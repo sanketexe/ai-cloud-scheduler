@@ -1,60 +1,105 @@
 # main.py
+import pandas as pd
 from environment import CloudProvider, VirtualMachine, Workload
 from schedulers import RandomScheduler, LowestCostScheduler, RoundRobinScheduler
 
-def run_simulation(scheduler, vms, workloads):
-    """Runs the simulation and prints scheduling decisions."""
-    print(f"\n--- Running Simulation with {scheduler.__class__.__name__} ---")
-    total_cost = 0
 
-    for workload in workloads:
+
+def load_workloads_from_csv(filepath):
+    """Loads workload data from a CSV file."""
+    try:
+        df = pd.read_csv(filepath)
+        workloads = []
+        for index, row in df.iterrows():
+            workloads.append(Workload(
+                workload_id=int(row['workload_id']),
+                cpu_required=int(row['cpu_required']),
+                memory_required_gb=int(row['memory_required_gb'])
+            ))
+        print(f"Successfully loaded {len(workloads)} workloads from {filepath}")
+        return workloads
+    except FileNotFoundError:
+        print(f"Error: The file {filepath} was not found.")
+        return []
+
+
+
+def run_simulation(scheduler, vms, workloads, log_filepath):
+    """Runs the simulation and logs the system state at each step."""
+    print(f"\n--- Running Simulation with {scheduler.__class__.__name__} ---")
+
+    simulation_logs = []
+
+    for timestamp, workload in enumerate(workloads, 1):
         selected_vm = scheduler.select_vm(workload, vms)
 
         if selected_vm:
             selected_vm.assign_workload(workload)
-            cost = (workload.cpu_required * selected_vm.provider.cpu_cost) + \
-                   (workload.memory_required_gb * selected_vm.provider.memory_cost_gb)
-            total_cost += cost
-
-            print(f"SUCCESS: Workload {workload.id} ({workload.cpu_required} vCPU, {workload.memory_required_gb}GB RAM) -> "
-                  f"VM {selected_vm.id} on {selected_vm.provider.name}. "
-                  f"Cost for this workload: ${cost:.4f}")
+            status = "SUCCESS"
         else:
-            print(f"FAILURE: Could not schedule Workload {workload.id} "
-                  f"({workload.cpu_required} vCPU, {workload.memory_required_gb}GB RAM). No suitable VM found.")
+            status = "FAILURE"
+
+        # --- LOGGING ---
+        # Capture the state of the system AFTER the scheduling attempt
+        total_cpu_used = sum(vm.cpu_used for vm in vms)
+        total_mem_used = sum(vm.memory_used_gb for vm in vms)
+        total_cpu_capacity = sum(vm.cpu_capacity for vm in vms)
+        total_mem_capacity = sum(vm.memory_capacity_gb for vm in vms)
+
+        log_entry = {
+            "timestamp": timestamp,
+            "workload_id": workload.id,
+            "status": status,
+            "total_cpu_used": total_cpu_used,
+            "total_cpu_capacity": total_cpu_capacity,
+            "percent_cpu_used": (total_cpu_used / total_cpu_capacity) * 100,
+            "total_mem_used_gb": total_mem_used,
+            "total_mem_capacity_gb": total_mem_capacity,
+            "percent_mem_used": (total_mem_used / total_mem_capacity) * 100,
+        }
+        simulation_logs.append(log_entry)
+
+        # Optional: Print status for clarity during run
+        print(f"T={timestamp}: Workload {workload.id} -> {status}")
+
+    # --- SAVE LOGS TO FILE ---
+    log_df = pd.DataFrame(simulation_logs)
+    log_df.to_csv(log_filepath, index=False)
 
     print(f"--- Simulation Complete ---")
-    print(f"Total simulated cost for workloads: ${total_cost:.2f}\n")
+    print(f"Performance log saved to {log_filepath}\n")
+
 
 if __name__ == "__main__":
-    # 1. Define Cloud Providers
-    aws_provider = CloudProvider(name="AWS", cpu_cost=0.04, memory_cost_gb=0.01)
-    gcp_provider = CloudProvider(name="GCP", cpu_cost=0.035, memory_cost_gb=0.009)
-    azure_provider = CloudProvider(name="Azure", cpu_cost=0.042, memory_cost_gb=0.011) # More expensive
+    # Function to set up a fresh environment for each simulation run
+    def setup_environment():
+        aws = CloudProvider(name="AWS", cpu_cost=0.04, memory_cost_gb=0.01)
+        gcp = CloudProvider(name="GCP", cpu_cost=0.035, memory_cost_gb=0.009)
+        azure = CloudProvider(name="Azure", cpu_cost=0.042, memory_cost_gb=0.011)
 
-    # 2. Setup Virtual Machines across providers
-    vms = [
-        VirtualMachine(vm_id=1, cpu_capacity=4, memory_capacity_gb=16, provider=aws_provider),
-        VirtualMachine(vm_id=2, cpu_capacity=8, memory_capacity_gb=32, provider=gcp_provider),
-        VirtualMachine(vm_id=3, cpu_capacity=4, memory_capacity_gb=16, provider=azure_provider),
-        VirtualMachine(vm_id=4, cpu_capacity=2, memory_capacity_gb=8, provider=gcp_provider) # Small cheap VM
-    ]
+        vms = [
+            VirtualMachine(vm_id=1, cpu_capacity=4, memory_capacity_gb=16, provider=aws),
+            VirtualMachine(vm_id=2, cpu_capacity=8, memory_capacity_gb=32, provider=gcp),
+            VirtualMachine(vm_id=3, cpu_capacity=4, memory_capacity_gb=16, provider=azure),
+            VirtualMachine(vm_id=4, cpu_capacity=2, memory_capacity_gb=8, provider=gcp)
+        ]
+        return vms
 
-    # 3. Create a list of workloads to be scheduled (for now, it's hardcoded)
-    workloads = [
-        Workload(workload_id=101, cpu_required=2, memory_required_gb=4),
-        Workload(workload_id=102, cpu_required=4, memory_required_gb=16),
-        Workload(workload_id=103, cpu_required=1, memory_required_gb=2),
-        Workload(workload_id=104, cpu_required=3, memory_required_gb=8),
-        Workload(workload_id=105, cpu_required=8, memory_required_gb=30), # A large workload
-        Workload(workload_id=106, cpu_required=2, memory_required_gb=2),
-    ]
+    # Load workloads from the CSV file
+    workloads_to_schedule = load_workloads_from_csv('workload_trace.csv')
 
-    # --- Run simulations with different schedulers ---
-    # Note: We are re-using the same VM and workload lists.
-    # For a proper comparison, they should be reset before each run,
-    # but for this first phase, this is fine.
+    if workloads_to_schedule:
+        # --- Run for Random Scheduler ---
+        vms_for_random = setup_environment()
+        random_scheduler = RandomScheduler()
+        run_simulation(random_scheduler, vms_for_random, workloads_to_schedule, 'log_random.csv')
 
-    run_simulation(RandomScheduler(), vms, workloads)
-    run_simulation(LowestCostScheduler(), vms, workloads)
-    run_simulation(RoundRobinScheduler(), vms, workloads)
+        # --- Run for Lowest Cost Scheduler ---
+        vms_for_lowest_cost = setup_environment()
+        lowest_cost_scheduler = LowestCostScheduler()
+        run_simulation(lowest_cost_scheduler, vms_for_lowest_cost, workloads_to_schedule, 'log_lowest_cost.csv')
+
+        # --- Run for Round Robin Scheduler ---
+        vms_for_round_robin = setup_environment()
+        round_robin_scheduler = RoundRobinScheduler()
+        run_simulation(round_robin_scheduler, vms_for_round_robin, workloads_to_schedule, 'log_round_robin.csv')
