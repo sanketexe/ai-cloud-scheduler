@@ -17,22 +17,20 @@ class Workload:
 class VirtualMachine:
     """Represents a VM instance on a cloud provider."""
     def __init__(self, vm_id, cpu_capacity, memory_capacity_gb, provider):
-        self.id = vm_id
+        self.vm_id = vm_id
         self.cpu_capacity = cpu_capacity
         self.memory_capacity_gb = memory_capacity_gb
         self.provider = provider
-        # Track current usage
         self.cpu_used = 0
         self.memory_used_gb = 0
 
     def can_accommodate(self, workload):
-        """Checks if the VM has enough resources for a workload."""
-        cpu_fits = (self.cpu_used + workload.cpu_required) <= self.cpu_capacity
-        mem_fits = (self.memory_used_gb + workload.memory_required_gb) <= self.memory_capacity_gb
-        return cpu_fits and mem_fits
+        """Check if VM can accommodate the workload"""
+        return (self.cpu_capacity - self.cpu_used >= workload.cpu_required and 
+                self.memory_capacity_gb - self.memory_used_gb >= workload.memory_required_gb)
 
     def assign_workload(self, workload):
-        """Assigns a workload to this VM, updating its resource usage."""
+        """Assign workload to VM"""
         if self.can_accommodate(workload):
             self.cpu_used += workload.cpu_required
             self.memory_used_gb += workload.memory_required_gb
@@ -41,6 +39,6 @@ class VirtualMachine:
 
     @property
     def cost(self):
-        """Calculates the current running cost of this VM based on its capacity."""
-        return (self.cpu_capacity * self.provider.cpu_cost) + \
-               (self.memory_capacity_gb * self.provider.memory_cost_gb)
+        """Calculate total cost for this VM"""
+        return (self.cpu_capacity * self.provider.cpu_cost + 
+                self.memory_capacity_gb * self.provider.memory_cost_gb)
