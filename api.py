@@ -7,6 +7,7 @@ import json
 import uvicorn
 import asyncio
 from functools import lru_cache
+import os
 
 # Import your existing modules
 try:
@@ -131,6 +132,16 @@ class SimulationRequest(BaseModel):
     scheduler_type: str
     workloads: List[WorkloadModel]
 
+class ConfigurationResponse(BaseModel):
+    category: str
+    config: Dict[str, Any]
+    last_updated: str
+    editable: bool
+
+class ConfigurationUpdate(BaseModel):
+    category: str
+    config: Dict[str, Any]
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -243,9 +254,7 @@ async def create_workload(workload: WorkloadModel):
             "status": "created"
         }
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/workloads/generate")
 async def generate_random_workloads(count: int = 5):
@@ -265,8 +274,6 @@ async def generate_random_workloads(count: int = 5):
             workloads.append(workload)
         return workloads
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/workloads/upload")
@@ -307,9 +314,7 @@ async def upload_workloads(file: UploadFile = File(...)):
         
         return {"workloads": workloads, "count": len(workloads)}
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
-        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Simulation endpoints
 @app.post("/api/simulation/run")
@@ -382,8 +387,6 @@ async def run_simulation(request: SimulationRequest):
         }
         
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/simulation/compare")
@@ -415,8 +418,6 @@ async def compare_schedulers(request: dict):
         return {"results": results}
         
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
         raise HTTPException(status_code=500, detail=str(e))
 
 # Global variable to track model status
@@ -448,7 +449,7 @@ async def upload_training_data(file: UploadFile = File(...)):
         return {"status": "success", "rows": len(rows)}
         
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ml/train")
 async def train_model():
@@ -484,8 +485,6 @@ async def predict_single(sequence: List[float]):
         prediction = random.uniform(40, 60)
         return {"prediction": prediction}
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ml/predict-multiple")
@@ -504,8 +503,271 @@ async def predict_multiple(sequence: List[float], steps: int = 5):
         predictions = [random.uniform(40, 60) for _ in range(steps)]
         return {"predictions": predictions}
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise
+        raise HTTPException(status_code=500, detail=str(e))
+
+SYSTEM_CONFIG = {
+    "api": {
+        "version": "1.0.0",
+        "host": "localhost",
+        "port": 8000,
+        "debug": False,
+        "cors_enabled": True,
+        "request_timeout": 30,
+        "max_workers": 4
+    },
+    "database": {
+        "type": "sqlite",
+        "connection_timeout": 10,
+        "max_connections": 20,
+        "backup_enabled": True,
+        "backup_interval": "24h"
+    },
+    "scheduler": {
+        "default_algorithm": "lowest_cost",
+        "available_algorithms": ["random", "lowest_cost", "round_robin"],
+        "max_workloads_per_request": 100,
+        "simulation_timeout": 300,
+        "retry_attempts": 3
+    },
+    "ml": {
+        "model_type": "lstm",
+        "training_enabled": True,
+        "prediction_window": 12,
+        "batch_size": 32,
+        "max_training_time": 600,
+        "auto_retrain": False
+    },
+    "performance": {
+        "cache_enabled": True,
+        "cache_ttl": 3600,
+        "rate_limit": 100,
+        "concurrent_limit": 10,
+        "response_compression": True
+    },
+    "providers": {
+        "aws": {
+            "enabled": True,
+            "default_region": "us-east-1",
+            "cpu_cost": 0.04,
+            "memory_cost_gb": 0.01
+        },
+        "gcp": {
+            "enabled": True,
+            "default_region": "us-central1",
+            "cpu_cost": 0.035,
+            "memory_cost_gb": 0.009
+        },
+        "azure": {
+            "enabled": True,
+            "default_region": "eastus",
+            "cpu_cost": 0.042,
+            "memory_cost_gb": 0.011
+        }
+    },
+    "logging": {
+        "level": "INFO",
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        "file_enabled": True,
+        "max_file_size": "10MB",
+        "backup_count": 5
+    },
+    "security": {
+        "api_key_required": False,
+        "https_only": False,
+        "cors_origins": ["*"],
+        "max_request_size": "10MB",
+        "rate_limiting": True
+    }
+}
+
+# Configuration endpoints
+
+
+
+
+@app.get("/api/config/show")
+async def show_configuration():
+    """Show formatted system configuration overview"""
+    try:
+        config_summary = {
+            "system_overview": {
+                "total_categories": len(SYSTEM_CONFIG),
+                "last_updated": datetime.now().isoformat(),
+                "status": "active"
+            },
+            "categories": {}
+        }
+        
+        # Summarize each category
+        for category, config in SYSTEM_CONFIG.items():
+            category_info = {
+                "total_settings": len(config),
+                "key_settings": {},
+                "status": "configured"
+            }
+            
+            # Extract key settings for each category
+            if category == "api":
+                category_info["key_settings"] = {
+                    "version": config.get("version"),
+                    "port": config.get("port"),
+                    "debug": config.get("debug")
+                }
+            elif category == "scheduler":
+                category_info["key_settings"] = {
+                    "default_algorithm": config.get("default_algorithm"),
+                    "max_workloads": config.get("max_workloads_per_request")
+                }
+            elif category == "providers":
+                enabled_providers = [name for name, settings in config.items() if settings.get("enabled", False)]
+                category_info["key_settings"] = {
+                    "enabled_providers": enabled_providers,
+                    "total_providers": len(config)
+                }
+            elif category == "ml":
+                category_info["key_settings"] = {
+                    "model_type": config.get("model_type"),
+                    "training_enabled": config.get("training_enabled")
+                }
+            elif category == "performance":
+                category_info["key_settings"] = {
+                    "cache_enabled": config.get("cache_enabled"),
+                    "concurrent_limit": config.get("concurrent_limit")
+                }
+            else:
+                # For other categories, show first 3 settings
+                keys = list(config.keys())[:3]
+                category_info["key_settings"] = {k: config[k] for k in keys}
+            
+            config_summary["categories"][category] = category_info
+        
+        return config_summary
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/config/export")
+async def export_configuration():
+    """Export all configurations as JSON"""
+    try:
+        export_data = {
+            "export_info": {
+                "timestamp": datetime.now().isoformat(),
+                "version": "1.0.0",
+                "total_categories": len(SYSTEM_CONFIG)
+            },
+            "configurations": SYSTEM_CONFIG
+        }
+        return export_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/config/{category}")
+async def get_configuration(category: str):
+    """Get configuration for specific category"""
+    try:
+        if category not in SYSTEM_CONFIG:
+            raise HTTPException(status_code=404, detail=f"Configuration category '{category}' not found")
+        
+        return ConfigurationResponse(
+            category=category,
+            config=SYSTEM_CONFIG[category],
+            last_updated=datetime.now().isoformat(),
+            editable=True
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/config/{category}")
+async def update_configuration(category: str, update: ConfigurationUpdate):
+    """Update configuration for specific category"""
+    try:
+        if category not in SYSTEM_CONFIG:
+            raise HTTPException(status_code=404, detail=f"Configuration category '{category}' not found")
+        
+        # Validate that the category in URL matches the request body
+        if update.category != category:
+            raise HTTPException(status_code=400, detail="Category in URL must match category in request body")
+        
+        # Update configuration
+        SYSTEM_CONFIG[category].update(update.config)
+        
+        return {
+            "category": category,
+            "updated_config": SYSTEM_CONFIG[category],
+            "message": f"Configuration for '{category}' updated successfully",
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/config/import")
+async def import_configuration(config_data: Dict[str, Any]):
+    """Import configurations from JSON data"""
+    try:
+        if "configurations" not in config_data:
+            raise HTTPException(status_code=400, detail="Invalid import format: 'configurations' key required")
+        
+        imported_config = config_data["configurations"]
+        
+        # Validate structure
+        for category in imported_config:
+            if category in SYSTEM_CONFIG:
+                SYSTEM_CONFIG[category].update(imported_config[category])
+        
+        return {
+            "message": "Configuration imported successfully",
+            "imported_categories": list(imported_config.keys()),
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/config/reset/{category}")
+async def reset_configuration(category: str):
+    """Reset configuration category to defaults"""
+    try:
+        if category not in SYSTEM_CONFIG:
+            raise HTTPException(status_code=404, detail=f"Configuration category '{category}' not found")
+        
+        # Default configurations (same as initial SYSTEM_CONFIG)
+        default_configs = {
+            "api": {
+                "version": "1.0.0",
+                "host": "localhost",
+                "port": 8000,
+                "debug": False,
+                "cors_enabled": True,
+                "request_timeout": 30,
+                "max_workers": 4
+            },
+            "scheduler": {
+                "default_algorithm": "lowest_cost",
+                "available_algorithms": ["random", "lowest_cost", "round_robin"],
+                "max_workloads_per_request": 100,
+                "simulation_timeout": 300,
+                "retry_attempts": 3
+            }
+            # Add other default configs as needed
+        }
+        
+        if category in default_configs:
+            SYSTEM_CONFIG[category] = default_configs[category].copy()
+        
+        return {
+            "category": category,
+            "message": f"Configuration for '{category}' reset to defaults",
+            "reset_config": SYSTEM_CONFIG[category],
+            "timestamp": datetime.now().isoformat()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.on_event("startup")

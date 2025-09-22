@@ -43,29 +43,29 @@ def quick_smoke_test():
         return False
     
     tests_passed = 0
-    total_tests = 6
+    total_tests = 7
     
     # Test 1: Basic connectivity
     try:
         response = requests.get(f"{API_BASE_URL}/", timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
-            print("✅ 1/6 - API server responding")
+            print("✅ 1/7 - API server responding")
             tests_passed += 1
         else:
-            print("❌ 1/6 - API server not responding correctly")
+            print("❌ 1/7 - API server not responding correctly")
     except Exception as e:
-        print(f"❌ 1/6 - Cannot connect to API server: {e}")
+        print(f"❌ 1/7 - Cannot connect to API server: {e}")
     
     # Test 2: API Documentation
     try:
         response = requests.get(f"{API_BASE_URL}/docs", timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
-            print("✅ 2/6 - API documentation accessible")
+            print("✅ 2/7 - API documentation accessible")
             tests_passed += 1
         else:
-            print("❌ 2/6 - API documentation failed")
+            print("❌ 2/7 - API documentation failed")
     except Exception as e:
-        print(f"❌ 2/6 - API documentation error: {e}")
+        print(f"❌ 2/7 - API documentation error: {e}")
     
     # Test 3: Get providers
     try:
@@ -75,16 +75,16 @@ def quick_smoke_test():
             if isinstance(data, list) and len(data) >= 3:
                 provider_names = [p.get("name", "").lower() for p in data]
                 if "aws" in provider_names and "gcp" in provider_names and "azure" in provider_names:
-                    print("✅ 3/6 - Provider endpoints working")
+                    print("✅ 3/7 - Provider endpoints working")
                     tests_passed += 1
                 else:
-                    print("❌ 3/6 - Provider endpoints: missing expected providers")
+                    print("❌ 3/7 - Provider endpoints: missing expected providers")
             else:
-                print(f"❌ 3/6 - Provider endpoints: invalid response format")
+                print(f"❌ 3/7 - Provider endpoints: invalid response format")
         else:
-            print(f"❌ 3/6 - Provider endpoints failed: {response.status_code}")
+            print(f"❌ 3/7 - Provider endpoints failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ 3/6 - Provider endpoints error: {e}")
+        print(f"❌ 3/7 - Provider endpoints error: {e}")
     
     # Test 4: Get VMs
     try:
@@ -96,16 +96,16 @@ def quick_smoke_test():
                 vm = data[0] if data else {}
                 required_fields = ["vm_id", "cpu_capacity", "memory_capacity_gb", "provider"]
                 if all(field in vm for field in required_fields):
-                    print("✅ 4/6 - VM endpoints working")
+                    print("✅ 4/7 - VM endpoints working")
                     tests_passed += 1
                 else:
-                    print("❌ 4/6 - VM endpoints: missing required fields")
+                    print("❌ 4/7 - VM endpoints: missing required fields")
             else:
-                print(f"❌ 4/6 - VM endpoints: invalid response format")
+                print(f"❌ 4/7 - VM endpoints: invalid response format")
         else:
-            print(f"❌ 4/6 - VM endpoints failed: {response.status_code}")
+            print(f"❌ 4/7 - VM endpoints failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ 4/6 - VM endpoints error: {e}")
+        print(f"❌ 4/7 - VM endpoints error: {e}")
     
     # Test 5: Get workloads
     try:
@@ -113,14 +113,14 @@ def quick_smoke_test():
         if response.status_code == 200:
             data = response.json()
             if isinstance(data, list) and len(data) >= 8:
-                print("✅ 5/6 - Workload endpoints working")
+                print("✅ 5/7 - Workload endpoints working")
                 tests_passed += 1
             else:
-                print(f"❌ 5/6 - Workload endpoints: insufficient workloads ({len(data)} < 8)")
+                print(f"❌ 5/7 - Workload endpoints: insufficient workloads ({len(data)} < 8)")
         else:
-            print(f"❌ 5/6 - Workload endpoints failed: {response.status_code}")
+            print(f"❌ 5/7 - Workload endpoints failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ 5/6 - Workload endpoints error: {e}")
+        print(f"❌ 5/7 - Workload endpoints error: {e}")
     
     # Test 6: Quick simulation
     try:
@@ -134,14 +134,33 @@ def quick_smoke_test():
             response = requests.post(f"{API_BASE_URL}/api/simulation/run", 
                                    json=simulation_data, timeout=30)
             if response.status_code == 200:
-                print("✅ 6/6 - Basic simulation working")
+                print("✅ 6/7 - Basic simulation working")
                 tests_passed += 1
             else:
-                print(f"❌ 6/6 - Basic simulation failed: {response.status_code}")
+                print(f"❌ 6/7 - Basic simulation failed: {response.status_code}")
         else:
-            print("❌ 6/6 - Cannot get workloads for simulation")
+            print("❌ 6/7 - Cannot get workloads for simulation")
     except Exception as e:
-        print(f"❌ 6/6 - Simulation error: {e}")
+        print(f"❌ 6/7 - Simulation error: {e}")
+    
+    # Test 7: Configuration system
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/config/show", timeout=REQUEST_TIMEOUT)
+        if response.status_code == 200:
+            data = response.json()
+            if "system_overview" in data and "categories" in data:
+                total_categories = data["system_overview"].get("total_categories", 0)
+                if total_categories >= 7:  # Should have at least 7 config categories
+                    print("✅ 7/7 - Configuration system working")
+                    tests_passed += 1
+                else:
+                    print(f"❌ 7/7 - Configuration system: insufficient categories ({total_categories} < 7)")
+            else:
+                print("❌ 7/7 - Configuration system: invalid response format")
+        else:
+            print(f"❌ 7/7 - Configuration system failed: {response.status_code}")
+    except Exception as e:
+        print(f"❌ 7/7 - Configuration system error: {e}")
     
     # Summary
     print(f"\n🏁 Quick Test Results: {tests_passed}/{total_tests} passed")

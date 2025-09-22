@@ -66,6 +66,14 @@ def import_test_modules():
         print(f"⚠️  Could not import performance tests: {e}")
         test_modules['performance'] = []
     
+    try:
+        from test_configuration import test_configuration_endpoints, test_configuration_validation
+        test_modules['configuration'] = [test_configuration_endpoints, test_configuration_validation]
+        print("✅ Imported configuration tests")
+    except ImportError as e:
+        print(f"⚠️  Could not import configuration tests: {e}")
+        test_modules['configuration'] = []
+    
     return test_modules
 
 def run_available_tests():

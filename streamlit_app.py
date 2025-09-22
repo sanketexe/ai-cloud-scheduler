@@ -33,16 +33,31 @@ def main():
         ["Dashboard", "Configuration", "Simulation", "Results", "ML Predictions"]
     )
     
-    if page == "Dashboard":
-        show_dashboard()
-    elif page == "Configuration":
-        show_configuration()
-    elif page == "Simulation":
-        show_simulation()
-    elif page == "Results":
-        show_results()
-    elif page == "ML Predictions":
-        show_ml_predictions()
+    # Add API status check
+    try:
+        response = requests.get(f"{API_BASE_URL}/", timeout=2)
+        if response.status_code == 200:
+            st.sidebar.success("🟢 API Connected")
+        else:
+            st.sidebar.warning("🟡 API Issues")
+    except:
+        st.sidebar.error("🔴 API Offline")
+    
+    # Page routing
+    try:
+        if page == "Dashboard":
+            show_dashboard()
+        elif page == "Configuration":
+            show_configuration()
+        elif page == "Simulation":
+            show_simulation()
+        elif page == "Results":
+            show_results()
+        elif page == "ML Predictions":
+            show_ml_predictions()
+    except Exception as e:
+        st.error(f"Error loading page: {str(e)}")
+        st.info("Please check if the API server is running: `python api.py`")
 
 def show_dashboard():
     st.header("📊 Dashboard")
@@ -77,7 +92,7 @@ def show_dashboard():
     
     with col2:
         if st.button("⚙️ Configure Simulation", use_container_width=True):
-            st.switch_page("Configuration")
+            st.info("💡 Use the sidebar navigation to go to Configuration page")
     
     with col3:
         if st.button("▶️ Quick Simulation", use_container_width=True):
@@ -89,7 +104,7 @@ def show_dashboard():
 def show_configuration():
     st.header("⚙️ Configuration")
     
-    tab1, tab2, tab3 = st.tabs(["Cloud Providers", "Virtual Machines", "Workloads"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Cloud Providers", "Virtual Machines", "Workloads", "System Config"])
     
     with tab1:
         show_provider_config()
@@ -99,15 +114,18 @@ def show_configuration():
     
     with tab3:
         show_workload_config()
+    
+    with tab4:
+        show_system_config()
 
 def show_provider_config():
     st.subheader("☁️ Cloud Provider Configuration")
     
-    # Get default providers
+    # Get default providers - Updated API response structure
     try:
         response = requests.get(f"{API_BASE_URL}/api/providers/default")
         if response.status_code == 200:
-            providers = response.json()["providers"]
+            providers = response.json()  # Remove ["providers"] - now returns list directly
             
             st.session_state.providers = []
             
@@ -153,7 +171,7 @@ def show_vm_config():
     try:
         response = requests.get(f"{API_BASE_URL}/api/vms/default")
         if response.status_code == 200:
-            vms = response.json()["vms"]
+            vms = response.json()  # Remove ["vms"] - now returns list directly
             
             st.session_state.vms = []
             
@@ -185,10 +203,12 @@ def show_vm_config():
                         )
                     
                     with col4:
+                        # Extract provider name from nested structure
+                        provider_name = vm['provider']['name']
                         provider_name = st.selectbox(
                             "Provider", 
                             ["AWS", "GCP", "Azure"],
-                            index=["AWS", "GCP", "Azure"].index(vm['provider_name']),
+                            index=["AWS", "GCP", "Azure"].index(provider_name),
                             key=f"provider_{i}"
                         )
                     
@@ -280,6 +300,46 @@ def show_random_workload_generator():
         if st.form_submit_button("Generate Random Workloads"):
             generate_random_workloads(count, cpu_min, cpu_max, memory_min, memory_max)
 
+def show_system_config():
+    """Show system configuration management"""
+    st.subheader("🔧 System Configuration")
+    
+    # Get configuration overview
+    try:
+        response = requests.get(f"{API_BASE_URL}/api/config/show")
+        if response.status_code == 200:
+            config_data = response.json()
+            
+            # Display overview
+            overview = config_data["system_overview"]
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Total Categories", overview["total_categories"])
+            with col2:
+                st.metric("Status", overview["status"])
+            with col3:
+                st.metric("Last Updated", "Just now")
+            
+            # Display categories
+            st.subheader("Configuration Categories")
+            
+            for category, info in config_data["categories"].items():
+                with st.expander(f"📁 {category.upper()} ({info['total_settings']} settings)"):
+                    st.write(f"**Status:** {info['status']}")
+                    st.write("**Key Settings:**")
+                    for key, value in info["key_settings"].items():
+                        st.write(f"- {key}: `{value}`")
+                    
+                    if st.button(f"Edit {category}", key=f"edit_{category}"):
+                        st.info(f"Edit functionality for {category} coming soon!")
+        
+        else:
+            st.error("Failed to load system configuration")
+    
+    except Exception as e:
+        st.error(f"Error loading system configuration: {e}")
+
 def show_simulation():
     st.header("▶️ Run Simulation")
     
@@ -349,76 +409,97 @@ def show_results_charts(results):
     
     scheduler_names = []
     success_rates = []
-    cpu_usage = []
-    memory_usage = []
+    total_costs = []
+    successful_workloads = []
     
     for scheduler, data in results.items():
         summary = data['summary']
         scheduler_names.append(scheduler.replace('_', ' ').title())
         success_rates.append(summary['success_rate'])
-        cpu_usage.append(summary['final_cpu_usage'])
-        memory_usage.append(summary['final_memory_usage'])
+        total_costs.append(summary.get('total_cost', 0))
+        successful_workloads.append(summary['successful_workloads'])
     
+    # Create comparison charts
     fig = make_subplots(
         rows=1, cols=3,
-        subplot_titles=('Success Rate (%)', 'Final CPU Usage (%)', 'Final Memory Usage (%)'),
+        subplot_titles=('Success Rate (%)', 'Total Cost ($)', 'Successful Workloads'),
         specs=[[{"secondary_y": False}, {"secondary_y": False}, {"secondary_y": False}]]
     )
     
     fig.add_trace(
-        go.Bar(x=scheduler_names, y=success_rates, name="Success Rate"),
+        go.Bar(x=scheduler_names, y=success_rates, name="Success Rate", marker_color='lightblue'),
         row=1, col=1
     )
     
     fig.add_trace(
-        go.Bar(x=scheduler_names, y=cpu_usage, name="CPU Usage"),
+        go.Bar(x=scheduler_names, y=total_costs, name="Total Cost", marker_color='lightgreen'),
         row=1, col=2
     )
     
     fig.add_trace(
-        go.Bar(x=scheduler_names, y=memory_usage, name="Memory Usage"),
+        go.Bar(x=scheduler_names, y=successful_workloads, name="Successful Workloads", marker_color='coral'),
         row=1, col=3
     )
     
     fig.update_layout(height=400, showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
     
-    # Resource utilization over time
-    st.subheader("Resource Utilization Over Time")
+    # Detailed results for each scheduler
+    st.subheader("Detailed Scheduler Results")
     
     for scheduler, data in results.items():
         logs = data['logs']
-        df = pd.DataFrame(logs)
         
         with st.expander(f"{scheduler.replace('_', ' ').title()} Details"):
-            fig = go.Figure()
+            # Show summary metrics
+            summary = data['summary']
+            col1, col2, col3, col4 = st.columns(4)
             
-            fig.add_trace(go.Scatter(
-                x=df['timestamp'],
-                y=df['percent_cpu_used'],
-                mode='lines+markers',
-                name='CPU Usage (%)',
-                line=dict(color='blue')
-            ))
+            with col1:
+                st.metric("Success Rate", f"{summary['success_rate']:.1f}%")
+            with col2:
+                st.metric("Successful", f"{summary['successful_workloads']}")
+            with col3:
+                st.metric("Total Workloads", f"{summary['total_workloads']}")
+            with col4:
+                st.metric("Total Cost", f"${summary.get('total_cost', 0):.2f}")
             
-            fig.add_trace(go.Scatter(
-                x=df['timestamp'],
-                y=df['percent_mem_used'],
-                mode='lines+markers',
-                name='Memory Usage (%)',
-                line=dict(color='red')
-            ))
+            # Show assignment details
+            st.subheader("Workload Assignments")
             
-            fig.update_layout(
-                title=f"{scheduler.replace('_', ' ').title()} - Resource Utilization",
-                xaxis_title="Timestamp",
-                yaxis_title="Usage (%)",
-                height=400
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            st.dataframe(df, use_container_width=True)
+            # Convert logs to DataFrame for better display
+            if logs:
+                df_logs = pd.DataFrame(logs)
+                
+                # Add status indicator
+                df_logs['Status'] = df_logs['success'].apply(lambda x: '✅ Success' if x else '❌ Failed')
+                
+                # Display the table - FIXED syntax error here
+                display_columns = ['workload_id', 'vm_id', 'Status', 'message']
+                available_columns = [col for col in display_columns if col in df_logs.columns]  # FIXED: removed 'are'
+                
+                st.dataframe(df_logs[available_columns], use_container_width=True)
+                
+                # Simple success/failure chart
+                success_count = df_logs['success'].sum()
+                failure_count = len(df_logs) - success_count
+                
+                if success_count > 0 or failure_count > 0:
+                    fig_pie = go.Figure(data=[go.Pie(
+                        labels=['Success', 'Failed'],
+                        values=[success_count, failure_count],
+                        hole=.3,
+                        marker_colors=['lightgreen', 'lightcoral']
+                    )])
+                    
+                    fig_pie.update_layout(
+                        title=f"{scheduler.replace('_', ' ').title()} - Assignment Results",
+                        height=300
+                    )
+                    
+                    st.plotly_chart(fig_pie, use_container_width=True)
+            else:
+                st.info("No assignment logs available for this scheduler.")
 
 def show_ml_predictions():
     st.header("🤖 ML Predictions")
@@ -681,18 +762,40 @@ def make_multiple_predictions(sequence_input, steps):
 # Helper functions
 def load_sample_workloads():
     """Load sample workloads for testing"""
-    sample_workloads = [
-        {"workload_id": 201, "cpu_required": 2, "memory_required_gb": 4},
-        {"workload_id": 202, "cpu_required": 1, "memory_required_gb": 2},
-        {"workload_id": 203, "cpu_required": 4, "memory_required_gb": 8},
-        {"workload_id": 204, "cpu_required": 2, "memory_required_gb": 2},
-        {"workload_id": 205, "cpu_required": 8, "memory_required_gb": 30},
-        {"workload_id": 206, "cpu_required": 1, "memory_required_gb": 4},
-        {"workload_id": 207, "cpu_required": 3, "memory_required_gb": 6},
-        {"workload_id": 208, "cpu_required": 2, "memory_required_gb": 8},
-    ]
-    st.session_state.workloads = sample_workloads
-    st.success(f"Loaded {len(sample_workloads)} sample workloads!")
+    try:
+        # Try to get sample workloads from API first
+        response = requests.get(f"{API_BASE_URL}/api/workloads/sample", timeout=5)
+        if response.status_code == 200:
+            api_workloads = response.json()
+            # Convert API format to frontend format
+            workloads = []
+            for w in api_workloads:
+                workloads.append({
+                    "workload_id": w["id"],
+                    "cpu_required": w["cpu_required"], 
+                    "memory_required_gb": w["memory_required_gb"]
+                })
+            st.session_state.workloads = workloads
+            st.success(f"✅ Loaded {len(workloads)} sample workloads from API!")
+        else:
+            # Fallback to hardcoded sample data
+            raise Exception("API not available")
+            
+    except Exception:
+        # Fallback to hardcoded sample workloads
+        sample_workloads = [
+            {"workload_id": 201, "cpu_required": 2, "memory_required_gb": 4},
+            {"workload_id": 202, "cpu_required": 1, "memory_required_gb": 2},
+            {"workload_id": 203, "cpu_required": 4, "memory_required_gb": 8},
+            {"workload_id": 204, "cpu_required": 2, "memory_required_gb": 2},
+            {"workload_id": 205, "cpu_required": 3, "memory_required_gb": 6},
+            {"workload_id": 206, "cpu_required": 1, "memory_required_gb": 4},
+            {"workload_id": 207, "cpu_required": 3, "memory_required_gb": 6},
+            {"workload_id": 208, "cpu_required": 2, "memory_required_gb": 8},
+        ]
+        st.session_state.workloads = sample_workloads
+        st.success(f"✅ Loaded {len(sample_workloads)} sample workloads (offline mode)!")
+    
     st.rerun()
 
 def upload_workloads(uploaded_file):
@@ -703,8 +806,16 @@ def upload_workloads(uploaded_file):
         
         if response.status_code == 200:
             data = response.json()
-            st.session_state.workloads = data["workloads"]
-            st.success(data["message"])
+            # Convert API response to match session state format
+            workloads = []
+            for w in data["workloads"]:
+                workloads.append({
+                    "workload_id": w["id"],  # API uses 'id', frontend uses 'workload_id'
+                    "cpu_required": w["cpu_required"],
+                    "memory_required_gb": w["memory_required_gb"]
+                })
+            st.session_state.workloads = workloads
+            st.success(f"Uploaded {data['count']} workloads successfully!")
             st.rerun()
         else:
             st.error(f"Upload failed: {response.text}")
@@ -717,19 +828,21 @@ def generate_random_workloads(count, cpu_min, cpu_max, memory_min, memory_max):
     try:
         response = requests.post(
             f"{API_BASE_URL}/api/workloads/generate",
-            params={
-                "count": count,
-                "cpu_min": cpu_min,
-                "cpu_max": cpu_max,
-                "memory_min": memory_min,
-                "memory_max": memory_max
-            }
+            params={"count": count}  # Note: API doesn't support min/max params yet
         )
         
         if response.status_code == 200:
             data = response.json()
-            st.session_state.workloads = data["workloads"]
-            st.success(data["message"])
+            # Convert API response to frontend format
+            workloads = []
+            for w in data:
+                workloads.append({
+                    "workload_id": w["id"],  # Convert from API format
+                    "cpu_required": w["cpu_required"],
+                    "memory_required_gb": w["memory_required_gb"]
+                })
+            st.session_state.workloads = workloads
+            st.success(f"Generated {len(workloads)} random workloads!")
             st.rerun()
         else:
             st.error(f"Generation failed: {response.text}")
@@ -740,37 +853,48 @@ def generate_random_workloads(count, cpu_min, cpu_max, memory_min, memory_max):
 def run_simulation(schedulers):
     """Run simulation via API"""
     try:
-        # Get providers and VMs from session state or use defaults
-        providers = getattr(st.session_state, 'providers', [
-            {"name": "AWS", "cpu_cost": 0.04, "memory_cost_gb": 0.01},
-            {"name": "GCP", "cpu_cost": 0.035, "memory_cost_gb": 0.009},
-            {"name": "Azure", "cpu_cost": 0.042, "memory_cost_gb": 0.011}
-        ])
+        # Use individual simulation calls since compare endpoint structure changed
+        results = {}
         
-        vms = getattr(st.session_state, 'vms', [
-            {"vm_id": 1, "cpu_capacity": 4, "memory_capacity_gb": 16, "provider_name": "AWS"},
-            {"vm_id": 2, "cpu_capacity": 8, "memory_capacity_gb": 32, "provider_name": "GCP"},
-            {"vm_id": 3, "cpu_capacity": 4, "memory_capacity_gb": 16, "provider_name": "Azure"},
-            {"vm_id": 4, "cpu_capacity": 2, "memory_capacity_gb": 8, "provider_name": "GCP"}
-        ])
+        for scheduler in schedulers:
+            # Convert workloads to API format (using 'id' instead of 'workload_id')
+            api_workloads = []
+            for w in st.session_state.workloads:
+                api_workloads.append({
+                    "id": w["workload_id"],  # Convert to API format
+                    "cpu_required": w["cpu_required"],
+                    "memory_required_gb": w["memory_required_gb"]
+                })
+            
+            simulation_request = {
+                "scheduler_type": scheduler,
+                "workloads": api_workloads
+            }
+            
+            with st.spinner(f"Running {scheduler} simulation..."):
+                response = requests.post(f"{API_BASE_URL}/api/simulation/run", json=simulation_request)
+            
+            if response.status_code == 200:
+                data = response.json()
+                results[scheduler] = {
+                    "summary": {
+                        "success_rate": data["summary"]["success_rate"],
+                        "successful_workloads": data["summary"]["successful_assignments"],
+                        "total_workloads": data["summary"]["total_workloads"],
+                        "total_cost": data["summary"]["total_cost"],
+                        # Add mock values for charts (since API doesn't provide these)
+                        "final_cpu_usage": min(100, data["summary"]["success_rate"] * 1.2),
+                        "final_memory_usage": min(100, data["summary"]["success_rate"] * 0.8)
+                    },
+                    "logs": data["logs"]
+                }
+            else:
+                st.error(f"Simulation failed for {scheduler}: {response.text}")
+                return
         
-        config = {
-            "providers": providers,
-            "vms": vms,
-            "workloads": st.session_state.workloads,
-            "schedulers": schedulers
-        }
-        
-        with st.spinner("Running simulation..."):
-            response = requests.post(f"{API_BASE_URL}/api/simulation/start", json=config)
-        
-        if response.status_code == 200:
-            data = response.json()
-            st.session_state.simulation_results = data["results"]
-            st.success("Simulation completed successfully!")
-            st.balloons()
-        else:
-            st.error(f"Simulation failed: {response.text}")
+        st.session_state.simulation_results = results
+        st.success("All simulations completed successfully!")
+        st.balloons()
     
     except Exception as e:
         st.error(f"Error running simulation: {e}")
