@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulation | AI Cloud Scheduler</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><h1>▶️ Simulation</h1></header>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="config.html">Configuration</a>
+    <a href="simulation.html">Simulation</a>
+    <a href="results.html">Results</a>
+    <a href="ml.html">ML Predictions</a>
+  </nav>
+  <div class="container">
+    <h2>Run a Simulation</h2>
+    <div class="card">
+      <p>Select schedulers to test:</p>
+      <label><input type="checkbox" value="random"> Random</label><br>
+      <label><input type="checkbox" value="lowest_cost"> Lowest Cost</label><br>
+      <label><input type="checkbox" value="round_robin"> Round Robin</label><br>
+      <label><input type="checkbox" value="ml_based"> ML-Based</label><br><br>
+      <button onclick="startSimulation()">🚀 Start Simulation</button>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

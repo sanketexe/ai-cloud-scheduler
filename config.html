@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Configuration | AI Cloud Scheduler</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header><h1>⚙️ Configuration</h1></header>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="config.html">Configuration</a>
+    <a href="simulation.html">Simulation</a>
+    <a href="results.html">Results</a>
+    <a href="ml.html">ML Predictions</a>
+  </nav>
+  <div class="container">
+    <h2>Setup Cloud Environment</h2>
+    <div class="card">
+      <h3>Providers & VMs</h3>
+      <button onclick="loadProviders()">📦 Load Providers</button>
+      <button onclick="loadVMs()">💻 Load VMs</button>
+    </div>
+
+    <div class="card">
+      <h3>Workload Management</h3>
+      <button onclick="loadSampleData()">📁 Load Sample Workloads</button>
+      <button onclick="uploadWorkloads()">⬆️ Upload Workloads</button>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
