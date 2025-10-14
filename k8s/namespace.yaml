@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-intelligence
+  labels:
+    name: cloud-intelligence
+    app.kubernetes.io/name: cloud-intelligence-platform
+    app.kubernetes.io/version: "1.0.0"

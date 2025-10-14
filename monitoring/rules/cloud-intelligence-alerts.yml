@@ -1,0 +1,137 @@
+# Alerting rules for Cloud Intelligence Platform
+groups:
+  - name: cloud-intelligence-api
+    rules:
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{job="cloud-intelligence-api",status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on Cloud Intelligence API"
+          description: "API error rate is {{ $value }} errors per second"
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="cloud-intelligence-api"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on Cloud Intelligence API"
+          description: "95th percentile latency is {{ $value }} seconds"
+
+      - alert: APIDown
+        expr: up{job="cloud-intelligence-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Cloud Intelligence API is down"
+          description: "API has been down for more than 1 minute"
+
+  - name: cloud-intelligence-resources
+    rules:
+      - alert: HighCPUUsage
+        expr: rate(cpu_usage_seconds_total[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: memory_usage_ratio > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: disk_free_ratio < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% full on {{ $labels.instance }}"
+
+  - name: cloud-intelligence-database
+    rules:
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "Database has been down for more than 1 minute"
+
+      - alert: DatabaseHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection usage is {{ $value }}%"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(pg_stat_database_tup_returned[5m]) / rate(pg_stat_database_tup_fetched[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database queries are slow"
+          description: "Query efficiency is {{ $value }}%"
+
+  - name: cloud-intelligence-cache
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis has been down for more than 1 minute"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory usage is {{ $value }}%"
+
+  - name: cloud-intelligence-workloads
+    rules:
+      - alert: HighWorkloadFailureRate
+        expr: rate(workload_scheduling_failures_total[5m]) / rate(workload_scheduling_attempts_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High workload scheduling failure rate"
+          description: "Workload failure rate is {{ $value }}%"
+
+      - alert: UnusualCostSpike
+        expr: increase(cloud_cost_total[1h]) > increase(cloud_cost_total[1h] offset 24h) * 1.5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual cloud cost spike detected"
+          description: "Cloud costs have increased by {{ $value }}% compared to yesterday"
+
+      - alert: PerformanceAnomaly
+        expr: performance_anomaly_score > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Performance anomaly detected"
+          description: "Anomaly score is {{ $value }} for {{ $labels.resource_id }}"

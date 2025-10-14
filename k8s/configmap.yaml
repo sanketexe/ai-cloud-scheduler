@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-intelligence-config
+  namespace: cloud-intelligence
+data:
+  DATABASE_URL: "postgresql://postgres:password@postgres:5432/cloud_intelligence"
+  REDIS_URL: "redis://redis:6379"
+  INFLUXDB_URL: "http://influxdb:8086"
+  INFLUXDB_ORG: "cloud-intelligence"
+  INFLUXDB_BUCKET: "metrics"
+  API_URL: "http://api:8000"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
