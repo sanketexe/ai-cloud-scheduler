@@ -1,9 +1,0 @@
-tensorflow
-pandas
-scikit-learn
-fastapi
-uvicorn
-python-multipart
-streamlit
-plotly
-requests

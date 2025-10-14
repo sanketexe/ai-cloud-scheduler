@@ -9,7 +9,8 @@ class BaseScheduler:
 class RandomScheduler(BaseScheduler):
     """Selects a random VM that can accommodate the workload."""
     def select_vm(self, workload, vms):
-        eligible_vms = [vm for vm in vms if vm.can_accommodate(workload)]
+        
+        eligible_vms = [vm for vm in vms if  vm.can_accommodate(workload)]
         if not eligible_vms:
             return None
         return random.choice(eligible_vms)

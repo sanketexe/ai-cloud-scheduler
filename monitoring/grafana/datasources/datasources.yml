@@ -1,0 +1,38 @@
+# Grafana datasources configuration
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    database: metrics
+    user: admin
+    secureJsonData:
+      password: password123
+    jsonData:
+      version: Flux
+      organization: cloud-intelligence
+      defaultBucket: metrics
+      tlsSkipVerify: true
+
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: cloud_intelligence
+    user: postgres
+    secureJsonData:
+      password: password
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 0
+      maxIdleConns: 2
+      connMaxLifetime: 14400

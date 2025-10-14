@@ -177,3 +177,70 @@ Thumbs.db
 *.log
 config.ini
 *.conf
+
+# Cloud Intelligence Platform specific
+logs/
+uploads/
+*.csv
+*.pkl
+*.keras
+*.h5
+audit_logs/
+.keys/
+.certs/
+
+# Docker
+.dockerignore
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.tfplan
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Cloud provider credentials
+.aws/
+.gcp/
+.azure/
+service-account*.json
+credentials.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+elasticsearch_data/
+
+# Secrets and sensitive data
+secrets.yaml
+.env.local
+.env.production
+*.pem
+*.key
+*.crt
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Temporary files
+tmp/
+temp/
+.tmp/

@@ -83,10 +83,40 @@ TS_AI_CLOUD_SCHEDULER/
 │   ├── 📄 test_simulation.py      # Scheduling algorithm tests
 │   ├── 📄 test_ml.py              # Machine learning tests
 │   ├── 📄 test_performance.py     # Speed and load tests
+│   ├── 📄 test_configuration.py   # Configuration management tests
 │   └── 📁 test_data/              # Sample data files
 │       ├── 📄 sample_workloads.csv
 │       └── 📄 sample_cpu_data.csv
 └──
 ```
+
+### 8. Configuration Tests (`test_configuration.py`)
+**Purpose**: Test system configuration management and settings
+
+**Tests performed**:
+- ✅ View all system configurations
+- ✅ Show configuration overview with `show_configuration`
+- ✅ Get specific configuration categories
+- ✅ Update configuration settings
+- ✅ Export/import configurations
+- ✅ Validate configuration data
+- ✅ Handle invalid categories and data
+
+**Configuration Categories**:
+- 🔧 **API**: Server settings, ports, debugging
+- 📊 **Scheduler**: Algorithm settings, limits, timeouts
+- ☁️ **Providers**: Cloud provider costs and settings
+- 🤖 **ML**: Machine learning model configuration
+- ⚡ **Performance**: Caching, rate limiting, concurrency
+- 📝 **Logging**: Log levels, file settings
+- 🔒 **Security**: API keys, HTTPS, CORS settings
+
+**Endpoints Tested**:
+- `GET /api/config` - Get all configurations
+- `GET /api/config/show` - Show configuration overview
+- `GET /api/config/{category}` - Get specific category
+- `POST /api/config/{category}` - Update configuration
+- `GET /api/config/export` - Export all configurations
+- `POST /api/config/import` - Import configurations
 
 
