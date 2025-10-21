@@ -2,9 +2,9 @@
 
 ## Overview
 
-The Cloud Intelligence Platform is a comprehensive multi-cloud management system that enhances the existing multi-cloud scheduler with advanced financial operations (FinOps) and performance monitoring capabilities. The platform provides unified visibility, cost optimization, and intelligent resource management across AWS, GCP, Azure, and other cloud providers.
+The Single-Cloud FinOps Platform is a comprehensive financial operations and cost optimization system designed for organizations operating within a single cloud provider ecosystem. The platform transforms existing cloud management capabilities into a focused FinOps solution that provides deep cost visibility, intelligent optimization recommendations, and automated governance.
 
-The design leverages the existing foundation of ML-powered workload scheduling while adding sophisticated cost tracking, performance monitoring, and predictive analytics to create a complete cloud intelligence solution.
+The design leverages cloud provider APIs to deliver real-time cost attribution, budget management, waste detection, reserved instance optimization, and tagging compliance. By focusing on a single cloud provider, the platform can provide deeper integration, more accurate recommendations, and simplified operations compared to multi-cloud solutions.
 
 ## Architecture
 
@@ -13,251 +13,292 @@ The design leverages the existing foundation of ML-powered workload scheduling w
 ```mermaid
 graph TB
     subgraph "User Interface Layer"
-        UI[Web Dashboard]
+        UI[FinOps Dashboard]
         API[REST API Gateway]
-        CLI[CLI Interface]
+        MOBILE[Mobile App]
+        ALERTS[Alert System]
     end
     
-    subgraph "Intelligence Layer"
-        WS[Workload Scheduler]
-        FE[FinOps Engine]
-        PM[Performance Monitor]
-        AA[Analytics & AI]
+    subgraph "FinOps Intelligence Layer"
+        CA[Cost Attribution Engine]
+        BM[Budget Management]
+        WD[Waste Detection]
+        RIO[RI Optimization]
+        TC[Tagging Compliance]
+        FE[Forecasting Engine]
     end
     
-    subgraph "Data Layer"
-        CM[Cost Metrics DB]
-        PM_DB[Performance Metrics DB]
-        WM[Workload Metadata DB]
-        TS[Time Series Store]
+    subgraph "Data Processing Layer"
+        DC[Data Collector]
+        DP[Data Processor]
+        ML[ML Analytics]
+        RE[Recommendation Engine]
     end
     
-    subgraph "Integration Layer"
-        AWS_API[AWS APIs]
-        GCP_API[GCP APIs]
-        AZURE_API[Azure APIs]
-        BILLING[Billing APIs]
+    subgraph "Data Storage Layer"
+        CD[Cost Database]
+        RD[Resource Database]
+        TD[Time Series Data]
+        MD[Metadata Store]
+    end
+    
+    subgraph "Cloud Provider Integration"
+        BILLING[Billing API]
+        RESOURCE[Resource API]
+        MONITOR[Monitoring API]
+        PRICING[Pricing API]
     end
     
     UI --> API
-    CLI --> API
-    API --> WS
+    MOBILE --> API
+    API --> CA
+    API --> BM
+    API --> WD
+    API --> RIO
+    API --> TC
     API --> FE
-    API --> PM
-    API --> AA
     
-    WS --> CM
-    WS --> WM
-    FE --> CM
-    FE --> BILLING
-    PM --> PM_DB
-    PM --> TS
-    AA --> CM
-    AA --> PM_DB
-    AA --> TS
+    CA --> DC
+    BM --> DC
+    WD --> DC
+    RIO --> DC
+    TC --> DC
+    FE --> ML
     
-    WS --> AWS_API
-    WS --> GCP_API
-    WS --> AZURE_API
-    FE --> BILLING
-    PM --> AWS_API
-    PM --> GCP_API
-    PM --> AZURE_API
+    DC --> DP
+    DP --> CD
+    DP --> RD
+    DP --> TD
+    DP --> MD
+    
+    ML --> RE
+    RE --> ALERTS
+    
+    DC --> BILLING
+    DC --> RESOURCE
+    DC --> MONITOR
+    DC --> PRICING
 ```
 
 ### Component Architecture
 
-The platform consists of four main architectural layers:
+The platform consists of five main architectural layers:
 
-1. **User Interface Layer**: Web dashboard, REST APIs, and CLI tools
-2. **Intelligence Layer**: Core business logic for scheduling, cost management, and monitoring
-3. **Data Layer**: Persistent storage for metrics, metadata, and time-series data
-4. **Integration Layer**: Cloud provider APIs and billing system integrations
+1. **User Interface Layer**: FinOps dashboard, mobile app, REST APIs, and intelligent alerting
+2. **FinOps Intelligence Layer**: Core business logic for cost attribution, budget management, waste detection, RI optimization, and tagging compliance
+3. **Data Processing Layer**: Data collection, processing, ML analytics, and recommendation generation
+4. **Data Storage Layer**: Persistent storage for cost data, resource metadata, time-series metrics, and configuration
+5. **Cloud Provider Integration**: Single cloud provider APIs for billing, resources, monitoring, and pricing
 
 ## Components and Interfaces
 
-### 1. Enhanced Workload Scheduler
+### 1. Cloud Provider Configuration Engine
 
-**Purpose**: Extends existing scheduler with cost and performance awareness
+**Purpose**: Manages cloud provider selection, API configuration, and credential management
 
 **Key Components**:
-- `IntelligentScheduler`: ML-enhanced scheduler considering cost, performance, and compliance
-- `CostAwareScheduler`: Optimizes placement based on real-time pricing
-- `PerformanceScheduler`: Places workloads based on historical performance data
-- `HybridScheduler`: Combines multiple scheduling strategies
+- `ProviderSelector`: Handles cloud provider selection (AWS, GCP, Azure, others)
+- `CredentialManager`: Securely manages API credentials and permissions
+- `APIConnector`: Establishes and validates connections to cloud provider APIs
+- `ResourceDiscovery`: Discovers existing resources and infrastructure
 
 **Interfaces**:
 ```python
-class EnhancedScheduler:
-    def select_vm(self, workload: Workload, vms: List[VirtualMachine], 
-                  cost_constraints: CostConstraints = None,
-                  performance_requirements: PerformanceRequirements = None) -> VirtualMachine
+class CloudProviderEngine:
+    def configure_provider(self, provider: CloudProviderType, 
+                          credentials: ProviderCredentials) -> ConfigurationResult
     
-    def predict_placement_outcome(self, workload: Workload, vm: VirtualMachine) -> PlacementPrediction
+    def validate_api_access(self, provider_config: ProviderConfig) -> ValidationResult
     
-    def get_optimization_recommendations(self, current_state: ClusterState) -> List[Recommendation]
+    def discover_resources(self, provider_config: ProviderConfig) -> ResourceInventory
+    
+    def test_billing_access(self, provider_config: ProviderConfig) -> BillingAccessResult
 ```
 
-### 2. FinOps Intelligence Engine
+### 2. Cost Attribution Engine
 
-**Purpose**: Comprehensive cost management and financial optimization
+**Purpose**: Comprehensive cost tracking and attribution across teams, projects, and environments
 
 **Key Components**:
-- `CostCollector`: Gathers cost data from cloud provider billing APIs
-- `CostAnalyzer`: Analyzes spending patterns and identifies optimization opportunities
-- `BudgetManager`: Manages budgets, alerts, and spending controls
-- `CostPredictor`: ML-based cost forecasting and trend analysis
+- `CostCollector`: Gathers detailed cost data from cloud provider billing APIs
+- `TagAnalyzer`: Analyzes resource tags for cost attribution and compliance
+- `CostAllocator`: Allocates shared costs using various allocation methods
+- `ChargebackCalculator`: Generates accurate chargeback reports for cost centers
 
 **Interfaces**:
 ```python
-class FinOpsEngine:
-    def collect_cost_data(self, providers: List[CloudProvider], 
-                         time_range: TimeRange) -> CostData
+class CostAttributionEngine:
+    def collect_detailed_costs(self, time_range: TimeRange) -> DetailedCostData
     
-    def analyze_spending_patterns(self, cost_data: CostData) -> SpendingAnalysis
+    def attribute_costs_by_tags(self, cost_data: CostData, 
+                               attribution_rules: AttributionRules) -> AttributedCosts
     
-    def predict_costs(self, historical_data: CostData, 
-                     forecast_period: int) -> CostForecast
+    def allocate_shared_costs(self, shared_costs: SharedCostData, 
+                             allocation_method: AllocationMethod) -> AllocatedCosts
     
-    def generate_optimization_recommendations(self, analysis: SpendingAnalysis) -> List[CostOptimization]
+    def generate_chargeback_report(self, cost_center: str, 
+                                  period: BillingPeriod) -> ChargebackReport
     
-    def track_budget_utilization(self, budget: Budget) -> BudgetStatus
+    def identify_untagged_resources(self) -> List[UntaggedResource]
 ```
 
-### 3. Performance & Health Monitor
+### 3. Budget Management Engine
 
-**Purpose**: Continuous monitoring and performance optimization
+**Purpose**: Comprehensive budget creation, tracking, and alerting system
 
 **Key Components**:
-- `MetricsCollector`: Collects performance metrics from cloud resources
-- `AnomalyDetector`: ML-based anomaly detection for performance issues
-- `HealthChecker`: Monitors resource health and availability
-- `PerformanceAnalyzer`: Analyzes performance trends and capacity planning
+- `BudgetCreator`: Creates flexible budgets for teams, projects, and services
+- `SpendingTracker`: Monitors real-time spending against budgets
+- `ForecastEngine`: Predicts future spending based on current trends
+- `AlertManager`: Sends proactive alerts before budget overruns
 
 **Interfaces**:
 ```python
-class PerformanceMonitor:
-    def collect_metrics(self, resources: List[CloudResource], 
-                       metrics: List[MetricType]) -> MetricsData
+class BudgetManagementEngine:
+    def create_budget(self, budget_config: BudgetConfiguration) -> Budget
     
-    def detect_anomalies(self, metrics_data: MetricsData) -> List[Anomaly]
+    def track_spending(self, budget: Budget) -> SpendingStatus
     
-    def analyze_performance_trends(self, historical_metrics: MetricsData) -> PerformanceTrends
+    def forecast_spending(self, budget: Budget, 
+                         forecast_period: int) -> SpendingForecast
     
-    def generate_scaling_recommendations(self, analysis: PerformanceTrends) -> List[ScalingRecommendation]
+    def check_alert_conditions(self, budget: Budget) -> List[BudgetAlert]
     
-    def check_resource_health(self, resource: CloudResource) -> HealthStatus
+    def generate_budget_report(self, budget: Budget, 
+                              period: ReportingPeriod) -> BudgetReport
+    
+    def recommend_budget_adjustments(self, budget: Budget) -> List[BudgetRecommendation]
 ```
 
-### 4. Analytics & AI Engine
+### 4. Waste Detection Engine
 
-**Purpose**: Advanced analytics and machine learning capabilities
+**Purpose**: Identifies unused, underutilized, and oversized resources for cost optimization
 
 **Key Components**:
-- `PredictiveModels`: ML models for cost, performance, and capacity prediction
-- `RecommendationEngine`: Generates intelligent recommendations
-- `ReportGenerator`: Creates comprehensive reports and dashboards
-- `AlertManager`: Manages intelligent alerting and notifications
+- `ResourceAnalyzer`: Analyzes resource utilization patterns and efficiency
+- `WasteIdentifier`: Identifies various types of waste (unused, idle, oversized)
+- `OptimizationCalculator`: Calculates potential savings from optimization actions
+- `RiskAssessor`: Assesses risk levels for optimization recommendations
 
 **Interfaces**:
 ```python
-class AnalyticsEngine:
-    def train_prediction_models(self, training_data: TrainingData) -> ModelMetrics
+class WasteDetectionEngine:
+    def analyze_resource_utilization(self, resources: List[CloudResource], 
+                                   analysis_period: int) -> UtilizationAnalysis
     
-    def generate_recommendations(self, context: AnalysisContext) -> List[Recommendation]
+    def identify_unused_resources(self, utilization_data: UtilizationAnalysis) -> List[UnusedResource]
     
-    def create_executive_report(self, time_period: TimeRange) -> ExecutiveReport
+    def identify_underutilized_resources(self, utilization_data: UtilizationAnalysis, 
+                                       thresholds: UtilizationThresholds) -> List[UnderutilizedResource]
     
-    def process_alert_conditions(self, current_state: SystemState) -> List[Alert]
+    def identify_oversized_resources(self, utilization_data: UtilizationAnalysis) -> List[OversizedResource]
+    
+    def calculate_optimization_savings(self, waste_items: List[WasteItem]) -> OptimizationSavings
+    
+    def assess_optimization_risk(self, optimization: OptimizationRecommendation) -> RiskAssessment
 ```
 
-### 5. Simulation & Modeling Engine
+### 5. Reserved Instance Optimization Engine
 
-**Purpose**: Comprehensive simulation framework for testing, validation, and research
+**Purpose**: Intelligent recommendations for reserved instances and savings plans
 
 **Key Components**:
-- `WorkloadSimulator`: Generates realistic workload patterns and traces
-- `EnvironmentSimulator`: Models cloud provider environments and constraints
-- `ScenarioEngine`: Runs complex multi-variable simulation scenarios
-- `ValidationFramework`: Compares simulation results with real-world data
-- `ExperimentManager`: Manages A/B testing and algorithm comparison
+- `UsageAnalyzer`: Analyzes historical usage patterns for stable workloads
+- `RIRecommendationEngine`: Generates optimal RI purchase recommendations
+- `SavingsCalculator`: Calculates potential savings from different commitment options
+- `UtilizationTracker`: Monitors RI utilization and identifies optimization opportunities
 
 **Interfaces**:
 ```python
-class SimulationEngine:
-    def create_workload_simulation(self, pattern: WorkloadPattern, 
-                                 duration: int, scale: int) -> WorkloadTrace
+class RIOptimizationEngine:
+    def analyze_usage_patterns(self, resources: List[CloudResource], 
+                              analysis_period: int) -> UsagePatternAnalysis
     
-    def simulate_environment(self, providers: List[CloudProvider], 
-                           constraints: EnvironmentConstraints) -> SimulatedEnvironment
+    def generate_ri_recommendations(self, usage_analysis: UsagePatternAnalysis, 
+                                   commitment_preferences: CommitmentPreferences) -> List[RIRecommendation]
     
-    def run_scheduling_simulation(self, scheduler: BaseScheduler, 
-                                workloads: WorkloadTrace, 
-                                environment: SimulatedEnvironment) -> SimulationResults
+    def calculate_ri_savings(self, recommendation: RIRecommendation) -> SavingsAnalysis
     
-    def run_cost_simulation(self, scenario: CostScenario, 
-                          time_horizon: int) -> CostSimulationResults
+    def track_ri_utilization(self, reserved_instances: List[ReservedInstance]) -> UtilizationReport
     
-    def run_performance_simulation(self, load_pattern: LoadPattern,
-                                 infrastructure: InfrastructureConfig) -> PerformanceResults
+    def identify_ri_optimization_opportunities(self, ri_portfolio: RIPortfolio) -> List[RIOptimization]
     
-    def compare_algorithms(self, algorithms: List[BaseScheduler],
-                         test_scenarios: List[Scenario]) -> ComparisonReport
+    def compare_commitment_options(self, workload: WorkloadProfile) -> CommitmentComparison
+```
+
+### 6. Tagging Compliance Engine
+
+**Purpose**: Automated tagging compliance monitoring and enforcement
+
+**Key Components**:
+- `TagPolicyManager`: Manages tagging policies and compliance rules
+- `ComplianceMonitor`: Monitors resources for tagging compliance violations
+- `TagSuggestionEngine`: Suggests appropriate tags based on patterns and context
+- `GovernanceEnforcer`: Enforces tagging policies through automated actions
+
+**Interfaces**:
+```python
+class TaggingComplianceEngine:
+    def define_tagging_policy(self, policy: TaggingPolicy) -> PolicyResult
     
-    def validate_simulation_accuracy(self, simulation_results: SimulationResults,
-                                   real_world_data: RealWorldData) -> ValidationReport
+    def monitor_compliance(self, resources: List[CloudResource]) -> ComplianceReport
+    
+    def identify_violations(self, compliance_report: ComplianceReport) -> List[TaggingViolation]
+    
+    def suggest_tags(self, resource: CloudResource, 
+                    context: ResourceContext) -> List[TagSuggestion]
+    
+    def enforce_policy(self, violation: TaggingViolation, 
+                      enforcement_action: EnforcementAction) -> EnforcementResult
+    
+    def generate_compliance_metrics(self, time_period: TimeRange) -> ComplianceMetrics
 ```
 
 ## Data Models
 
-### Core Data Models
+### Core FinOps Data Models
 
 ```python
 @dataclass
-class EnhancedWorkload(Workload):
-    """Extended workload with cost and performance requirements"""
-    cost_constraints: Optional[CostConstraints] = None
-    performance_requirements: Optional[PerformanceRequirements] = None
-    compliance_requirements: Optional[ComplianceRequirements] = None
-    priority: WorkloadPriority = WorkloadPriority.NORMAL
+class CloudProvider:
+    """Cloud provider configuration"""
+    provider_type: CloudProviderType  # AWS, GCP, AZURE, OTHER
+    provider_name: str
+    credentials: ProviderCredentials
+    billing_account_id: str
+    regions: List[str]
+    api_endpoints: Dict[str, str]
     
 @dataclass
-class CostConstraints:
-    max_hourly_cost: float
-    max_monthly_budget: float
-    cost_optimization_preference: CostOptimizationLevel
+class CloudResource:
+    """Generic cloud resource with cost and utilization data"""
+    resource_id: str
+    resource_type: ResourceType
+    provider: CloudProvider
+    region: str
+    tags: Dict[str, str]
+    cost_data: ResourceCostData
+    utilization_metrics: UtilizationMetrics
+    created_date: datetime
     
 @dataclass
-class PerformanceRequirements:
-    min_cpu_performance: float
-    max_latency_ms: int
-    availability_requirement: float
-    throughput_requirement: Optional[int] = None
-
-@dataclass
-class EnhancedVirtualMachine(VirtualMachine):
-    """Extended VM with performance and cost metrics"""
-    current_performance_metrics: PerformanceMetrics
-    cost_history: List[CostDataPoint]
-    health_status: HealthStatus
-    utilization_trends: UtilizationTrends
-    
-@dataclass
-class CostDataPoint:
-    timestamp: datetime
+class ResourceCostData:
+    """Cost information for a cloud resource"""
     hourly_cost: float
-    cumulative_cost: float
-    cost_breakdown: Dict[str, float]
+    monthly_cost: float
+    cost_breakdown: Dict[str, float]  # compute, storage, network, etc.
+    pricing_model: PricingModel  # on-demand, reserved, spot
+    last_updated: datetime
     
 @dataclass
-class PerformanceMetrics:
+class UtilizationMetrics:
+    """Resource utilization metrics"""
     cpu_utilization: float
     memory_utilization: float
-    network_io: float
-    disk_io: float
-    response_time_ms: float
-    throughput: float
-    timestamp: datetime
+    storage_utilization: float
+    network_utilization: float
+    measurement_period: TimeRange
+    average_utilization: float
 ```
 
 ### Financial Data Models
