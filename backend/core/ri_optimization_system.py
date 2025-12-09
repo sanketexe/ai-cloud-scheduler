@@ -437,11 +437,18 @@ class RIRecommendationEngine:
     Considers cost savings, flexibility, and risk factors.
     """
     
-    def __init__(self, provider: CloudProvider = CloudProvider.AWS):
+    def __init__(self, provider: CloudProvider = CloudProvider.AWS, pricing_service=None):
         self.provider = provider
         self.logger = logging.getLogger(__name__ + ".RIRecommendationEngine")
         
-        # Default pricing data (would be fetched from cloud provider APIs)
+        # Use real AWS Pricing API service
+        if pricing_service is None:
+            from .aws_pricing_service import get_pricing_service
+            self.pricing_service = get_pricing_service()
+        else:
+            self.pricing_service = pricing_service
+        
+        # Fallback pricing data for offline/testing
         self.pricing_data = self._initialize_pricing_data()
         
     def generate_ri_recommendations(self, usage_patterns: List[UsagePattern],
@@ -730,7 +737,42 @@ class RIRecommendationEngine:
     
     def _get_ri_pricing(self, instance_type: str, region: str,
                        term: CommitmentTerm, payment: PaymentOption) -> Optional[Dict[str, float]]:
-        """Get RI pricing for specific configuration"""
+        """Get RI pricing for specific configuration - now uses real AWS Pricing API"""
+        try:
+            # Try to fetch real pricing from AWS
+            import asyncio
+            
+            # Convert term and payment to AWS API format
+            term_years = 1 if term == CommitmentTerm.ONE_YEAR else 3
+            payment_map = {
+                PaymentOption.NO_UPFRONT: 'No Upfront',
+                PaymentOption.PARTIAL_UPFRONT: 'Partial Upfront',
+                PaymentOption.ALL_UPFRONT: 'All Upfront'
+            }
+            payment_option = payment_map.get(payment, 'No Upfront')
+            
+            # Fetch real pricing
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            pricing_data = loop.run_until_complete(
+                self.pricing_service.get_ec2_reserved_pricing(
+                    instance_type=instance_type,
+                    region=region,
+                    term_years=term_years,
+                    payment_option=payment_option
+                )
+            )
+            loop.close()
+            
+            if pricing_data:
+                return {
+                    'upfront': float(pricing_data['upfront']),
+                    'hourly': float(pricing_data['hourly'])
+                }
+        except Exception as e:
+            self.logger.warning(f"Failed to fetch real pricing, using fallback: {e}")
+        
+        # Fallback to hardcoded pricing if API fails
         if instance_type not in self.pricing_data:
             return None
         

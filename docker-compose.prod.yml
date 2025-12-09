@@ -1,0 +1,99 @@
+# Production configuration for docker-compose
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+version: '3.8'
+
+services:
+  api:
+    environment:
+      - DEBUG=false
+      - ENVIRONMENT=production
+    # Remove volume mounts for production
+    volumes: []
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  frontend:
+    # Remove volume mounts for production
+    volumes: []
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+
+  worker:
+    environment:
+      - DEBUG=false
+      - ENVIRONMENT=production
+    volumes: []
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  scheduler:
+    environment:
+      - DEBUG=false
+      - ENVIRONMENT=production
+    volumes: []
+
+  # Enable all monitoring services in production
+  prometheus:
+    profiles: []
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  grafana:
+    profiles: []
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+
+  node-exporter:
+    profiles: []
+
+  cadvisor:
+    profiles: []
+
+  elasticsearch:
+    profiles: []
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+
+  logstash:
+    profiles: []
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  kibana:
+    profiles: []
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  filebeat:
+    profiles: []

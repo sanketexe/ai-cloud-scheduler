@@ -14,8 +14,8 @@ try:
 except ImportError:
     SKLEARN_AVAILABLE = False
 
-from performance_monitor import MetricType, MetricsData
-from enhanced_models import SeverityLevel
+from .enums import MetricType, SeverityLevel
+from .performance_monitor import MetricsData
 
 
 @dataclass

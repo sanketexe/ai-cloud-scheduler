@@ -1,0 +1,67 @@
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker-compose and overrides settings for development
+
+version: '3.8'
+
+services:
+  api:
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - "8000:8000"
+
+  frontend:
+    volumes:
+      - ./frontend/src:/app/src
+    ports:
+      - "3000:80"
+
+  worker:
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app/backend
+
+  scheduler:
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app/backend
+
+  # Disable monitoring services in development by default
+  prometheus:
+    profiles:
+      - monitoring
+
+  grafana:
+    profiles:
+      - monitoring
+
+  node-exporter:
+    profiles:
+      - monitoring
+
+  cadvisor:
+    profiles:
+      - monitoring
+
+  elasticsearch:
+    profiles:
+      - logging
+
+  logstash:
+    profiles:
+      - logging
+
+  kibana:
+    profiles:
+      - logging
+
+  filebeat:
+    profiles:
+      - logging

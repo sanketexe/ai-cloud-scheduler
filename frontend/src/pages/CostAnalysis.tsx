@@ -160,7 +160,7 @@ const CostAnalysis: React.FC = () => {
                   label="Start Date"
                   value={dateRange.start}
                   onChange={(newValue) => setDateRange({ ...dateRange, start: newValue! })}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  slotProps={{ textField: { fullWidth: true } }}
                 />
               </Grid>
               <Grid item xs={12} md={3}>
@@ -168,7 +168,7 @@ const CostAnalysis: React.FC = () => {
                   label="End Date"
                   value={dateRange.end}
                   onChange={(newValue) => setDateRange({ ...dateRange, end: newValue! })}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  slotProps={{ textField: { fullWidth: true } }}
                 />
               </Grid>
               <Grid item xs={12} md={3}>

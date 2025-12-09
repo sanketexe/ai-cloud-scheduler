@@ -1,0 +1,1597 @@
+openapi: 3.0.3
+info:
+  title: Cloud Migration Advisor API
+  description: |
+    Comprehensive API for the Cloud Migration Advisor platform that guides organizations through
+    their cloud migration journey from initial assessment through provider selection, migration
+    execution, and post-migration resource organization.
+    
+    ## Features
+    - Migration project management and assessment
+    - Workload and requirements analysis
+    - ML-powered cloud provider recommendations
+    - Migration planning and execution tracking
+    - Automated resource discovery and organization
+    - Multi-dimensional resource management
+    - Post-migration FinOps integration
+    
+    ## Authentication
+    All endpoints require authentication using Bearer tokens. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-token>
+    ```
+  version: 1.0.0
+  contact:
+    name: Cloud Migration Advisor Support
+    email: support@cloudmigration.example.com
+  license:
+    name: Proprietary
+    
+servers:
+  - url: https://api.cloudmigration.example.com/v1
+    description: Production server
+  - url: https://staging-api.cloudmigration.example.com/v1
+    description: Staging server
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: Migration Assessment
+    description: Migration project creation and initial assessment
+  - name: Requirements Analysis
+    description: Workload profiling and requirements gathering
+  - name: Provider Recommendations
+    description: Cloud provider evaluation and recommendations
+  - name: Migration Planning
+    description: Migration plan generation and execution tracking
+  - name: Resource Organization
+    description: Resource discovery and categorization
+  - name: Dimensional Management
+    description: Multi-dimensional resource views and filtering
+  - name: Post-Migration Integration
+    description: FinOps integration and migration reporting
+
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication endpoint
+      
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+      required:
+        - detail
+        
+    MigrationProject:
+      type: object
+      properties:
+        project_id:
+          type: string
+          description: Unique project identifier
+          example: "mig-acme-corporation-20231116120000-abc123de"
+        project_uuid:
+          type: string
+          format: uuid
+          description: UUID of the project
+        organization_name:
+          type: string
+          description: Name of the organization
+        status:
+          type: string
+          enum: [assessment, analysis, recommendation, planning, execution, complete, cancelled]
+          description: Current migration status
+        current_phase:
+          type: string
+          description: Current phase description
+        estimated_completion:
+          type: string
+          format: date-time
+          description: Estimated completion date
+        created_at:
+          type: string
+          format: date-time
+          description: Project creation timestamp
+      required:
+        - project_id
+        - project_uuid
+        - organization_name
+        - status
+        - created_at
+        
+    OrganizationProfile:
+      type: object
+      properties:
+        company_size:
+          type: string
+          enum: [small, medium, large, enterprise]
+          description: Company size category
+        industry:
+          type: string
+          description: Industry sector
+        current_infrastructure:
+          type: string
+          enum: [on_premises, cloud, hybrid, multi_cloud]
+          description: Current infrastructure type
+        it_team_size:
+          type: integer
+          minimum: 0
+          description: Number of IT team members
+        cloud_experience_level:
+          type: string
+          enum: [none, beginner, intermediate, advanced]
+          description: Team's cloud experience level
+        geographic_presence:
+          type: array
+          items:
+            type: string
+          description: List of regions/countries
+        additional_context:
+          type: object
+          additionalProperties: true
+          description: Additional context information
+      required:
+        - company_size
+        - industry
+        - current_infrastructure
+        - it_team_size
+        - cloud_experience_level
+
+    WorkloadProfile:
+      type: object
+      properties:
+        workload_name:
+          type: string
+          description: Name of the workload
+        application_type:
+          type: string
+          description: Type of application
+        total_compute_cores:
+          type: integer
+          minimum: 0
+          description: Total compute cores required
+        total_memory_gb:
+          type: integer
+          minimum: 0
+          description: Total memory in GB
+        total_storage_tb:
+          type: number
+          minimum: 0
+          description: Total storage in TB
+        database_types:
+          type: array
+          items:
+            type: string
+          description: List of database types used
+        data_volume_tb:
+          type: number
+          minimum: 0
+          description: Data volume in TB
+        peak_transaction_rate:
+          type: integer
+          minimum: 0
+          description: Peak transaction rate per second
+      required:
+        - workload_name
+        - application_type
+        
+    ProviderRecommendation:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: Cloud provider name
+        rank:
+          type: integer
+          description: Recommendation rank (1 is best)
+        overall_score:
+          type: number
+          format: float
+          description: Overall score (0-1)
+        confidence_score:
+          type: number
+          format: float
+          description: Confidence score (0-1)
+        justification:
+          type: string
+          description: Detailed justification for recommendation
+        strengths:
+          type: array
+          items:
+            type: string
+          description: Provider strengths
+        weaknesses:
+          type: array
+          items:
+            type: string
+          description: Provider weaknesses
+        key_differentiators:
+          type: array
+          items:
+            type: string
+          description: Key differentiating factors
+        estimated_monthly_cost:
+          type: number
+          format: float
+          description: Estimated monthly cost in USD
+        migration_duration_weeks:
+          type: integer
+          description: Estimated migration duration in weeks
+      required:
+        - provider
+        - rank
+        - overall_score
+        - confidence_score
+        - justification
+        - strengths
+        - weaknesses
+        
+    MigrationPlan:
+      type: object
+      properties:
+        plan_id:
+          type: string
+          description: Unique plan identifier
+        target_provider:
+          type: string
+          description: Target cloud provider
+        total_duration_days:
+          type: integer
+          description: Total migration duration in days
+        estimated_cost:
+          type: number
+          format: float
+          description: Estimated migration cost
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Migration risk level
+        phases:
+          type: array
+          items:
+            $ref: '#/components/schemas/MigrationPhase'
+          description: Migration phases
+        dependencies_graph:
+          type: object
+          additionalProperties: true
+          description: Resource dependency graph
+        migration_waves:
+          type: array
+          items:
+            type: object
+          description: Migration waves
+        success_criteria:
+          type: array
+          items:
+            type: string
+          description: Success criteria
+        created_at:
+          type: string
+          format: date-time
+          description: Plan creation timestamp
+      required:
+        - plan_id
+        - target_provider
+        - total_duration_days
+        - estimated_cost
+        - risk_level
+        - phases
+        
+    MigrationPhase:
+      type: object
+      properties:
+        phase_id:
+          type: string
+          description: Unique phase identifier
+        phase_name:
+          type: string
+          description: Phase name
+        phase_order:
+          type: integer
+          description: Phase execution order
+        workloads:
+          type: array
+          items:
+            type: string
+          description: Workloads in this phase
+        start_date:
+          type: string
+          format: date-time
+          description: Planned start date
+        end_date:
+          type: string
+          format: date-time
+          description: Planned end date
+        actual_start_date:
+          type: string
+          format: date-time
+          description: Actual start date
+        actual_end_date:
+          type: string
+          format: date-time
+          description: Actual end date
+        status:
+          type: string
+          enum: [not_started, in_progress, completed, failed, blocked]
+          description: Phase status
+        prerequisites:
+          type: array
+          items:
+            type: string
+          description: Prerequisites for this phase
+        success_criteria:
+          type: array
+          items:
+            type: string
+          description: Success criteria for this phase
+        notes:
+          type: string
+          description: Additional notes
+      required:
+        - phase_id
+        - phase_name
+        - phase_order
+        - status
+
+    CategorizedResource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Resource UUID
+        resource_id:
+          type: string
+          description: Cloud provider resource ID
+        resource_type:
+          type: string
+          description: Type of resource (ec2, s3, rds, etc.)
+        resource_name:
+          type: string
+          description: Resource name
+        provider:
+          type: string
+          description: Cloud provider
+        team:
+          type: string
+          description: Team assignment
+        project:
+          type: string
+          description: Project assignment
+        environment:
+          type: string
+          description: Environment (dev, staging, prod)
+        region:
+          type: string
+          description: Cloud region
+        cost_center:
+          type: string
+          description: Cost center assignment
+        custom_attributes:
+          type: object
+          additionalProperties: true
+          description: Custom attributes
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Resource tags
+        ownership_status:
+          type: string
+          enum: [assigned, unassigned, suggested, pending]
+          description: Ownership status
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - resource_id
+        - resource_type
+        - provider
+        - ownership_status
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/migrations/projects:
+    post:
+      tags:
+        - Migration Assessment
+      summary: Create migration project
+      description: |
+        Create a new migration project and initiate assessment.
+        This is the first step in the migration journey.
+        
+        **Requirements:** 1.1, 1.4
+      operationId: createMigrationProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                organization_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  description: Name of the organization
+              required:
+                - organization_name
+            example:
+              organization_name: "Acme Corporation"
+      responses:
+        '201':
+          description: Migration project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationProject'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+    get:
+      tags:
+        - Migration Assessment
+      summary: List migration projects
+      description: |
+        List all migration projects with optional filtering by status.
+        Supports pagination.
+        
+        **Requirements:** 1.1, 1.4
+      operationId: listMigrationProjects
+      parameters:
+        - name: status_filter
+          in: query
+          description: Filter by migration status
+          schema:
+            type: string
+            enum: [assessment, analysis, recommendation, planning, execution, complete, cancelled]
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: List of migration projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MigrationProject'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/migrations/projects/{project_id}:
+    get:
+      tags:
+        - Migration Assessment
+      summary: Get migration project
+      description: |
+        Retrieve detailed information about a specific migration project.
+        
+        **Requirements:** 1.1, 1.4
+      operationId: getMigrationProject
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Migration project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationProject'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+    delete:
+      tags:
+        - Migration Assessment
+      summary: Delete migration project
+      description: |
+        Cancel/delete a migration project. This performs a soft delete.
+        
+        **Requirements:** 1.1
+      operationId: deleteMigrationProject
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Project deleted successfully
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+  /api/migrations/{project_id}/assessment/organization:
+    post:
+      tags:
+        - Migration Assessment
+      summary: Create organization profile
+      description: |
+        Create organization profile and estimate assessment timeline.
+        Collects comprehensive organization information.
+        
+        **Requirements:** 1.2, 1.3, 1.5
+      operationId: createOrganizationProfile
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationProfile'
+            example:
+              company_size: "medium"
+              industry: "Financial Services"
+              current_infrastructure: "on_premises"
+              it_team_size: 15
+              cloud_experience_level: "beginner"
+              geographic_presence: ["North America", "Europe"]
+              additional_context:
+                compliance_requirements: ["SOC2", "GDPR"]
+      responses:
+        '200':
+          description: Organization profile created with timeline estimation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile:
+                    $ref: '#/components/schemas/OrganizationProfile'
+                  timeline_estimation:
+                    type: object
+                    properties:
+                      estimated_days:
+                        type: integer
+                      estimated_completion_date:
+                        type: string
+                        format: date-time
+                      breakdown:
+                        type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+    get:
+      tags:
+        - Migration Assessment
+      summary: Get organization profile
+      description: |
+        Retrieve organization profile for a migration project.
+        
+        **Requirements:** 1.2
+      operationId: getOrganizationProfile
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationProfile'
+        '404':
+          description: Profile not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/migrations/{project_id}/recommendations/generate:
+    post:
+      tags:
+        - Provider Recommendations
+      summary: Generate provider recommendations
+      description: |
+        Generate cloud provider recommendations based on requirements.
+        Analyzes requirements and generates ranked recommendations for AWS, GCP, and Azure.
+        
+        **Requirements:** 3.1, 3.2, 3.4
+      operationId: generateRecommendations
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                required_services:
+                  type: array
+                  items:
+                    type: string
+                  description: List of required cloud services
+                target_monthly_budget:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: Target monthly budget in USD
+                compliance_requirements:
+                  type: array
+                  items:
+                    type: string
+                  description: List of compliance frameworks
+                source_infrastructure:
+                  type: string
+                  default: "on_premises"
+                  description: Current infrastructure type
+                workload_specs:
+                  type: array
+                  items:
+                    type: object
+                  description: Workload specifications
+                providers:
+                  type: array
+                  items:
+                    type: string
+                    enum: [aws, gcp, azure]
+                  description: Providers to evaluate
+              required:
+                - required_services
+                - target_monthly_budget
+            example:
+              required_services: ["compute", "storage", "database", "ml"]
+              target_monthly_budget: 50000.0
+              compliance_requirements: ["GDPR", "SOC2"]
+              source_infrastructure: "on_premises"
+              providers: ["aws", "gcp", "azure"]
+      responses:
+        '200':
+          description: Provider recommendations generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  primary_recommendation:
+                    $ref: '#/components/schemas/ProviderRecommendation'
+                  alternative_recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProviderRecommendation'
+                  comparison_matrix:
+                    type: object
+                  scoring_weights:
+                    type: object
+                  overall_confidence:
+                    type: number
+                    format: float
+                  key_findings:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Invalid request
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+  /api/migrations/{project_id}/recommendations:
+    get:
+      tags:
+        - Provider Recommendations
+      summary: Get provider recommendations
+      description: |
+        Retrieve existing provider recommendations for a project.
+        
+        **Requirements:** 3.2, 3.4
+      operationId: getRecommendations
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Provider recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  primary_recommendation:
+                    $ref: '#/components/schemas/ProviderRecommendation'
+                  alternative_recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProviderRecommendation'
+                  comparison_matrix:
+                    type: object
+                  scoring_weights:
+                    type: object
+                  overall_confidence:
+                    type: number
+                  key_findings:
+                    type: array
+                    items:
+                      type: string
+        '404':
+          description: Recommendations not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/migrations/{project_id}/plan:
+    post:
+      tags:
+        - Migration Planning
+      summary: Generate migration plan
+      description: |
+        Generate a comprehensive migration plan with phases, timelines, and cost estimates.
+        
+        **Requirements:** 4.1
+      operationId: generateMigrationPlan
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_provider:
+                  type: string
+                  description: Target cloud provider
+                workload_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of workload IDs to migrate
+                migration_strategy:
+                  type: string
+                  default: "phased"
+                  enum: [phased, big_bang, parallel]
+                  description: Migration strategy
+                target_start_date:
+                  type: string
+                  format: date-time
+                  description: Target migration start date
+              required:
+                - target_provider
+            example:
+              target_provider: "aws"
+              workload_ids: ["workload-1", "workload-2"]
+              migration_strategy: "phased"
+              target_start_date: "2024-01-15T00:00:00"
+      responses:
+        '201':
+          description: Migration plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationPlan'
+        '400':
+          description: Invalid request
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+    get:
+      tags:
+        - Migration Planning
+      summary: Get migration plan
+      description: |
+        Retrieve the migration plan for a project.
+        
+        **Requirements:** 4.1
+      operationId: getMigrationPlan
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Migration plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationPlan'
+        '404':
+          description: Plan not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+  /api/migrations/{project_id}/plan/progress:
+    get:
+      tags:
+        - Migration Planning
+      summary: Get migration progress
+      description: |
+        Get comprehensive migration progress tracking information.
+        
+        **Requirements:** 4.4
+      operationId: getMigrationProgress
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Migration progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan_id:
+                    type: string
+                  overall_status:
+                    type: string
+                  total_phases:
+                    type: integer
+                  completed_phases:
+                    type: integer
+                  in_progress_phases:
+                    type: integer
+                  not_started_phases:
+                    type: integer
+                  failed_phases:
+                    type: integer
+                  overall_progress_percentage:
+                    type: number
+                    format: float
+                  current_phase:
+                    $ref: '#/components/schemas/MigrationPhase'
+                  next_phase:
+                    $ref: '#/components/schemas/MigrationPhase'
+                  estimated_completion_date:
+                    type: string
+                    format: date-time
+                  actual_start_date:
+                    type: string
+                    format: date-time
+                  days_elapsed:
+                    type: integer
+                  days_remaining:
+                    type: integer
+        '404':
+          description: Plan not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/migrations/{project_id}/resources/discover:
+    post:
+      tags:
+        - Resource Organization
+      summary: Discover cloud resources
+      description: |
+        Discover and inventory all cloud resources from the specified provider.
+        
+        **Requirements:** 5.1
+      operationId: discoverResources
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum: [aws, gcp, azure]
+                  description: Cloud provider
+                credentials:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Provider credentials
+                regions:
+                  type: array
+                  items:
+                    type: string
+                  description: Regions to scan
+                resource_types:
+                  type: array
+                  items:
+                    type: string
+                  description: Resource types to discover
+              required:
+                - provider
+                - credentials
+            example:
+              provider: "aws"
+              credentials:
+                access_key_id: "AKIAIOSFODNN7EXAMPLE"
+                secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+              regions: ["us-east-1", "us-west-2"]
+              resource_types: ["ec2", "s3", "rds"]
+      responses:
+        '200':
+          description: Resources discovered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  discovery_id:
+                    type: string
+                  provider:
+                    type: string
+                  total_discovered:
+                    type: integer
+                  resources_by_type:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  regions_scanned:
+                    type: array
+                    items:
+                      type: string
+                  discovery_timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+  /api/migrations/{project_id}/resources:
+    get:
+      tags:
+        - Resource Organization
+      summary: Get resource inventory
+      description: |
+        Get resource inventory with optional filtering.
+        
+        **Requirements:** 5.1, 5.2
+      operationId: getResourceInventory
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+        - name: resource_type
+          in: query
+          description: Filter by resource type
+          schema:
+            type: string
+        - name: ownership_status
+          in: query
+          description: Filter by ownership status
+          schema:
+            type: string
+            enum: [assigned, unassigned, suggested, pending]
+        - name: team
+          in: query
+          description: Filter by team
+          schema:
+            type: string
+        - name: project_filter
+          in: query
+          description: Filter by project
+          schema:
+            type: string
+        - name: environment
+          in: query
+          description: Filter by environment
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Resource inventory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_resources:
+                    type: integer
+                  resources_by_type:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  resources_by_status:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  resources:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CategorizedResource'
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/resources/views/{dimension}:
+    get:
+      tags:
+        - Dimensional Management
+      summary: Get dimensional view
+      description: |
+        Generate a dimensional view of resources organized by the specified dimension.
+        
+        **Requirements:** 6.1
+      operationId: getDimensionalView
+      parameters:
+        - name: dimension
+          in: path
+          required: true
+          description: Dimension type (team, project, environment, region, cost_center)
+          schema:
+            type: string
+            enum: [team, project, environment, region, cost_center]
+        - name: project_id
+          in: query
+          description: Filter by project ID
+          schema:
+            type: string
+        - name: aggregation_metrics
+          in: query
+          description: Comma-separated list of metrics to aggregate
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dimensional view
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dimension_type:
+                    type: string
+                  view_data:
+                    type: array
+                    items:
+                      type: object
+                  aggregations:
+                    type: object
+                  total_resources:
+                    type: integer
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+  /api/resources/filter:
+    post:
+      tags:
+        - Dimensional Management
+      summary: Filter resources with advanced expressions
+      description: |
+        Filter resources using complex filter expressions with multiple conditions.
+        
+        **Requirements:** 6.2
+      operationId: filterResources
+      parameters:
+        - name: project_id
+          in: query
+          description: Filter by project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter_expression:
+                  type: object
+                  properties:
+                    operator:
+                      type: string
+                      enum: [AND, OR]
+                    conditions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          field:
+                            type: string
+                          operator:
+                            type: string
+                            enum: [equals, not_equals, in, not_in, contains, starts_with, ends_with]
+                          value:
+                            oneOf:
+                              - type: string
+                              - type: array
+                                items:
+                                  type: string
+                  description: Complex filter expression
+                sort_by:
+                  type: string
+                  description: Field to sort by
+                sort_order:
+                  type: string
+                  enum: [asc, desc]
+                  default: asc
+                  description: Sort order
+                limit:
+                  type: integer
+                  default: 100
+                  minimum: 1
+                  maximum: 1000
+                offset:
+                  type: integer
+                  default: 0
+                  minimum: 0
+              required:
+                - filter_expression
+            example:
+              filter_expression:
+                operator: "AND"
+                conditions:
+                  - field: "team"
+                    operator: "equals"
+                    value: "platform"
+                  - field: "environment"
+                    operator: "in"
+                    value: ["production", "staging"]
+              sort_by: "resource_name"
+              sort_order: "asc"
+              limit: 50
+      responses:
+        '200':
+          description: Filtered resources
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_count:
+                    type: integer
+                  filtered_count:
+                    type: integer
+                  resources:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CategorizedResource'
+                  filter_summary:
+                    type: object
+        '400':
+          description: Invalid filter expression
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/migrations/{project_id}/integration/finops:
+    post:
+      tags:
+        - Post-Migration Integration
+      summary: Integrate with FinOps platform
+      description: |
+        Configure cost tracking, budget alerts, and optimization features.
+        
+        **Requirements:** 7.1, 7.2
+      operationId: integrateWithFinOps
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enable_cost_tracking:
+                  type: boolean
+                  default: true
+                enable_budget_alerts:
+                  type: boolean
+                  default: true
+                enable_waste_detection:
+                  type: boolean
+                  default: true
+                enable_optimization:
+                  type: boolean
+                  default: true
+                cost_allocation_method:
+                  type: string
+                  default: "proportional"
+            example:
+              enable_cost_tracking: true
+              enable_budget_alerts: true
+              enable_waste_detection: true
+              enable_optimization: true
+              cost_allocation_method: "proportional"
+      responses:
+        '200':
+          description: FinOps integration completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  integration_id:
+                    type: string
+                  status:
+                    type: string
+                  cost_tracking_enabled:
+                    type: boolean
+                  budget_alerts_configured:
+                    type: integer
+                  optimization_features_enabled:
+                    type: array
+                    items:
+                      type: string
+                  integration_timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+  /api/migrations/{project_id}/integration/baselines:
+    post:
+      tags:
+        - Post-Migration Integration
+      summary: Capture baseline metrics
+      description: |
+        Capture initial cost and performance metrics after migration.
+        
+        **Requirements:** 7.3
+      operationId: captureBaselineMetrics
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                capture_cost_data:
+                  type: boolean
+                  default: true
+                capture_performance_data:
+                  type: boolean
+                  default: true
+                capture_utilization_data:
+                  type: boolean
+                  default: true
+                baseline_period_days:
+                  type: integer
+                  default: 7
+                  minimum: 1
+                  maximum: 30
+            example:
+              capture_cost_data: true
+              capture_performance_data: true
+              capture_utilization_data: true
+              baseline_period_days: 7
+      responses:
+        '200':
+          description: Baseline metrics captured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  baseline_id:
+                    type: string
+                  capture_date:
+                    type: string
+                    format: date-time
+                  total_monthly_cost:
+                    type: number
+                    format: float
+                  cost_by_service:
+                    type: object
+                    additionalProperties:
+                      type: number
+                  cost_by_team:
+                    type: object
+                    additionalProperties:
+                      type: number
+                  cost_by_project:
+                    type: object
+                    additionalProperties:
+                      type: number
+                  cost_by_environment:
+                    type: object
+                    additionalProperties:
+                      type: number
+                  resource_count:
+                    type: integer
+                  resource_count_by_type:
+                    type: object
+                    additionalProperties:
+                      type: integer
+        '400':
+          description: Invalid request
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          
+    get:
+      tags:
+        - Post-Migration Integration
+      summary: Get baseline metrics
+      description: |
+        Retrieve baseline metrics for a migration project.
+        
+        **Requirements:** 7.3
+      operationId: getBaselineMetrics
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Baseline metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  baseline_id:
+                    type: string
+                  capture_date:
+                    type: string
+                    format: date-time
+                  total_monthly_cost:
+                    type: number
+                  cost_by_service:
+                    type: object
+                  cost_by_team:
+                    type: object
+                  cost_by_project:
+                    type: object
+                  cost_by_environment:
+                    type: object
+                  resource_count:
+                    type: integer
+                  resource_count_by_type:
+                    type: object
+        '404':
+          description: Baseline metrics not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /api/migrations/{project_id}/reports/final:
+    get:
+      tags:
+        - Post-Migration Integration
+      summary: Get migration report
+      description: |
+        Generate and retrieve comprehensive migration report with costs, timeline analysis,
+        success metrics, lessons learned, and optimization opportunities.
+        
+        **Requirements:** 7.5
+      operationId: getMigrationReport
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: Migration project ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Migration report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report_id:
+                    type: string
+                  report_date:
+                    type: string
+                    format: date-time
+                  start_date:
+                    type: string
+                    format: date-time
+                  completion_date:
+                    type: string
+                    format: date-time
+                  actual_duration_days:
+                    type: integer
+                  planned_duration_days:
+                    type: integer
+                  total_cost:
+                    type: number
+                    format: float
+                  budgeted_cost:
+                    type: number
+                    format: float
+                  cost_variance_percentage:
+                    type: number
+                    format: float
+                  resources_migrated:
+                    type: integer
+                  success_rate:
+                    type: number
+                    format: float
+                  lessons_learned:
+                    type: array
+                    items:
+                      type: string
+                  optimization_opportunities:
+                    type: array
+                    items:
+                      type: object
+                  cost_analysis:
+                    type: object
+                  timeline_analysis:
+                    type: object
+        '404':
+          description: Project not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
