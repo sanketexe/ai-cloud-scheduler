@@ -97,13 +97,16 @@ const Settings: React.FC = () => {
   };
 
   const handleNestedSettingChange = (parent: string, key: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent as keyof typeof prev],
-        [key]: value
-      }
-    }));
+    setSettings(prev => {
+      const parentValue = prev[parent as keyof typeof prev];
+      return {
+        ...prev,
+        [parent]: {
+          ...(typeof parentValue === 'object' && parentValue !== null ? parentValue : {}),
+          [key]: value
+        }
+      };
+    });
   };
 
   const handleSave = () => {

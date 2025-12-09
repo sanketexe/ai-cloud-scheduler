@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 import logging
 import statistics
 
-from performance_monitor import MetricType, MetricsData
-from enhanced_models import SeverityLevel
-from anomaly_detector import Anomaly
+from .enums import MetricType, SeverityLevel
+from .performance_monitor import MetricsData
+from .anomaly_detector import Anomaly
 
 
 @dataclass

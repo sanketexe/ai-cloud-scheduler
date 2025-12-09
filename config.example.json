@@ -1,0 +1,350 @@
+{
+  "aws": {
+    "master_account": {
+      "account_id": "123456789012",
+      "access_key_id": "AKIA...",
+      "secret_access_key": "...",
+      "region": "us-east-1"
+    },
+    "cross_account_role": {
+      "role_name": "FinOpsAccessRole",
+      "external_id": "finops-external-id-2024",
+      "session_duration_seconds": 3600
+    }
+  },
+  
+  "organization": {
+    "teams": [
+      {
+        "name": "Engineering",
+        "owner": "john@company.com",
+        "members": ["john@company.com", "jane@company.com", "bob@company.com"],
+        "monthly_budget": 50000,
+        "cost_center": "CC-ENG",
+        "notification_channels": ["email-eng", "slack-eng"]
+      },
+      {
+        "name": "Data Science",
+        "owner": "alice@company.com",
+        "members": ["alice@company.com", "charlie@company.com"],
+        "monthly_budget": 30000,
+        "cost_center": "CC-DS",
+        "notification_channels": ["email-ds", "slack-ds"]
+      },
+      {
+        "name": "DevOps",
+        "owner": "dave@company.com",
+        "members": ["dave@company.com", "eve@company.com"],
+        "monthly_budget": 20000,
+        "cost_center": "CC-OPS",
+        "notification_channels": ["email-ops", "slack-ops"]
+      }
+    ],
+    
+    "cost_centers": [
+      {
+        "code": "CC-ENG",
+        "name": "Engineering Cost Center",
+        "description": "Engineering team cloud costs",
+        "teams": ["Engineering"],
+        "monthly_budget": 50000,
+        "alert_thresholds": [80, 90, 100]
+      },
+      {
+        "code": "CC-DS",
+        "name": "Data Science Cost Center",
+        "description": "Data Science team cloud costs",
+        "teams": ["Data Science"],
+        "monthly_budget": 30000,
+        "alert_thresholds": [80, 90, 100]
+      },
+      {
+        "code": "CC-OPS",
+        "name": "Operations Cost Center",
+        "description": "DevOps and infrastructure costs",
+        "teams": ["DevOps"],
+        "monthly_budget": 20000,
+        "alert_thresholds": [80, 90, 100]
+      }
+    ],
+    
+    "projects": [
+      {
+        "name": "WebApp",
+        "description": "Customer-facing web application",
+        "team": "Engineering",
+        "cost_center": "CC-ENG",
+        "environment": "Production",
+        "tags": {
+          "Application": "CustomerPortal",
+          "Criticality": "High"
+        }
+      },
+      {
+        "name": "DataPipeline",
+        "description": "ETL and data processing pipeline",
+        "team": "Data Science",
+        "cost_center": "CC-DS",
+        "environment": "Production",
+        "tags": {
+          "Application": "Analytics",
+          "Criticality": "Medium"
+        }
+      },
+      {
+        "name": "Infrastructure",
+        "description": "Core infrastructure and monitoring",
+        "team": "DevOps",
+        "cost_center": "CC-OPS",
+        "environment": "Production",
+        "tags": {
+          "Application": "Infrastructure",
+          "Criticality": "Critical"
+        }
+      }
+    ],
+    
+    "environments": [
+      {
+        "name": "Production",
+        "cost_allocation_percentage": 70,
+        "alert_enabled": true
+      },
+      {
+        "name": "Staging",
+        "cost_allocation_percentage": 20,
+        "alert_enabled": true
+      },
+      {
+        "name": "Development",
+        "cost_allocation_percentage": 10,
+        "alert_enabled": false
+      }
+    ]
+  },
+  
+  "notifications": {
+    "email": {
+      "smtp_host": "smtp.gmail.com",
+      "smtp_port": 587,
+      "smtp_username": "finops@company.com",
+      "smtp_password": "your-app-password",
+      "from_address": "finops@company.com",
+      "use_tls": true,
+      "channels": [
+        {
+          "id": "email-eng",
+          "to_addresses": ["eng-leads@company.com"],
+          "cc_addresses": ["finops@company.com"]
+        },
+        {
+          "id": "email-ds",
+          "to_addresses": ["ds-leads@company.com"],
+          "cc_addresses": ["finops@company.com"]
+        },
+        {
+          "id": "email-ops",
+          "to_addresses": ["ops-leads@company.com"],
+          "cc_addresses": ["finops@company.com"]
+        },
+        {
+          "id": "email-finops-team",
+          "to_addresses": ["finops-team@company.com"]
+        }
+      ]
+    },
+    
+    "slack": {
+      "channels": [
+        {
+          "id": "slack-eng",
+          "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX",
+          "channel": "#eng-finops",
+          "username": "FinOps Bot",
+          "icon_emoji": ":moneybag:"
+        },
+        {
+          "id": "slack-ds",
+          "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/YYYYYYYYYYYYYYYYYYYY",
+          "channel": "#ds-finops",
+          "username": "FinOps Bot",
+          "icon_emoji": ":chart_with_upwards_trend:"
+        },
+        {
+          "id": "slack-ops",
+          "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/ZZZZZZZZZZZZZZZZZZZZ",
+          "channel": "#ops-finops",
+          "username": "FinOps Bot",
+          "icon_emoji": ":gear:"
+        },
+        {
+          "id": "slack-finops",
+          "webhook_url": "https://hooks.slack.com/services/T00000000/B00000000/AAAAAAAAAAAAAAAAAAAA",
+          "channel": "#finops-alerts",
+          "username": "FinOps Bot",
+          "icon_emoji": ":rotating_light:"
+        }
+      ]
+    },
+    
+    "teams": {
+      "channels": [
+        {
+          "id": "teams-finops",
+          "webhook_url": "https://outlook.office.com/webhook/YOUR-WEBHOOK-URL"
+        }
+      ]
+    }
+  },
+  
+  "alerts": {
+    "budget_alerts": [
+      {
+        "id": "budget-eng-80",
+        "name": "Engineering Budget 80% Alert",
+        "cost_center": "CC-ENG",
+        "threshold_percentage": 80,
+        "notification_channels": ["email-eng", "slack-eng"],
+        "cooldown_minutes": 60,
+        "enabled": true
+      },
+      {
+        "id": "budget-eng-90",
+        "name": "Engineering Budget 90% Alert",
+        "cost_center": "CC-ENG",
+        "threshold_percentage": 90,
+        "notification_channels": ["email-eng", "slack-eng", "email-finops-team"],
+        "cooldown_minutes": 30,
+        "enabled": true
+      },
+      {
+        "id": "budget-eng-100",
+        "name": "Engineering Budget Exceeded",
+        "cost_center": "CC-ENG",
+        "threshold_percentage": 100,
+        "notification_channels": ["email-eng", "slack-eng", "email-finops-team", "slack-finops"],
+        "cooldown_minutes": 15,
+        "enabled": true
+      }
+    ],
+    
+    "anomaly_alerts": [
+      {
+        "id": "anomaly-all-teams",
+        "name": "Cost Anomaly Detection - All Teams",
+        "threshold_percentage": 20,
+        "notification_channels": ["email-finops-team", "slack-finops"],
+        "cooldown_minutes": 240,
+        "enabled": true
+      },
+      {
+        "id": "anomaly-production",
+        "name": "Production Environment Anomaly",
+        "environment": "Production",
+        "threshold_percentage": 15,
+        "notification_channels": ["email-finops-team", "slack-finops"],
+        "cooldown_minutes": 120,
+        "enabled": true
+      }
+    ],
+    
+    "waste_alerts": [
+      {
+        "id": "idle-resources",
+        "name": "Idle Resources Detection",
+        "idle_threshold_days": 7,
+        "utilization_threshold_percentage": 5,
+        "notification_channels": ["email-finops-team"],
+        "cooldown_minutes": 1440,
+        "enabled": true
+      }
+    ]
+  },
+  
+  "tagging_policy": {
+    "required_tags": ["Team", "Project", "Environment", "CostCenter", "Owner"],
+    "enforcement_level": "warning",
+    "auto_tag_rules": [
+      {
+        "condition": "account_id",
+        "value": "123456789012",
+        "tags": {
+          "Team": "Engineering",
+          "CostCenter": "CC-ENG"
+        }
+      }
+    ]
+  },
+  
+  "cost_optimization": {
+    "ri_recommendations": {
+      "enabled": true,
+      "min_stability_score": 0.7,
+      "min_predictability_score": 0.6,
+      "max_payback_months": 12,
+      "analysis_period_days": 90
+    },
+    
+    "waste_detection": {
+      "enabled": true,
+      "idle_threshold_days": 7,
+      "low_utilization_threshold": 5.0,
+      "check_frequency_hours": 24
+    },
+    
+    "rightsizing": {
+      "enabled": true,
+      "utilization_threshold": 40.0,
+      "recommendation_confidence": "HIGH"
+    }
+  },
+  
+  "reporting": {
+    "daily_summary": {
+      "enabled": true,
+      "recipients": ["finops-team@company.com"],
+      "send_time": "09:00"
+    },
+    
+    "weekly_report": {
+      "enabled": true,
+      "recipients": ["finops-team@company.com", "leadership@company.com"],
+      "send_day": "Monday",
+      "send_time": "08:00"
+    },
+    
+    "monthly_report": {
+      "enabled": true,
+      "recipients": ["finops-team@company.com", "leadership@company.com", "finance@company.com"],
+      "send_day": 1,
+      "send_time": "09:00"
+    }
+  },
+  
+  "celery": {
+    "broker_url": "redis://:redis_password@redis:6379/0",
+    "result_backend": "redis://:redis_password@redis:6379/0",
+    "task_schedules": {
+      "sync_cost_data": {
+        "schedule": "0 */6 * * *",
+        "enabled": true
+      },
+      "monitor_budgets": {
+        "schedule": "0 * * * *",
+        "enabled": true
+      },
+      "detect_anomalies": {
+        "schedule": "30 */4 * * *",
+        "enabled": true
+      },
+      "generate_ri_recommendations": {
+        "schedule": "0 2 * * 1",
+        "enabled": true
+      },
+      "detect_waste": {
+        "schedule": "0 3 * * *",
+        "enabled": true
+      }
+    }
+  }
+}

@@ -1,0 +1,141 @@
+"""
+Celery Configuration for FinOps Platform
+"""
+
+import os
+from celery import Celery
+from kombu import Queue
+
+def create_celery_app() -> Celery:
+    """Create and configure Celery application"""
+    
+    # Get configuration from environment
+    broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+    result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+    
+    # Create Celery app
+    celery_app = Celery('finops_platform')
+    
+    # Basic configuration
+    celery_app.conf.update(
+        # Broker settings
+        broker_url=broker_url,
+        result_backend=result_backend,
+        
+        # Serialization
+        task_serializer='json',
+        accept_content=['json'],
+        result_serializer='json',
+        
+        # Timezone
+        timezone='UTC',
+        enable_utc=True,
+        
+        # Task execution
+        task_track_started=True,
+        task_time_limit=30 * 60,  # 30 minutes
+        task_soft_time_limit=25 * 60,  # 25 minutes
+        worker_prefetch_multiplier=1,
+        task_acks_late=True,
+        
+        # Performance
+        worker_disable_rate_limits=False,
+        task_compression='gzip',
+        result_compression='gzip',
+        
+        # Result backend settings
+        result_expires=3600,  # 1 hour
+        result_persistent=True,
+        
+        # Worker settings
+        worker_max_tasks_per_child=1000,
+        worker_max_memory_per_child=200000,  # 200MB
+        
+        # Queue configuration
+        task_routes={
+            'backend.core.tasks.sync_provider_cost_data': {'queue': 'cost_sync'},
+            'backend.core.tasks.sync_all_providers_cost_data': {'queue': 'cost_sync'},
+            'backend.core.tasks.discover_provider_resources': {'queue': 'resource_discovery'},
+            'backend.core.tasks.discover_all_resources': {'queue': 'resource_discovery'},
+            'backend.core.tasks.monitor_budget': {'queue': 'monitoring'},
+            'backend.core.tasks.monitor_all_budgets': {'queue': 'monitoring'},
+            'backend.core.tasks.analyze_optimization_opportunities': {'queue': 'analysis'},
+            'backend.core.tasks.detect_cost_anomalies': {'queue': 'analysis'},
+            'backend.core.tasks.cleanup_old_data': {'queue': 'maintenance'},
+        },
+        
+        # Define queues
+        task_default_queue='default',
+        task_queues=(
+            Queue('default', routing_key='default'),
+            Queue('cost_sync', routing_key='cost_sync'),
+            Queue('resource_discovery', routing_key='resource_discovery'),
+            Queue('monitoring', routing_key='monitoring'),
+            Queue('analysis', routing_key='analysis'),
+            Queue('maintenance', routing_key='maintenance'),
+        ),
+        
+        # Beat schedule for periodic tasks
+        beat_schedule={
+            # Sync cost data every 6 hours
+            'sync-cost-data': {
+                'task': 'backend.core.tasks.sync_all_providers_cost_data',
+                'schedule': 6 * 60 * 60,  # 6 hours in seconds
+                'options': {'queue': 'cost_sync'}
+            },
+            
+            # Monitor budgets every hour
+            'monitor-budgets': {
+                'task': 'backend.core.tasks.monitor_all_budgets',
+                'schedule': 60 * 60,  # 1 hour in seconds
+                'options': {'queue': 'monitoring'}
+            },
+            
+            # Discover resources daily at 2 AM UTC
+            'discover-resources': {
+                'task': 'backend.core.tasks.discover_all_resources',
+                'schedule': 24 * 60 * 60,  # Daily
+                'options': {'queue': 'resource_discovery'}
+            },
+            
+            # Generate optimization recommendations daily at 3 AM UTC
+            'optimization-analysis': {
+                'task': 'backend.core.tasks.analyze_optimization_opportunities',
+                'schedule': 24 * 60 * 60,  # Daily
+                'options': {'queue': 'analysis'}
+            },
+            
+            # Detect anomalies every 4 hours
+            'anomaly-detection': {
+                'task': 'backend.core.tasks.detect_cost_anomalies',
+                'schedule': 4 * 60 * 60,  # 4 hours in seconds
+                'options': {'queue': 'analysis'}
+            },
+            
+            # Cleanup old data weekly (every 7 days)
+            'cleanup-old-data': {
+                'task': 'backend.core.tasks.cleanup_old_data',
+                'schedule': 7 * 24 * 60 * 60,  # Weekly
+                'options': {'queue': 'maintenance'}
+            },
+        },
+        
+        # Error handling
+        task_reject_on_worker_lost=True,
+        task_ignore_result=False,
+        
+        # Security
+        worker_hijack_root_logger=False,
+        worker_log_color=False,
+    )
+    
+    return celery_app
+
+# Create the Celery app instance
+celery_app = create_celery_app()
+
+# Auto-discover tasks
+celery_app.autodiscover_tasks(['backend.core'])
+
+if __name__ == '__main__':
+    celery_app.start()

@@ -132,7 +132,7 @@ const Alerts: React.FC = () => {
     type: '',
     condition: '',
     threshold: '',
-    channels: [],
+    channels: [] as string[],
     team: '',
   });
 
