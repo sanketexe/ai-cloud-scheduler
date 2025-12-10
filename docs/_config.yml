@@ -1,0 +1,11 @@
+title: Cloud Intelligence FinOps Platform
+description: Enterprise-grade multi-cloud cost optimization and migration planning platform
+theme: jekyll-theme-cayman
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: true
+include:
+  - DEMO.md
+  - README.md
