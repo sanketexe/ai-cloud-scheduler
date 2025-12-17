@@ -44,35 +44,37 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
   data,
   onChange,
 }) => {
-  const { control, watch } = useForm({
-    defaultValues: data || {
-      performance: {
-        latency_target_ms: 100,
-        availability_target: 99.9,
-        disaster_recovery_rto_minutes: 60,
-        disaster_recovery_rpo_minutes: 15,
-        geographic_distribution: [],
-      },
-      compliance: {
-        regulatory_frameworks: [],
-        data_residency_requirements: [],
-        industry_certifications: [],
-        security_standards: [],
-      },
-      budget: {
-        current_monthly_cost: 0,
-        migration_budget: 0,
-        target_monthly_cost: 0,
-        cost_optimization_priority: 'MEDIUM',
-      },
-      technical: {
-        required_services: [],
-        ml_ai_required: false,
-        analytics_required: false,
-        container_orchestration: false,
-        serverless_required: false,
-      },
+  const defaultValues = {
+    performance: {
+      latency_target_ms: 100,
+      availability_target: 99.9,
+      disaster_recovery_rto_minutes: 60,
+      disaster_recovery_rpo_minutes: 15,
+      geographic_distribution: [],
     },
+    compliance: {
+      regulatory_frameworks: [],
+      data_residency_requirements: [],
+      industry_certifications: [],
+      security_standards: [],
+    },
+    budget: {
+      current_monthly_cost: 5000,
+      migration_budget: 50000,
+      target_monthly_cost: 4000,
+      cost_optimization_priority: 'MEDIUM',
+    },
+    technical: {
+      required_services: ['Compute', 'Storage', 'Database'],
+      ml_ai_required: false,
+      analytics_required: false,
+      container_orchestration: false,
+      serverless_required: false,
+    },
+  };
+
+  const { control, watch } = useForm({
+    defaultValues: data || defaultValues,
   });
 
   const formData = watch();
@@ -80,6 +82,13 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
   useEffect(() => {
     onChange(formData);
   }, [formData, onChange]);
+
+  // Initialize with default values if no data provided
+  useEffect(() => {
+    if (!data) {
+      onChange(defaultValues);
+    }
+  }, [data, onChange]);
 
   return (
     <Box>

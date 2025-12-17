@@ -1,0 +1,309 @@
+# Prometheus Helm Chart Values for FinOps Cost Optimization Platform
+
+# Global configuration
+global:
+  scrapeInterval: 15s
+  evaluationInterval: 15s
+
+# Prometheus server configuration
+prometheus:
+  prometheusSpec:
+    retention: 30d
+    retentionSize: 50GB
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3-sc
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 100Gi
+    
+    # Resource limits
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 1000m
+      limits:
+        memory: 8Gi
+        cpu: 4000m
+    
+    # Additional scrape configs for FinOps services
+    additionalScrapeConfigs:
+    - job_name: 'finops-api'
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names:
+          - finops-automation
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_name]
+        action: keep
+        regex: finops-api
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: http
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_service_name]
+        target_label: kubernetes_name
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: kubernetes_pod_name
+      metrics_path: /metrics
+      scrape_interval: 30s
+      scrape_timeout: 10s
+
+    - job_name: 'finops-worker'
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names:
+          - finops-automation
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_name]
+        action: keep
+        regex: finops-worker-metrics
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: metrics
+      metrics_path: /metrics
+      scrape_interval: 30s
+      scrape_timeout: 10s
+
+    # Rule files for FinOps alerts
+    ruleFiles:
+      finops-alerts.yaml: |
+        groups:
+        - name: finops.rules
+          rules:
+          - alert: FinOpsAPIDown
+            expr: up{job="finops-api"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: FinOps API is down
+              description: "FinOps API has been down for more than 1 minute"
+
+# Grafana configuration
+grafana:
+  enabled: true
+  
+  # Admin credentials
+  adminPassword: "CHANGE_ME_IN_PRODUCTION"
+  
+  # Persistence
+  persistence:
+    enabled: true
+    storageClassName: gp3-sc
+    size: 10Gi
+  
+  # Resource limits
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+  
+  # Grafana configuration
+  grafana.ini:
+    server:
+      root_url: https://monitoring.finops.example.com
+    security:
+      admin_user: admin
+      admin_password: ${GRAFANA_ADMIN_PASSWORD}
+    auth:
+      disable_login_form: false
+    auth.anonymous:
+      enabled: false
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    log:
+      mode: console
+      level: info
+    
+  # Data sources
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-kube-prometheus-prometheus:9090
+        access: proxy
+        isDefault: true
+        
+  # Dashboard providers
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'finops-dashboards'
+        orgId: 1
+        folder: 'FinOps'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/finops
+          
+  # Dashboards
+  dashboards:
+    finops:
+      finops-overview:
+        gnetId: 1860
+        revision: 27
+        datasource: Prometheus
+      finops-cost-optimization:
+        url: https://raw.githubusercontent.com/finops-platform/dashboards/main/cost-optimization.json
+        datasource: Prometheus
+
+# Alertmanager configuration
+alertmanager:
+  enabled: true
+  
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3-sc
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+    
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+    
+    # Alertmanager configuration
+    config:
+      global:
+        smtp_smarthost: 'smtp.example.com:587'
+        smtp_from: 'finops-alerts@example.com'
+        smtp_auth_username: 'finops-alerts@example.com'
+        smtp_auth_password: 'CHANGE_ME_IN_PRODUCTION'
+        
+      route:
+        group_by: ['alertname', 'cluster', 'service']
+        group_wait: 10s
+        group_interval: 10s
+        repeat_interval: 1h
+        receiver: 'default'
+        routes:
+        - match:
+            severity: critical
+          receiver: 'critical-alerts'
+          group_wait: 0s
+          repeat_interval: 5m
+        - match:
+            service: cost-optimization
+          receiver: 'cost-optimization-team'
+        - match:
+            service: security
+          receiver: 'security-team'
+          group_wait: 0s
+          repeat_interval: 1m
+          
+      receivers:
+      - name: 'default'
+        email_configs:
+        - to: 'finops-team@example.com'
+          subject: '[FinOps] {{ .GroupLabels.alertname }}'
+          body: |
+            {{ range .Alerts }}
+            Alert: {{ .Annotations.summary }}
+            Description: {{ .Annotations.description }}
+            Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+            {{ end }}
+            
+      - name: 'critical-alerts'
+        email_configs:
+        - to: 'finops-oncall@example.com'
+          subject: '[CRITICAL] FinOps Alert: {{ .GroupLabels.alertname }}'
+          body: |
+            CRITICAL ALERT - Immediate attention required
+            
+            {{ range .Alerts }}
+            Alert: {{ .Annotations.summary }}
+            Description: {{ .Annotations.description }}
+            Runbook: {{ .Annotations.runbook_url }}
+            Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+            {{ end }}
+        slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+          channel: '#finops-critical'
+          title: 'Critical FinOps Alert'
+          text: |
+            {{ range .Alerts }}
+            *{{ .Annotations.summary }}*
+            {{ .Annotations.description }}
+            {{ end }}
+          
+      - name: 'cost-optimization-team'
+        email_configs:
+        - to: 'cost-optimization@example.com'
+          subject: '[Cost Optimization] {{ .GroupLabels.alertname }}'
+        slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+          channel: '#cost-optimization'
+          
+      - name: 'security-team'
+        email_configs:
+        - to: 'security@example.com'
+          subject: '[SECURITY] FinOps Alert: {{ .GroupLabels.alertname }}'
+        slack_configs:
+        - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+          channel: '#security-alerts'
+
+# Node Exporter
+nodeExporter:
+  enabled: true
+  
+# kube-state-metrics
+kubeStateMetrics:
+  enabled: true
+  
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+  
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 200m
+
+# Additional exporters for AWS monitoring
+# These would be deployed separately but configured here
+additionalPrometheusRules:
+- name: finops-cost-optimization
+  groups:
+  - name: finops.cost-optimization
+    rules:
+    - alert: HighAWSCosts
+      expr: aws_billing_estimated_charges > 10000
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "High AWS costs detected"
+        description: "AWS costs are ${{ $value }} this month"
+        
+    - alert: UnusedResourcesDetected
+      expr: finops_unused_resources_count > 50
+      for: 30m
+      labels:
+        severity: info
+      annotations:
+        summary: "Many unused resources detected"
+        description: "{{ $value }} unused resources found"

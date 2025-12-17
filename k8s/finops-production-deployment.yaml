@@ -1,0 +1,779 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: finops-automation
+  labels:
+    name: finops-automation
+    environment: production
+    app: finops-cost-optimization
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finops-config
+  namespace: finops-automation
+data:
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "finops_db"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  # Cost Optimization Configuration
+  AUTOMATION_ENABLED: "true"
+  SAFETY_CHECKS_ENABLED: "true"
+  BUSINESS_HOURS_PROTECTION: "true"
+  DEFAULT_AUTOMATION_LEVEL: "balanced"
+  MAX_CONCURRENT_ACTIONS: "10"
+  ACTION_TIMEOUT_MINUTES: "30"
+  ROLLBACK_TIMEOUT_MINUTES: "15"
+  # Monitoring Configuration
+  METRICS_ENABLED: "true"
+  AUDIT_LOGGING_ENABLED: "true"
+  NOTIFICATION_CHANNELS: "email,slack,webhook"
+  # AWS Configuration
+  AWS_DEFAULT_REGION: "us-east-1"
+  COST_OPTIMIZATION_ROLE_ARN: "arn:aws:iam::ACCOUNT_ID:role/FinOpsCostOptimizationRole"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: finops-secrets
+  namespace: finops-automation
+type: Opaque
+stringData:
+  DATABASE_USER: "finops"
+  DATABASE_PASSWORD: "CHANGE_ME_IN_PRODUCTION"
+  JWT_SECRET_KEY: "CHANGE_ME_IN_PRODUCTION_32_CHARS_MIN"
+  ENCRYPTION_KEY: "CHANGE_ME_IN_PRODUCTION_32_CHARS_EXACTLY"
+  REDIS_PASSWORD: "CHANGE_ME_IN_PRODUCTION"
+  # AWS Credentials (if not using IAM roles)
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  # Notification Secrets
+  SLACK_WEBHOOK_URL: ""
+  EMAIL_SMTP_PASSWORD: ""
+  WEBHOOK_SECRET_TOKEN: ""
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finops-api
+  namespace: finops-automation
+  labels:
+    app: finops-api
+    component: api
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: finops-api
+      component: api
+  template:
+    metadata:
+      labels:
+        app: finops-api
+        component: api
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: finops-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: api
+        image: ${API_IMAGE:-finops/api:latest}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: ASYNC_DATABASE_URL
+          value: "postgresql+asyncpg://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/0"
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_PORT
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_NAME
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: REDIS_PASSWORD
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: JWT_SECRET_KEY
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: ENCRYPTION_KEY
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: LOG_LEVEL
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: ENVIRONMENT
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DEBUG
+        # Cost Optimization Environment Variables
+        - name: AUTOMATION_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: AUTOMATION_ENABLED
+        - name: SAFETY_CHECKS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: SAFETY_CHECKS_ENABLED
+        - name: BUSINESS_HOURS_PROTECTION
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: BUSINESS_HOURS_PROTECTION
+        - name: DEFAULT_AUTOMATION_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DEFAULT_AUTOMATION_LEVEL
+        - name: MAX_CONCURRENT_ACTIONS
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: MAX_CONCURRENT_ACTIONS
+        - name: ACTION_TIMEOUT_MINUTES
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: ACTION_TIMEOUT_MINUTES
+        - name: ROLLBACK_TIMEOUT_MINUTES
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: ROLLBACK_TIMEOUT_MINUTES
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: AWS_DEFAULT_REGION
+        - name: COST_OPTIMIZATION_ROLE_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: COST_OPTIMIZATION_ROLE_ARN
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: audit-logs
+          mountPath: /app/audit_logs
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: audit-logs
+        persistentVolumeClaim:
+          claimName: finops-audit-logs-pvc
+      - name: tmp
+        emptyDir:
+          sizeLimit: 500Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finops-worker
+  namespace: finops-automation
+  labels:
+    app: finops-worker
+    component: worker
+    version: v1
+spec:
+  replicas: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: finops-worker
+      component: worker
+  template:
+    metadata:
+      labels:
+        app: finops-worker
+        component: worker
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9540"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: finops-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: worker
+        image: ${API_IMAGE:-finops/api:latest}
+        imagePullPolicy: Always
+        command: ["python", "backend/celery_worker.py"]
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: CELERY_BROKER_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/0"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/0"
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_PORT
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_NAME
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: REDIS_PASSWORD
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: JWT_SECRET_KEY
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: ENCRYPTION_KEY
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: LOG_LEVEL
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: ENVIRONMENT
+        # Cost Optimization Worker Configuration
+        - name: WORKER_CONCURRENCY
+          value: "4"
+        - name: WORKER_MAX_TASKS_PER_CHILD
+          value: "1000"
+        - name: WORKER_PREFETCH_MULTIPLIER
+          value: "1"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "3Gi"
+            cpu: "1500m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import celery; from backend.celery_worker import celery_app; print('Worker healthy')"
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import celery; from backend.celery_worker import celery_app; print('Worker ready')"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 15
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: audit-logs
+          mountPath: /app/audit_logs
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: audit-logs
+        persistentVolumeClaim:
+          claimName: finops-audit-logs-pvc
+      - name: tmp
+        emptyDir:
+          sizeLimit: 500Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finops-scheduler
+  namespace: finops-automation
+  labels:
+    app: finops-scheduler
+    component: scheduler
+    version: v1
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: finops-scheduler
+      component: scheduler
+  template:
+    metadata:
+      labels:
+        app: finops-scheduler
+        component: scheduler
+        version: v1
+    spec:
+      serviceAccountName: finops-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: scheduler
+        image: ${API_IMAGE:-finops/api:latest}
+        imagePullPolicy: Always
+        command: ["python", "backend/celery_beat.py"]
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: CELERY_BROKER_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/0"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/0"
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_PORT
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: DATABASE_NAME
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: REDIS_PASSWORD
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: JWT_SECRET_KEY
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: finops-secrets
+              key: ENCRYPTION_KEY
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: LOG_LEVEL
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: finops-config
+              key: ENVIRONMENT
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import os; print('Scheduler healthy') if os.path.exists('/tmp/celerybeat.pid') else exit(1)"
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import os; print('Scheduler ready') if os.path.exists('/tmp/celerybeat.pid') else exit(1)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 15
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: scheduler-data
+          mountPath: /tmp
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 500Mi
+      - name: scheduler-data
+        persistentVolumeClaim:
+          claimName: finops-scheduler-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: finops-audit-logs-pvc
+  namespace: finops-automation
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: efs-sc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: finops-scheduler-pvc
+  namespace: finops-automation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: gp3-sc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finops-api
+  namespace: finops-automation
+  labels:
+    app: finops-api
+    component: api
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 8000
+    protocol: TCP
+    name: https
+  selector:
+    app: finops-api
+    component: api
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: finops-service-account
+  namespace: finops-automation
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/FinOpsCostOptimizationRole
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: finops-api-hpa
+  namespace: finops-automation
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: finops-api
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+      - type: Pods
+        value: 4
+        periodSeconds: 30
+      selectPolicy: Max
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: finops-worker-hpa
+  namespace: finops-automation
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: finops-worker
+  minReplicas: 5
+  maxReplicas: 50
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 85
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+      - type: Percent
+        value: 25
+        periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 200
+        periodSeconds: 60
+      - type: Pods
+        value: 10
+        periodSeconds: 60
+      selectPolicy: Max
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: finops-ingress
+  namespace: finops-automation
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  tls:
+  - hosts:
+    - finops.example.com
+    - api.finops.example.com
+    secretName: finops-tls
+  rules:
+  - host: api.finops.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: finops-api
+            port:
+              number: 80
+  - host: finops.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: finops-api
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: finops-frontend
+            port:
+              number: 80

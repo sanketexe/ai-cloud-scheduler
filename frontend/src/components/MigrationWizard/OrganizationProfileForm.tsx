@@ -44,15 +44,17 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
   data,
   onChange,
 }) => {
+  const defaultValues = {
+    company_size: 'MEDIUM',
+    industry: 'Technology',
+    current_infrastructure: 'ON_PREMISES',
+    geographic_presence: [],
+    it_team_size: 10,
+    cloud_experience_level: 'BEGINNER',
+  };
+
   const { control, watch, setValue } = useForm({
-    defaultValues: data || {
-      company_size: 'MEDIUM',
-      industry: 'Technology',
-      current_infrastructure: 'ON_PREMISES',
-      geographic_presence: [],
-      it_team_size: 10,
-      cloud_experience_level: 'BEGINNER',
-    },
+    defaultValues: data || defaultValues,
   });
 
   const formData = watch();
@@ -60,6 +62,13 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
   useEffect(() => {
     onChange(formData);
   }, [formData, onChange]);
+
+  // Initialize with default values if no data provided
+  useEffect(() => {
+    if (!data) {
+      onChange(defaultValues);
+    }
+  }, [data, onChange]);
 
   return (
     <Box>

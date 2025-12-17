@@ -21,6 +21,9 @@ import {
   Security as ComplianceIcon,
   Settings as SettingsIcon,
   AttachMoney as MoneyIcon,
+  Cloud as CloudIcon,
+  NotificationsActive as NotificationsActiveIcon,
+  AutoMode as AutomationIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 280;
@@ -28,8 +31,11 @@ const drawerWidth = 280;
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Cost Analysis', icon: <TrendingUpIcon />, path: '/cost-analysis' },
+  { text: 'AWS Cost Analysis', icon: <CloudIcon />, path: '/aws-cost-analysis' },
+  { text: 'AWS Cost Alerts', icon: <NotificationsActiveIcon />, path: '/aws-cost-alerts' },
   { text: 'Budget Management', icon: <BudgetIcon />, path: '/budgets' },
   { text: 'Optimization', icon: <OptimizationIcon />, path: '/optimization' },
+  { text: 'Automation', icon: <AutomationIcon />, path: '/automation' },
   { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
   { text: 'Alerts', icon: <AlertsIcon />, path: '/alerts' },
   { text: 'Compliance', icon: <ComplianceIcon />, path: '/compliance' },

@@ -18,6 +18,13 @@ from sqlalchemy.sql import func
 
 from .database import Base
 
+# Import automation models
+from .automation_models import (
+    AutomationPolicy, OptimizationAction, AutomationAuditLog,
+    ActionApproval, SafetyCheckResult, AutomationLevel, ActionType,
+    ActionStatus, RiskLevel, ApprovalStatus
+)
+
 class UserRole(PyEnum):
     """User roles for role-based access control"""
     ADMIN = "admin"

@@ -1,0 +1,392 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finops-monitoring-config
+  namespace: monitoring
+data:
+  finops-alerts.yaml: |
+    groups:
+    - name: finops-cost-optimization
+      rules:
+      # API Health Alerts
+      - alert: FinOpsAPIDown
+        expr: up{job="finops-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: finops-api
+        annotations:
+          summary: "FinOps API is down"
+          description: "FinOps API has been down for more than 1 minute"
+          runbook_url: "https://docs.finops.example.com/runbooks/api-down"
+
+      - alert: FinOpsAPIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="finops-api"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: finops-api
+        annotations:
+          summary: "FinOps API high latency"
+          description: "95th percentile latency is {{ $value }}s for more than 5 minutes"
+
+      - alert: FinOpsAPIHighErrorRate
+        expr: rate(http_requests_total{job="finops-api",status=~"5.."}[5m]) / rate(http_requests_total{job="finops-api"}[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          service: finops-api
+        annotations:
+          summary: "FinOps API high error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} for more than 3 minutes"
+
+      # Cost Optimization Specific Alerts
+      - alert: CostOptimizationEngineDown
+        expr: finops_automation_engine_status != 1
+        for: 2m
+        labels:
+          severity: critical
+          service: cost-optimization
+        annotations:
+          summary: "Cost optimization engine is down"
+          description: "The automated cost optimization engine has stopped working"
+          runbook_url: "https://docs.finops.example.com/runbooks/automation-engine-down"
+
+      - alert: HighFailedOptimizationActions
+        expr: rate(finops_optimization_actions_failed_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: cost-optimization
+        annotations:
+          summary: "High rate of failed optimization actions"
+          description: "{{ $value }} optimization actions are failing per second"
+
+      - alert: SafetyCheckFailures
+        expr: rate(finops_safety_check_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cost-optimization
+        annotations:
+          summary: "Safety check failures detected"
+          description: "Safety checks are failing, automation may be impacting production resources"
+          runbook_url: "https://docs.finops.example.com/runbooks/safety-check-failures"
+
+      - alert: UnauthorizedOptimizationAttempt
+        expr: rate(finops_unauthorized_actions_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: security
+        annotations:
+          summary: "Unauthorized optimization attempt detected"
+          description: "Someone attempted to perform optimization actions without proper authorization"
+
+      # Worker and Queue Alerts
+      - alert: CeleryWorkerDown
+        expr: finops_celery_workers_active < 3
+        for: 2m
+        labels:
+          severity: warning
+          service: celery-worker
+        annotations:
+          summary: "Insufficient Celery workers"
+          description: "Only {{ $value }} Celery workers are active, minimum is 3"
+
+      - alert: CeleryQueueBacklog
+        expr: finops_celery_queue_length > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: celery-worker
+        annotations:
+          summary: "Celery queue backlog"
+          description: "Celery queue has {{ $value }} pending tasks"
+
+      - alert: CeleryTaskFailureRate
+        expr: rate(finops_celery_task_failures_total[10m]) / rate(finops_celery_task_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: celery-worker
+        annotations:
+          summary: "High Celery task failure rate"
+          description: "{{ $value | humanizePercentage }} of Celery tasks are failing"
+
+      # Database and Cache Alerts
+      - alert: DatabaseConnectionFailure
+        expr: finops_database_connections_failed_total > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connection failures"
+          description: "Unable to connect to the database"
+
+      - alert: RedisConnectionFailure
+        expr: finops_redis_connections_failed_total > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis connection failures"
+          description: "Unable to connect to Redis cache"
+
+      - alert: DatabaseSlowQueries
+        expr: finops_database_query_duration_seconds{quantile="0.95"} > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile query time is {{ $value }}s"
+
+      # Resource Usage Alerts
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{pod=~"finops-.*"} / container_spec_memory_limit_bytes) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: kubernetes
+        annotations:
+          summary: "High memory usage in {{ $labels.pod }}"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{pod=~"finops-.*"}[5m]) / (container_spec_cpu_quota / container_spec_cpu_period) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          service: kubernetes
+        annotations:
+          summary: "High CPU usage in {{ $labels.pod }}"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      # Cost and Savings Alerts
+      - alert: LowCostSavings
+        expr: finops_monthly_savings_dollars < 1000
+        for: 24h
+        labels:
+          severity: info
+          service: cost-optimization
+        annotations:
+          summary: "Low cost savings this month"
+          description: "Monthly savings are only ${{ $value }}, below expected threshold"
+
+      - alert: UnexpectedCostIncrease
+        expr: increase(finops_aws_cost_total[24h]) > increase(finops_aws_cost_total[24h] offset 7d) * 1.2
+        for: 1h
+        labels:
+          severity: warning
+          service: cost-monitoring
+        annotations:
+          summary: "Unexpected cost increase detected"
+          description: "Daily AWS costs increased by more than 20% compared to last week"
+
+      # Audit and Compliance Alerts
+      - alert: AuditLogFailure
+        expr: rate(finops_audit_log_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: audit
+        annotations:
+          summary: "Audit logging failures"
+          description: "Unable to write audit logs - compliance may be at risk"
+
+      - alert: MissingAuditLogs
+        expr: time() - finops_last_audit_log_timestamp > 300
+        for: 1m
+        labels:
+          severity: warning
+          service: audit
+        annotations:
+          summary: "No recent audit logs"
+          description: "No audit logs have been written in the last 5 minutes"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finops-grafana-dashboards
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  finops-overview.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "FinOps Cost Optimization Overview",
+        "tags": ["finops", "cost-optimization"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Monthly Cost Savings",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "finops_monthly_savings_dollars",
+                "legendFormat": "Savings ($)"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "currencyUSD",
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "yellow", "value": 500},
+                    {"color": "green", "value": 1000}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Optimization Actions (24h)",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "increase(finops_optimization_actions_total[24h])",
+                "legendFormat": "Actions"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Active Automation Policies",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "finops_active_policies_total",
+                "legendFormat": "Policies"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "API Response Time",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"finops-api\"}[5m]))",
+                "legendFormat": "95th percentile"
+              },
+              {
+                "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"finops-api\"}[5m]))",
+                "legendFormat": "50th percentile"
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "title": "Optimization Actions by Type",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum by (action_type) (finops_optimization_actions_total)",
+                "legendFormat": "{{ action_type }}"
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "title": "Safety Check Results",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "rate(finops_safety_checks_passed_total[5m])",
+                "legendFormat": "Passed"
+              },
+              {
+                "expr": "rate(finops_safety_checks_failed_total[5m])",
+                "legendFormat": "Failed"
+              }
+            ]
+          }
+        ],
+        "time": {
+          "from": "now-24h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: finops-api
+  namespace: monitoring
+  labels:
+    app: finops-api
+spec:
+  selector:
+    matchLabels:
+      app: finops-api
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: finops-worker
+  namespace: monitoring
+  labels:
+    app: finops-worker
+spec:
+  selector:
+    matchLabels:
+      app: finops-worker
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finops-api-metrics
+  namespace: finops-automation
+  labels:
+    app: finops-api
+spec:
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  selector:
+    app: finops-api
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finops-worker-metrics
+  namespace: finops-automation
+  labels:
+    app: finops-worker
+spec:
+  ports:
+  - port: 9540
+    targetPort: 9540
+    name: metrics
+  selector:
+    app: finops-worker

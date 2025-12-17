@@ -33,15 +33,17 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
   data,
   onChange,
 }) => {
+  const defaultValues = {
+    total_compute_cores: 4,
+    total_memory_gb: 16,
+    total_storage_tb: 1,
+    database_types: [],
+    data_volume_tb: 0.5,
+    peak_transaction_rate: 100,
+  };
+
   const { control, watch } = useForm({
-    defaultValues: data || {
-      total_compute_cores: 0,
-      total_memory_gb: 0,
-      total_storage_tb: 0,
-      database_types: [],
-      data_volume_tb: 0,
-      peak_transaction_rate: 0,
-    },
+    defaultValues: data || defaultValues,
   });
 
   const formData = watch();
@@ -49,6 +51,13 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
   useEffect(() => {
     onChange(formData);
   }, [formData, onChange]);
+
+  // Initialize with default values if no data provided
+  useEffect(() => {
+    if (!data) {
+      onChange(defaultValues);
+    }
+  }, [data, onChange]);
 
   return (
     <Box>

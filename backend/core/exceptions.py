@@ -494,3 +494,65 @@ class ConflictException(FinOpsException):
             details=details,
             **{k: v for k, v in kwargs.items() if k != 'details'}
         )
+
+
+class WebhookException(FinOpsException):
+    """
+    Exception for webhook system errors.
+    
+    Raised when there are issues with webhook delivery,
+    endpoint configuration, or event processing.
+    """
+    
+    def __init__(
+        self, 
+        message: str, 
+        endpoint_id: str = None,
+        event_type: str = None,
+        **kwargs
+    ):
+        details = kwargs.get('details', {})
+        if endpoint_id:
+            details['endpoint_id'] = endpoint_id
+        if event_type:
+            details['event_type'] = event_type
+            
+        super().__init__(
+            message=message,
+            error_code=kwargs.get('error_code', 'WEBHOOK_ERROR'),
+            details=details,
+            **{k: v for k, v in kwargs.items() if k not in ['details', 'error_code']}
+        )
+
+
+class WebhookDeliveryException(WebhookException):
+    """Exception for webhook delivery failures."""
+    
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message=message,
+            error_code='WEBHOOK_DELIVERY_ERROR',
+            **kwargs
+        )
+
+
+class WebhookConfigurationException(WebhookException):
+    """Exception for webhook configuration errors."""
+    
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message=message,
+            error_code='WEBHOOK_CONFIGURATION_ERROR',
+            **kwargs
+        )
+
+
+class WebhookSecurityException(WebhookException):
+    """Exception for webhook security validation errors."""
+    
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message=message,
+            error_code='WEBHOOK_SECURITY_ERROR',
+            **kwargs
+        )

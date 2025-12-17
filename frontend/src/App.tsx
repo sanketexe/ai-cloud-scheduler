@@ -24,6 +24,10 @@ import MigrationDashboard from './pages/MigrationDashboard';
 import ResourceOrganization from './pages/ResourceOrganization';
 import DimensionalFiltering from './pages/DimensionalFiltering';
 import MigrationReport from './pages/MigrationReport';
+import AWSCostAnalysis from './pages/AWSCostAnalysis';
+import AWSCostAlerts from './pages/AWSCostAlerts';
+import AutomationDashboard from './pages/AutomationDashboard';
+import AutomationSettings from './pages/AutomationSettings';
 
 // Theme
 const theme = createTheme({
@@ -137,6 +141,30 @@ function App() {
                 </Box>
               } />
               
+              <Route path="/aws-cost-analysis" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <AWSCostAnalysis />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+              
+              <Route path="/aws-cost-alerts" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <AWSCostAlerts />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+              
               <Route path="/budgets" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -156,6 +184,30 @@ function App() {
                     <Header />
                     <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
                       <Optimization />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+              
+              <Route path="/automation" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <AutomationDashboard />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+              
+              <Route path="/automation/settings" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <AutomationSettings />
                     </Box>
                   </Box>
                 </Box>

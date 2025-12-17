@@ -66,6 +66,12 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning("Redis connection issues detected", **redis_health)
         
+        # Initialize webhook system
+        logger.info("Initializing webhook system")
+        from backend.core.webhook_integration import start_webhook_system
+        await start_webhook_system()
+        logger.info("Webhook system started successfully")
+        
         logger.info("FinOps Platform API started successfully")
         
     except Exception as e:
@@ -87,6 +93,14 @@ async def lifespan(app: FastAPI):
         logger.info("Redis connections closed")
     except Exception as e:
         logger.error("Error closing Redis connections", error=str(e))
+    
+    # Stop webhook system
+    try:
+        from backend.core.webhook_integration import stop_webhook_system
+        await stop_webhook_system()
+        logger.info("Webhook system stopped")
+    except Exception as e:
+        logger.error("Error stopping webhook system", error=str(e))
     
     logger.info("FinOps Platform API shutdown complete")
 
@@ -235,6 +249,10 @@ from backend.core.migration_advisor.migration_planning_endpoints import router a
 from backend.core.migration_advisor.resource_organization_endpoints import router as resource_org_router
 from backend.core.migration_advisor.dimensional_management_endpoints import router as dimensional_router
 from backend.core.migration_advisor.integration_endpoints import router as integration_router
+from backend.core.aws_cost_endpoints import router as aws_cost_router
+from backend.core.aws_cost_alerts_endpoints import router as aws_cost_alerts_router
+from backend.core.webhook_endpoints import router as webhook_router
+from backend.core.automation_endpoints import router as automation_router
 
 # Include routers
 app.include_router(auth_router, prefix="/api/v1")
@@ -250,6 +268,10 @@ app.include_router(planning_router, prefix="/api/v1")
 app.include_router(resource_org_router, prefix="/api/v1")
 app.include_router(dimensional_router, prefix="/api/v1")
 app.include_router(integration_router, prefix="/api/v1")
+app.include_router(aws_cost_router)
+app.include_router(aws_cost_alerts_router)
+app.include_router(webhook_router, prefix="/api/v1")
+app.include_router(automation_router)
 
 # Root endpoints
 @app.get("/")
