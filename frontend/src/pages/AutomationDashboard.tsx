@@ -33,7 +33,7 @@ import {
   Stop as StopIcon,
   Refresh as RefreshIcon,
   Settings as SettingsIcon,
-  Timeline as TimelineIcon,
+  Schedule as TimelineIcon,
   Security as SecurityIcon,
   Assessment as ReportIcon,
   CheckCircle as CheckIcon,

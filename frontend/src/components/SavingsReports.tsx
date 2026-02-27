@@ -31,7 +31,7 @@ import {
   Download as DownloadIcon,
   Refresh as RefreshIcon,
   Assessment as ReportIcon,
-  Timeline as TimelineIcon,
+  Schedule as TimelineIcon,
   PieChart as PieChartIcon,
   BarChart as BarChartIcon,
 } from '@mui/icons-material';

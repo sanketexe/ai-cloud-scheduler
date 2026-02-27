@@ -1,0 +1,606 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-services-ingress
+  namespace: finops-ai-services
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: ai-services-auth
+    nginx.ingress.kubernetes.io/auth-realm: "FinOps AI Services"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+spec:
+  tls:
+  - hosts:
+    - ai.finops.example.com
+    - predictive-scaling.finops.example.com
+    - nlp.finops.example.com
+    - orchestrator.finops.example.com
+    - monitoring.finops.example.com
+    secretName: ai-services-tls
+  rules:
+  - host: ai.finops.example.com
+    http:
+      paths:
+      - path: /predictive-scaling
+        pathType: Prefix
+        backend:
+          service:
+            name: predictive-scaling-engine
+            port:
+              number: 80
+      - path: /workload-intelligence
+        pathType: Prefix
+        backend:
+          service:
+            name: workload-intelligence-system
+            port:
+              number: 80
+      - path: /reinforcement-learning
+        pathType: Prefix
+        backend:
+          service:
+            name: reinforcement-learning-agent
+            port:
+              number: 80
+      - path: /natural-language
+        pathType: Prefix
+        backend:
+          service:
+            name: natural-language-interface
+            port:
+              number: 80
+      - path: /graph-neural-network
+        pathType: Prefix
+        backend:
+          service:
+            name: graph-neural-network-system
+            port:
+              number: 80
+      - path: /predictive-maintenance
+        pathType: Prefix
+        backend:
+          service:
+            name: predictive-maintenance-system
+            port:
+              number: 80
+      - path: /smart-contract-optimizer
+        pathType: Prefix
+        backend:
+          service:
+            name: smart-contract-optimizer
+            port:
+              number: 80
+      - path: /orchestrator
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-orchestrator
+            port:
+              number: 80
+  - host: predictive-scaling.finops.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: predictive-scaling-engine
+            port:
+              number: 80
+  - host: nlp.finops.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: natural-language-interface
+            port:
+              number: 80
+  - host: orchestrator.finops.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-orchestrator
+            port:
+              number: 80
+  - host: monitoring.finops.example.com
+    http:
+      paths:
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+      - path: /jaeger
+        pathType: Prefix
+        backend:
+          service:
+            name: jaeger-query
+            port:
+              number: 16686
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-services-auth
+  namespace: finops-ai-services
+type: Opaque
+data:
+  auth: YWRtaW46JGFwcjEkSDY1dnVhNzAkLnRiUzFLVDFUTGRtQUNOcjRIb2QvMQo=  # admin:admin (change in production)
+
+---
+# Network Policies for Security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-services-network-policy
+  namespace: finops-ai-services
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from nginx ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow ingress from prometheus for metrics scraping
+  - from:
+    - podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 9090
+  # Allow inter-service communication within namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: finops-ai-services
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9090
+  egress:
+  # Allow egress to DNS
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow egress to external APIs (cloud providers, etc.)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+  # Allow egress to database
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: finops-automation
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow egress to Redis
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: finops-automation
+    ports:
+    - protocol: TCP
+      port: 6379
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-services-monitoring-policy
+  namespace: finops-ai-services
+spec:
+  podSelector:
+    matchLabels:
+      component: monitoring
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from anywhere for monitoring dashboards
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 3000  # Grafana
+    - protocol: TCP
+      port: 9090  # Prometheus
+    - protocol: TCP
+      port: 16686 # Jaeger
+  egress:
+  # Allow egress to scrape metrics from AI services
+  - to:
+    - podSelector:
+        matchLabels:
+          component: ai-service
+    ports:
+    - protocol: TCP
+      port: 9090
+  # Allow egress to Kubernetes API for service discovery
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+  # Allow egress to DNS
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+
+---
+# Service Mesh Configuration (Istio)
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ai-services-virtual-service
+  namespace: finops-ai-services
+spec:
+  hosts:
+  - ai.finops.example.com
+  gateways:
+  - ai-services-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /predictive-scaling
+    route:
+    - destination:
+        host: predictive-scaling-engine
+        port:
+          number: 80
+    fault:
+      delay:
+        percentage:
+          value: 0.1
+        fixedDelay: 5s
+    retries:
+      attempts: 3
+      perTryTimeout: 30s
+  - match:
+    - uri:
+        prefix: /natural-language
+    route:
+    - destination:
+        host: natural-language-interface
+        port:
+          number: 80
+    timeout: 30s
+    retries:
+      attempts: 2
+      perTryTimeout: 15s
+  - match:
+    - uri:
+        prefix: /orchestrator
+    route:
+    - destination:
+        host: ai-orchestrator
+        port:
+          number: 80
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: ai-services-gateway
+  namespace: finops-ai-services
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: ai-services-tls
+    hosts:
+    - ai.finops.example.com
+    - predictive-scaling.finops.example.com
+    - nlp.finops.example.com
+    - orchestrator.finops.example.com
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - ai.finops.example.com
+    - predictive-scaling.finops.example.com
+    - nlp.finops.example.com
+    - orchestrator.finops.example.com
+    tls:
+      httpsRedirect: true
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ai-services-destination-rule
+  namespace: finops-ai-services
+spec:
+  host: "*.finops-ai-services.svc.cluster.local"
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+        consecutiveGatewayErrors: 5
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 50
+    circuitBreaker:
+      consecutiveErrors: 3
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  portLevelSettings:
+  - port:
+      number: 80
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 25
+        maxRequestsPerConnection: 5
+
+---
+# Load Balancer Service for External Access
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-services-load-balancer
+  namespace: finops-ai-services
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERTIFICATE_ID"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "300"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "Environment=production,Service=ai-services"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 8080
+    protocol: TCP
+    name: https
+  selector:
+    app: ai-orchestrator
+
+---
+# DNS Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-services-dns-config
+  namespace: finops-ai-services
+data:
+  dns-setup.sh: |
+    #!/bin/bash
+    # DNS setup script for AI services
+    
+    # Get load balancer external IP
+    EXTERNAL_IP=$(kubectl get service ai-services-load-balancer -n finops-ai-services -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+    
+    if [ -z "$EXTERNAL_IP" ]; then
+      echo "Error: Could not get external IP for load balancer"
+      exit 1
+    fi
+    
+    echo "Load balancer external endpoint: $EXTERNAL_IP"
+    
+    # Create Route53 records (if using AWS)
+    if command -v aws &> /dev/null; then
+      echo "Creating Route53 DNS records..."
+      
+      # Main AI services domain
+      aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [{
+          "Action": "UPSERT",
+          "ResourceRecordSet": {
+            "Name": "ai.finops.example.com",
+            "Type": "CNAME",
+            "TTL": 300,
+            "ResourceRecords": [{"Value": "'$EXTERNAL_IP'"}]
+          }
+        }]
+      }'
+      
+      # Predictive scaling subdomain
+      aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [{
+          "Action": "UPSERT",
+          "ResourceRecordSet": {
+            "Name": "predictive-scaling.finops.example.com",
+            "Type": "CNAME",
+            "TTL": 300,
+            "ResourceRecords": [{"Value": "'$EXTERNAL_IP'"}]
+          }
+        }]
+      }'
+      
+      # NLP subdomain
+      aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [{
+          "Action": "UPSERT",
+          "ResourceRecordSet": {
+            "Name": "nlp.finops.example.com",
+            "Type": "CNAME",
+            "TTL": 300,
+            "ResourceRecords": [{"Value": "'$EXTERNAL_IP'"}]
+          }
+        }]
+      }'
+      
+      # Orchestrator subdomain
+      aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [{
+          "Action": "UPSERT",
+          "ResourceRecordSet": {
+            "Name": "orchestrator.finops.example.com",
+            "Type": "CNAME",
+            "TTL": 300,
+            "ResourceRecords": [{"Value": "'$EXTERNAL_IP'"}]
+          }
+        }]
+      }'
+      
+      # Monitoring subdomain
+      aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [{
+          "Action": "UPSERT",
+          "ResourceRecordSet": {
+            "Name": "monitoring.finops.example.com",
+            "Type": "CNAME",
+            "TTL": 300,
+            "ResourceRecords": [{"Value": "'$EXTERNAL_IP'"}]
+          }
+        }]
+      }'
+      
+      echo "DNS records created successfully"
+    else
+      echo "AWS CLI not found. Please create DNS records manually:"
+      echo "ai.finops.example.com -> $EXTERNAL_IP"
+      echo "predictive-scaling.finops.example.com -> $EXTERNAL_IP"
+      echo "nlp.finops.example.com -> $EXTERNAL_IP"
+      echo "orchestrator.finops.example.com -> $EXTERNAL_IP"
+      echo "monitoring.finops.example.com -> $EXTERNAL_IP"
+    fi
+
+---
+# Certificate Management
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ai-services-tls
+  namespace: finops-ai-services
+spec:
+  secretName: ai-services-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - ai.finops.example.com
+  - predictive-scaling.finops.example.com
+  - nlp.finops.example.com
+  - orchestrator.finops.example.com
+  - monitoring.finops.example.com
+
+---
+# Rate Limiting Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rate-limiting-config
+  namespace: finops-ai-services
+data:
+  nginx.conf: |
+    # Rate limiting zones
+    limit_req_zone $binary_remote_addr zone=ai_services:10m rate=100r/m;
+    limit_req_zone $binary_remote_addr zone=nlp_queries:10m rate=60r/m;
+    limit_req_zone $binary_remote_addr zone=model_inference:10m rate=200r/m;
+    
+    # Connection limiting
+    limit_conn_zone $binary_remote_addr zone=ai_connections:10m;
+    
+    server {
+        listen 80;
+        server_name ai.finops.example.com;
+        
+        # Apply rate limiting
+        limit_req zone=ai_services burst=20 nodelay;
+        limit_conn ai_connections 10;
+        
+        # Security headers
+        add_header X-Frame-Options DENY;
+        add_header X-Content-Type-Options nosniff;
+        add_header X-XSS-Protection "1; mode=block";
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+        
+        # NLP endpoint with stricter rate limiting
+        location /natural-language {
+            limit_req zone=nlp_queries burst=10 nodelay;
+            proxy_pass http://natural-language-interface;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_timeout 30s;
+        }
+        
+        # Model inference endpoints
+        location ~ ^/(predictive-scaling|workload-intelligence|graph-neural-network) {
+            limit_req zone=model_inference burst=50 nodelay;
+            proxy_pass http://upstream;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_timeout 60s;
+        }
+        
+        # Default location
+        location / {
+            proxy_pass http://ai-orchestrator;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }

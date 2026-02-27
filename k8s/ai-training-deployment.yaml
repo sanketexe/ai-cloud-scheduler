@@ -1,0 +1,603 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-training
+  labels:
+    name: ai-training
+    environment: production
+    app: finops-ai-training
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-training-config
+  namespace: ai-training
+data:
+  # MLflow Configuration
+  MLFLOW_TRACKING_URI: "http://mlflow-server:5000"
+  MLFLOW_EXPERIMENT_NAME: "finops_ai_models"
+  MLFLOW_ARTIFACT_ROOT: "s3://finops-mlflow-artifacts"
+  
+  # Kubeflow Configuration
+  KUBEFLOW_HOST: "http://kubeflow-pipelines:8888"
+  KUBEFLOW_NAMESPACE: "kubeflow"
+  
+  # Training Configuration
+  DEFAULT_TRAINING_IMAGE: "finops/ai-training:latest"
+  MODEL_REGISTRY_PATH: "/models"
+  TRAINING_DATA_PATH: "/data"
+  
+  # Deployment Configuration
+  CANARY_TRAFFIC_PERCENTAGE: "10"
+  CANARY_DURATION_HOURS: "24"
+  ROLLBACK_THRESHOLD_ACCURACY: "0.85"
+  
+  # Monitoring Configuration
+  DRIFT_DETECTION_ENABLED: "true"
+  DRIFT_CHECK_INTERVAL_HOURS: "6"
+  PERFORMANCE_MONITORING_ENABLED: "true"
+  AUTO_ROLLBACK_ENABLED: "true"
+  
+  # Resource Configuration
+  TRAINING_CPU_REQUEST: "2000m"
+  TRAINING_MEMORY_REQUEST: "4Gi"
+  TRAINING_CPU_LIMIT: "8000m"
+  TRAINING_MEMORY_LIMIT: "16Gi"
+  
+  # GPU Configuration (if available)
+  GPU_ENABLED: "false"
+  GPU_TYPE: "nvidia.com/gpu"
+  GPU_COUNT: "1"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-training-secrets
+  namespace: ai-training
+type: Opaque
+stringData:
+  # MLflow Secrets
+  MLFLOW_S3_ENDPOINT_URL: ""
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  
+  # Database Secrets
+  DATABASE_URL: "postgresql://finops:CHANGE_ME@postgres-service:5432/finops_db"
+  
+  # Model Registry Secrets
+  MODEL_REGISTRY_TOKEN: "CHANGE_ME_IN_PRODUCTION"
+  
+  # Notification Secrets
+  SLACK_WEBHOOK_URL: ""
+  EMAIL_SMTP_PASSWORD: ""
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-models-pvc
+  namespace: ai-training
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: efs-sc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-training-data-pvc
+  namespace: ai-training
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: efs-sc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-server
+  namespace: ai-training
+  labels:
+    app: mlflow-server
+    component: tracking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-server
+  template:
+    metadata:
+      labels:
+        app: mlflow-server
+        component: tracking
+    spec:
+      containers:
+      - name: mlflow-server
+        image: python:3.9-slim
+        command:
+        - /bin/bash
+        - -c
+        - |
+          pip install mlflow[extras] boto3 psycopg2-binary
+          mlflow server \
+            --backend-store-uri postgresql://finops:${DATABASE_PASSWORD}@postgres-service:5432/mlflow_db \
+            --default-artifact-root s3://finops-mlflow-artifacts \
+            --host 0.0.0.0 \
+            --port 5000
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-training-secrets
+              key: DATABASE_PASSWORD
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: ai-training-secrets
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-training-secrets
+              key: AWS_SECRET_ACCESS_KEY
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-server
+  namespace: ai-training
+spec:
+  selector:
+    app: mlflow-server
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: http
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-training-controller
+  namespace: ai-training
+  labels:
+    app: ai-training-controller
+    component: controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-training-controller
+  template:
+    metadata:
+      labels:
+        app: ai-training-controller
+        component: controller
+    spec:
+      serviceAccountName: ai-training-service-account
+      containers:
+      - name: controller
+        image: finops/ai-training-controller:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: MLFLOW_TRACKING_URI
+          valueFrom:
+            configMapKeyRef:
+              name: ai-training-config
+              key: MLFLOW_TRACKING_URI
+        - name: KUBEFLOW_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ai-training-config
+              key: KUBEFLOW_HOST
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ai-training-secrets
+              key: DATABASE_URL
+        - name: MODEL_REGISTRY_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: ai-training-config
+              key: MODEL_REGISTRY_PATH
+        - name: DRIFT_DETECTION_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-training-config
+              key: DRIFT_DETECTION_ENABLED
+        - name: AUTO_ROLLBACK_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-training-config
+              key: AUTO_ROLLBACK_ENABLED
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: training-data
+          mountPath: /data
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: training-data
+        persistentVolumeClaim:
+          claimName: ai-training-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-training-controller
+  namespace: ai-training
+spec:
+  selector:
+    app: ai-training-controller
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: drift-detection-job
+  namespace: ai-training
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: ai-training-service-account
+          containers:
+          - name: drift-detector
+            image: finops/ai-drift-detector:latest
+            env:
+            - name: MLFLOW_TRACKING_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-training-config
+                  key: MLFLOW_TRACKING_URI
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-training-secrets
+                  key: DATABASE_URL
+            - name: DRIFT_CHECK_INTERVAL_HOURS
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-training-config
+                  key: DRIFT_CHECK_INTERVAL_HOURS
+            resources:
+              requests:
+                memory: "1Gi"
+                cpu: "500m"
+              limits:
+                memory: "2Gi"
+                cpu: "1000m"
+            volumeMounts:
+            - name: models-storage
+              mountPath: /models
+            - name: training-data
+              mountPath: /data
+          volumes:
+          - name: models-storage
+            persistentVolumeClaim:
+              claimName: ai-models-pvc
+          - name: training-data
+            persistentVolumeClaim:
+              claimName: ai-training-data-pvc
+          restartPolicy: OnFailure
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-training-service-account
+  namespace: ai-training
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/FinOpsAITrainingRole
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ai-training-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["virtualservices", "destinationrules"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["argoproj.io"]
+  resources: ["workflows", "workflowtemplates"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ai-training-cluster-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ai-training-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: ai-training-service-account
+  namespace: ai-training
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-training-ingress
+  namespace: ai-training
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: ai-training-auth
+    nginx.ingress.kubernetes.io/auth-realm: "AI Training Dashboard"
+spec:
+  tls:
+  - hosts:
+    - mlflow.finops.example.com
+    - ai-training.finops.example.com
+    secretName: ai-training-tls
+  rules:
+  - host: mlflow.finops.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mlflow-server
+            port:
+              number: 5000
+  - host: ai-training.finops.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-training-controller
+            port:
+              number: 80
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-training-auth
+  namespace: ai-training
+type: Opaque
+data:
+  auth: YWRtaW46JGFwcjEkSDY1dnVhNzAkLnRiUzFLVDFUTGRtQUNOcjRIb2QvMQo=  # admin:admin (change in production)
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ai-training-metrics
+  namespace: ai-training
+  labels:
+    app: ai-training
+spec:
+  selector:
+    matchLabels:
+      app: ai-training-controller
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-ai-training-rules
+  namespace: ai-training
+data:
+  ai-training.rules: |
+    groups:
+    - name: ai-training.rules
+      rules:
+      - alert: ModelDriftDetected
+        expr: ai_model_drift_score > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model drift detected for {{ $labels.model_id }}"
+          description: "Model {{ $labels.model_id }} has drift score {{ $value }}"
+      
+      - alert: ModelPerformanceDegraded
+        expr: ai_model_accuracy < 0.8
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model performance degraded for {{ $labels.model_id }}"
+          description: "Model {{ $labels.model_id }} accuracy dropped to {{ $value }}"
+      
+      - alert: CanaryDeploymentFailed
+        expr: ai_canary_deployment_status == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Canary deployment failed for {{ $labels.model_id }}"
+          description: "Canary deployment for model {{ $labels.model_id }} has failed"
+      
+      - alert: TrainingPipelineFailed
+        expr: ai_training_pipeline_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI training pipeline failed"
+          description: "Training pipeline {{ $labels.pipeline_id }} has failed"
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ai-model-traffic-split
+  namespace: ai-training
+spec:
+  hosts:
+  - ai-model-service
+  http:
+  - match:
+    - headers:
+        canary:
+          exact: "true"
+    route:
+    - destination:
+        host: ai-model-service
+        subset: canary
+  - route:
+    - destination:
+        host: ai-model-service
+        subset: stable
+      weight: 90
+    - destination:
+        host: ai-model-service
+        subset: canary
+      weight: 10
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: ai-model-destination
+  namespace: ai-training
+spec:
+  host: ai-model-service
+  subsets:
+  - name: stable
+    labels:
+      version: stable
+  - name: canary
+    labels:
+      version: canary
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+    circuitBreaker:
+      consecutiveErrors: 3
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-training-controller-hpa
+  namespace: ai-training
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-training-controller
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30

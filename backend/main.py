@@ -242,6 +242,7 @@ from backend.core.cloud_endpoints import cloud_router
 from backend.core.cache_health_endpoints import router as cache_health_router
 from backend.core.health_endpoints import router as health_router
 from backend.core.ai_assistant_endpoints import router as ai_assistant_router
+from backend.core.natural_language_endpoints import router as nlp_router
 from backend.core.migration_advisor.assessment_endpoints import router as assessment_router
 from backend.core.migration_advisor.requirements_endpoints import router as requirements_router
 from backend.core.migration_advisor.recommendation_endpoints import router as recommendation_router
@@ -249,10 +250,25 @@ from backend.core.migration_advisor.migration_planning_endpoints import router a
 from backend.core.migration_advisor.resource_organization_endpoints import router as resource_org_router
 from backend.core.migration_advisor.dimensional_management_endpoints import router as dimensional_router
 from backend.core.migration_advisor.integration_endpoints import router as integration_router
+from backend.core.migration_advisor.report_endpoints import router as report_router
 from backend.core.aws_cost_endpoints import router as aws_cost_router
 from backend.core.aws_cost_alerts_endpoints import router as aws_cost_alerts_router
 from backend.core.webhook_endpoints import router as webhook_router
 from backend.core.automation_endpoints import router as automation_router
+from backend.api.anomaly_detection import router as anomaly_detection_router
+from backend.api.multi_cloud import router as multi_cloud_router
+from backend.core.graph_neural_network_endpoints import router as gnn_router
+from backend.core.ml_model_management_endpoints import router as ml_model_router
+from backend.core.ai_orchestrator_endpoints import router as ai_orchestrator_router
+from backend.core.ai_ml_services_endpoints import router as ai_ml_services_router
+from backend.core.rl_optimization_endpoints import router as rl_optimization_router
+from backend.core.smart_contract_optimizer_endpoints import router as smart_contract_router
+from backend.core.ai_services_documentation import router as ai_services_docs_router
+from backend.core.ai_system_monitoring_endpoints import router as ai_monitoring_router
+from backend.core.collaboration_endpoints import router as collaboration_router
+from backend.core.communication_endpoints import router as communication_router
+from backend.core.video_endpoints import router as video_router
+from backend.api.onboarding import router as onboarding_router
 
 # Include routers
 app.include_router(auth_router, prefix="/api/v1")
@@ -261,6 +277,7 @@ app.include_router(cloud_router, prefix="/api/v1")
 app.include_router(cache_health_router, prefix="/api/v1")
 app.include_router(health_router)
 app.include_router(ai_assistant_router, prefix="/api/v1")
+app.include_router(nlp_router)
 app.include_router(assessment_router, prefix="/api/v1")
 app.include_router(requirements_router, prefix="/api/v1")
 app.include_router(recommendation_router, prefix="/api/v1")
@@ -268,10 +285,25 @@ app.include_router(planning_router, prefix="/api/v1")
 app.include_router(resource_org_router, prefix="/api/v1")
 app.include_router(dimensional_router, prefix="/api/v1")
 app.include_router(integration_router, prefix="/api/v1")
+app.include_router(report_router, prefix="/api/v1")
 app.include_router(aws_cost_router)
 app.include_router(aws_cost_alerts_router)
 app.include_router(webhook_router, prefix="/api/v1")
 app.include_router(automation_router)
+app.include_router(anomaly_detection_router)
+app.include_router(multi_cloud_router, prefix="/api/v1")
+app.include_router(gnn_router)
+app.include_router(ml_model_router)
+app.include_router(ai_orchestrator_router)
+app.include_router(ai_ml_services_router)
+app.include_router(rl_optimization_router)
+app.include_router(smart_contract_router)
+app.include_router(ai_services_docs_router)
+app.include_router(ai_monitoring_router, prefix="/api/v1")
+app.include_router(collaboration_router, prefix="/api/v1")
+app.include_router(communication_router, prefix="/api/v1")
+app.include_router(video_router, prefix="/api/v1")
+app.include_router(onboarding_router, prefix="/api/v1")
 
 # Root endpoints
 @app.get("/")

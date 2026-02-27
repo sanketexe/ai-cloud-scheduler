@@ -1,0 +1,652 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: disaster-recovery-config
+  namespace: finops-ai-services
+data:
+  # Disaster Recovery Configuration
+  DR_ENABLED: "true"
+  DR_BACKUP_INTERVAL: "3600"  # 1 hour
+  DR_BACKUP_RETENTION_DAYS: "30"
+  DR_FAILOVER_TIMEOUT: "300"  # 5 minutes
+  DR_HEALTH_CHECK_INTERVAL: "60"  # 1 minute
+  DR_CROSS_REGION_REPLICATION: "true"
+  
+  # Backup Configuration
+  BACKUP_ENABLED: "true"
+  BACKUP_SCHEDULE: "0 */6 * * *"  # Every 6 hours
+  BACKUP_STORAGE_CLASS: "efs-sc"
+  BACKUP_ENCRYPTION_ENABLED: "true"
+  BACKUP_COMPRESSION_ENABLED: "true"
+  
+  # Model Backup Configuration
+  MODEL_BACKUP_ENABLED: "true"
+  MODEL_BACKUP_INTERVAL: "7200"  # 2 hours
+  MODEL_VERSIONING_ENABLED: "true"
+  MODEL_BACKUP_RETENTION_VERSIONS: "10"
+  
+  # Database Backup Configuration
+  DB_BACKUP_ENABLED: "true"
+  DB_BACKUP_SCHEDULE: "0 2 * * *"  # Daily at 2 AM
+  DB_BACKUP_RETENTION_DAYS: "30"
+  DB_POINT_IN_TIME_RECOVERY: "true"
+  
+  # Cross-Region Configuration
+  PRIMARY_REGION: "us-east-1"
+  SECONDARY_REGION: "us-west-2"
+  CROSS_REGION_SYNC_INTERVAL: "1800"  # 30 minutes
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ai-models-backup
+  namespace: finops-ai-services
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ai-models-backup
+            component: backup
+        spec:
+          serviceAccountName: ai-services-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: backup-models
+            image: finops/backup-manager:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting AI models backup at $(date)"
+              
+              # Create backup directory with timestamp
+              BACKUP_DIR="/backup/models/$(date +%Y%m%d_%H%M%S)"
+              mkdir -p "$BACKUP_DIR"
+              
+              # Backup ML models
+              echo "Backing up ML models..."
+              rsync -av --progress /models/ "$BACKUP_DIR/models/"
+              
+              # Backup model registry metadata
+              echo "Backing up model registry..."
+              pg_dump "$DATABASE_URL" -t model_registry > "$BACKUP_DIR/model_registry.sql"
+              
+              # Create backup manifest
+              cat > "$BACKUP_DIR/manifest.json" << EOF
+              {
+                "backup_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                "backup_type": "models",
+                "model_count": $(find /models -name "*.pkl" -o -name "*.pt" -o -name "*.h5" | wc -l),
+                "total_size_mb": $(du -sm "$BACKUP_DIR" | cut -f1),
+                "retention_days": $DR_BACKUP_RETENTION_DAYS
+              }
+              EOF
+              
+              # Compress backup
+              if [ "$BACKUP_COMPRESSION_ENABLED" = "true" ]; then
+                echo "Compressing backup..."
+                tar -czf "$BACKUP_DIR.tar.gz" -C "$(dirname "$BACKUP_DIR")" "$(basename "$BACKUP_DIR")"
+                rm -rf "$BACKUP_DIR"
+              fi
+              
+              # Sync to secondary region if enabled
+              if [ "$DR_CROSS_REGION_REPLICATION" = "true" ]; then
+                echo "Syncing to secondary region..."
+                aws s3 sync /backup/models/ s3://finops-ai-backup-$SECONDARY_REGION/models/ --region $SECONDARY_REGION
+              fi
+              
+              # Clean up old backups
+              find /backup/models -type f -name "*.tar.gz" -mtime +$DR_BACKUP_RETENTION_DAYS -delete
+              
+              echo "AI models backup completed successfully at $(date)"
+            env:
+            - name: DATABASE_URL
+              value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+            - name: DR_BACKUP_RETENTION_DAYS
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: DR_BACKUP_RETENTION_DAYS
+            - name: DR_CROSS_REGION_REPLICATION
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: DR_CROSS_REGION_REPLICATION
+            - name: SECONDARY_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: SECONDARY_REGION
+            - name: BACKUP_COMPRESSION_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: BACKUP_COMPRESSION_ENABLED
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: DATABASE_PASSWORD
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            volumeMounts:
+            - name: models-storage
+              mountPath: /models
+            - name: backup-storage
+              mountPath: /backup
+            resources:
+              requests:
+                memory: "1Gi"
+                cpu: "500m"
+              limits:
+                memory: "2Gi"
+                cpu: "1000m"
+          volumes:
+          - name: models-storage
+            persistentVolumeClaim:
+              claimName: ai-models-pvc
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: ai-backup-pvc
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ai-database-backup
+  namespace: finops-ai-services
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ai-database-backup
+            component: backup
+        spec:
+          serviceAccountName: ai-services-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: backup-database
+            image: postgres:15
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting AI database backup at $(date)"
+              
+              # Create backup directory with timestamp
+              BACKUP_DIR="/backup/database/$(date +%Y%m%d_%H%M%S)"
+              mkdir -p "$BACKUP_DIR"
+              
+              # Full database backup
+              echo "Creating full database backup..."
+              pg_dump "$DATABASE_URL" > "$BACKUP_DIR/full_backup.sql"
+              
+              # Schema-only backup
+              echo "Creating schema backup..."
+              pg_dump "$DATABASE_URL" --schema-only > "$BACKUP_DIR/schema_backup.sql"
+              
+              # Data-only backup
+              echo "Creating data backup..."
+              pg_dump "$DATABASE_URL" --data-only > "$BACKUP_DIR/data_backup.sql"
+              
+              # AI-specific tables backup
+              echo "Creating AI tables backup..."
+              pg_dump "$DATABASE_URL" \
+                -t ai_models \
+                -t ai_experiments \
+                -t ai_training_runs \
+                -t ai_predictions \
+                -t ai_metrics \
+                > "$BACKUP_DIR/ai_tables_backup.sql"
+              
+              # Create backup manifest
+              cat > "$BACKUP_DIR/manifest.json" << EOF
+              {
+                "backup_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                "backup_type": "database",
+                "database_name": "$DATABASE_NAME",
+                "backup_size_mb": $(du -sm "$BACKUP_DIR" | cut -f1),
+                "retention_days": $DB_BACKUP_RETENTION_DAYS,
+                "point_in_time_recovery": $DB_POINT_IN_TIME_RECOVERY
+              }
+              EOF
+              
+              # Compress backup
+              echo "Compressing database backup..."
+              tar -czf "$BACKUP_DIR.tar.gz" -C "$(dirname "$BACKUP_DIR")" "$(basename "$BACKUP_DIR")"
+              rm -rf "$BACKUP_DIR"
+              
+              # Sync to secondary region if enabled
+              if [ "$DR_CROSS_REGION_REPLICATION" = "true" ]; then
+                echo "Syncing to secondary region..."
+                aws s3 sync /backup/database/ s3://finops-ai-backup-$SECONDARY_REGION/database/ --region $SECONDARY_REGION
+              fi
+              
+              # Clean up old backups
+              find /backup/database -type f -name "*.tar.gz" -mtime +$DB_BACKUP_RETENTION_DAYS -delete
+              
+              echo "AI database backup completed successfully at $(date)"
+            env:
+            - name: DATABASE_URL
+              value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: ai-services-config
+                  key: DATABASE_NAME
+            - name: DB_BACKUP_RETENTION_DAYS
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: DB_BACKUP_RETENTION_DAYS
+            - name: DB_POINT_IN_TIME_RECOVERY
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: DB_POINT_IN_TIME_RECOVERY
+            - name: DR_CROSS_REGION_REPLICATION
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: DR_CROSS_REGION_REPLICATION
+            - name: SECONDARY_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: disaster-recovery-config
+                  key: SECONDARY_REGION
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: DATABASE_PASSWORD
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-services-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+            resources:
+              requests:
+                memory: "1Gi"
+                cpu: "500m"
+              limits:
+                memory: "2Gi"
+                cpu: "1000m"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: disaster-recovery-controller
+  namespace: finops-ai-services
+  labels:
+    app: disaster-recovery-controller
+    component: disaster-recovery
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: disaster-recovery-controller
+  template:
+    metadata:
+      labels:
+        app: disaster-recovery-controller
+        component: disaster-recovery
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: disaster-recovery-controller
+        image: finops/disaster-recovery-controller:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Starting Disaster Recovery Controller..."
+          
+          # Health check function
+          health_check() {
+            local service=$1
+            local endpoint=$2
+            local timeout=${3:-5}
+            
+            if curl -f -m $timeout "$endpoint/health" > /dev/null 2>&1; then
+              echo "✓ $service is healthy"
+              return 0
+            else
+              echo "✗ $service is unhealthy"
+              return 1
+            fi
+          }
+          
+          # Failover function
+          failover_service() {
+            local service=$1
+            echo "Initiating failover for $service..."
+            
+            # Scale down primary
+            kubectl scale deployment $service --replicas=0 -n finops-ai-services
+            
+            # Wait for pods to terminate
+            kubectl wait --for=delete pod -l app=$service -n finops-ai-services --timeout=300s
+            
+            # Scale up with new configuration
+            kubectl scale deployment $service --replicas=2 -n finops-ai-services
+            
+            # Wait for pods to be ready
+            kubectl wait --for=condition=ready pod -l app=$service -n finops-ai-services --timeout=300s
+            
+            echo "Failover completed for $service"
+          }
+          
+          # Main monitoring loop
+          while true; do
+            echo "Running disaster recovery health checks at $(date)"
+            
+            # Check critical AI services
+            services=(
+              "predictive-scaling-engine:http://predictive-scaling-engine"
+              "natural-language-interface:http://natural-language-interface"
+              "ai-orchestrator:http://ai-orchestrator"
+            )
+            
+            for service_info in "${services[@]}"; do
+              IFS=':' read -r service endpoint <<< "$service_info"
+              
+              if ! health_check "$service" "$endpoint" 10; then
+                echo "Service $service failed health check, initiating recovery..."
+                
+                # Attempt restart first
+                kubectl rollout restart deployment/$service -n finops-ai-services
+                
+                # Wait for rollout to complete
+                kubectl rollout status deployment/$service -n finops-ai-services --timeout=300s
+                
+                # If still unhealthy, trigger failover
+                sleep 30
+                if ! health_check "$service" "$endpoint" 10; then
+                  failover_service "$service"
+                fi
+              fi
+            done
+            
+            # Check backup status
+            if [ "$BACKUP_ENABLED" = "true" ]; then
+              last_backup=$(find /backup -name "*.tar.gz" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
+              if [ -n "$last_backup" ]; then
+                backup_age=$(( $(date +%s) - $(stat -c %Y "$last_backup") ))
+                if [ $backup_age -gt 28800 ]; then  # 8 hours
+                  echo "WARNING: Last backup is older than 8 hours"
+                fi
+              fi
+            fi
+            
+            sleep $DR_HEALTH_CHECK_INTERVAL
+          done
+        env:
+        - name: DR_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: disaster-recovery-config
+              key: DR_ENABLED
+        - name: DR_HEALTH_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: disaster-recovery-config
+              key: DR_HEALTH_CHECK_INTERVAL
+        - name: DR_FAILOVER_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: disaster-recovery-config
+              key: DR_FAILOVER_TIMEOUT
+        - name: BACKUP_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: disaster-recovery-config
+              key: BACKUP_ENABLED
+        volumeMounts:
+        - name: backup-storage
+          mountPath: /backup
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: disaster-recovery-controller
+  namespace: finops-ai-services
+  labels:
+    app: disaster-recovery-controller
+spec:
+  selector:
+    app: disaster-recovery-controller
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+# Backup Restore Job Template
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ai-backup-restore-template
+  namespace: finops-ai-services
+spec:
+  template:
+    metadata:
+      labels:
+        app: ai-backup-restore
+        component: restore
+    spec:
+      serviceAccountName: ai-services-service-account
+      restartPolicy: Never
+      containers:
+      - name: restore-backup
+        image: finops/backup-manager:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Starting AI backup restore at $(date)"
+          
+          # Restore models
+          if [ -n "$RESTORE_MODELS_BACKUP" ]; then
+            echo "Restoring models from $RESTORE_MODELS_BACKUP..."
+            tar -xzf "/backup/models/$RESTORE_MODELS_BACKUP" -C /tmp/
+            rsync -av /tmp/models/ /models/
+          fi
+          
+          # Restore database
+          if [ -n "$RESTORE_DATABASE_BACKUP" ]; then
+            echo "Restoring database from $RESTORE_DATABASE_BACKUP..."
+            tar -xzf "/backup/database/$RESTORE_DATABASE_BACKUP" -C /tmp/
+            psql "$DATABASE_URL" < /tmp/full_backup.sql
+          fi
+          
+          echo "AI backup restore completed successfully at $(date)"
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: RESTORE_MODELS_BACKUP
+          value: ""  # Set this when creating the job
+        - name: RESTORE_DATABASE_BACKUP
+          value: ""  # Set this when creating the job
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: backup-storage
+          mountPath: /backup
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+# Disaster Recovery Monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: disaster-recovery-metrics
+  namespace: finops-ai-services
+  labels:
+    app: disaster-recovery-controller
+spec:
+  selector:
+    matchLabels:
+      app: disaster-recovery-controller
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: disaster-recovery-alerts
+  namespace: finops-ai-services
+spec:
+  groups:
+  - name: disaster-recovery.rules
+    rules:
+    - alert: BackupJobFailed
+      expr: kube_job_status_failed{job_name=~"ai-.*-backup"} > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "AI backup job failed"
+        description: "Backup job {{ $labels.job_name }} has failed."
+    
+    - alert: BackupTooOld
+      expr: (time() - ai_last_backup_timestamp) > 28800  # 8 hours
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "AI backup is too old"
+        description: "Last successful backup was more than 8 hours ago."
+    
+    - alert: DisasterRecoveryControllerDown
+      expr: up{job="disaster-recovery-controller"} == 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Disaster recovery controller is down"
+        description: "The disaster recovery controller has been down for more than 2 minutes."
+    
+    - alert: CrossRegionSyncFailed
+      expr: ai_cross_region_sync_status == 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Cross-region sync failed"
+        description: "Cross-region backup synchronization has failed."

@@ -24,6 +24,10 @@ import {
   Cloud as CloudIcon,
   NotificationsActive as NotificationsActiveIcon,
   AutoMode as AutomationIcon,
+  Psychology as AnomalyIcon,
+  CompareArrows as MultiCloudIcon,
+  FlightTakeoff as MigrationIcon,
+  SmartToy as AIIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 280;
@@ -31,11 +35,15 @@ const drawerWidth = 280;
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Cost Analysis', icon: <TrendingUpIcon />, path: '/cost-analysis' },
+  { text: 'Multi-Cloud Comparison', icon: <MultiCloudIcon />, path: '/multi-cloud' },
+  { text: 'Migration Planner', icon: <MigrationIcon />, path: '/migration-planner' },
+  { text: 'AI Dashboard', icon: <AIIcon />, path: '/ai-dashboard' },
   { text: 'AWS Cost Analysis', icon: <CloudIcon />, path: '/aws-cost-analysis' },
   { text: 'AWS Cost Alerts', icon: <NotificationsActiveIcon />, path: '/aws-cost-alerts' },
   { text: 'Budget Management', icon: <BudgetIcon />, path: '/budgets' },
   { text: 'Optimization', icon: <OptimizationIcon />, path: '/optimization' },
   { text: 'Automation', icon: <AutomationIcon />, path: '/automation' },
+  { text: 'AI Anomaly Detection', icon: <AnomalyIcon />, path: '/anomaly-detection' },
   { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
   { text: 'Alerts', icon: <AlertsIcon />, path: '/alerts' },
   { text: 'Compliance', icon: <ComplianceIcon />, path: '/compliance' },

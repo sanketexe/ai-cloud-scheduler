@@ -16,6 +16,26 @@ import {
   Stack,
   Tooltip,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  Checkbox,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -25,6 +45,8 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import TuneIcon from '@mui/icons-material/Tune';
 import InfoIcon from '@mui/icons-material/Info';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import HistoryIcon from '@mui/icons-material/History';
+import EditIcon from '@mui/icons-material/Edit';
 import { migrationApi, ProviderRecommendation } from '../services/migrationApi';
 
 const ProviderRecommendations: React.FC = () => {
@@ -36,6 +58,14 @@ const ProviderRecommendations: React.FC = () => {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showWeightAdjustment, setShowWeightAdjustment] = useState(false);
+  const [showExportOptions, setShowExportOptions] = useState(false);
+  const [assessmentData, setAssessmentData] = useState<any>(null);
+  const [recommendationMetadata, setRecommendationMetadata] = useState<any>(null);
+  const [showScenarioManager, setShowScenarioManager] = useState(false);
+  const [scenarioHistory, setScenarioHistory] = useState<any[]>([]);
+  const [selectedScenarios, setSelectedScenarios] = useState<string[]>([]);
+  const [scenarioComparison, setScenarioComparison] = useState<any>(null);
+  const [showAssessmentModifier, setShowAssessmentModifier] = useState(false);
   const [weights, setWeights] = useState({
     service_weight: 0.25,
     cost_weight: 0.25,
@@ -46,7 +76,36 @@ const ProviderRecommendations: React.FC = () => {
 
   useEffect(() => {
     loadRecommendations();
+    loadAssessmentData();
   }, [projectId]);
+
+  const loadAssessmentData = async () => {
+    try {
+      // Load assessment data to show context and enable scenario comparison
+      const [orgData, workloadData, perfData, complianceData, budgetData, techData] = await Promise.allSettled([
+        migrationApi.getProject(projectId!).then(p => ({ organization: p })).catch(() => null),
+        // Note: These endpoints might not exist yet, but we'll handle gracefully
+        fetch(`/api/v1/api/migrations/${projectId}/assessment/organization`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/v1/api/migrations/${projectId}/workloads`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/v1/api/migrations/${projectId}/performance-requirements`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/v1/api/migrations/${projectId}/compliance-requirements`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/v1/api/migrations/${projectId}/budget-constraints`).then(r => r.ok ? r.json() : null).catch(() => null),
+      ]);
+      
+      const assessment = {
+        organization: orgData.status === 'fulfilled' ? orgData.value : null,
+        workload: workloadData.status === 'fulfilled' ? workloadData.value : null,
+        performance: perfData.status === 'fulfilled' ? perfData.value : null,
+        compliance: complianceData.status === 'fulfilled' ? complianceData.value : null,
+        budget: budgetData.status === 'fulfilled' ? budgetData.value : null,
+        technical: techData.status === 'fulfilled' ? techData.value : null,
+      };
+      
+      setAssessmentData(assessment);
+    } catch (error) {
+      console.error('Failed to load assessment data:', error);
+    }
+  };
 
   const loadRecommendations = async () => {
     setLoading(true);
@@ -70,18 +129,73 @@ const ProviderRecommendations: React.FC = () => {
   const generateRecommendations = async () => {
     setGenerating(true);
     try {
-      const data = await migrationApi.generateRecommendations(projectId!);
-      setRecommendations(data);
+      const response = await migrationApi.generateRecommendations(projectId!);
+      
+      // Handle both old and new response formats
+      if (Array.isArray(response)) {
+        setRecommendations(response);
+      } else if (response && typeof response === 'object' && 'recommendations' in response) {
+        setRecommendations((response as any).recommendations);
+        setRecommendationMetadata((response as any).metadata);
+      } else {
+        setRecommendations(response as ProviderRecommendation[]);
+      }
+      
       toast.success('Recommendations generated successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate recommendations', error);
-      toast.error('Failed to generate recommendations');
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.error?.message || 
+                          error.message || 
+                          'Failed to generate recommendations';
+      toast.error(errorMessage);
     } finally {
       setGenerating(false);
     }
   };
 
-  const handleWeightChange = async (newWeights: typeof weights) => {
+  const handleExportPDF = async () => {
+    try {
+      // Generate PDF export (this would typically call a backend service)
+      const exportData = {
+        projectId,
+        recommendations,
+        assessmentData,
+        metadata: recommendationMetadata,
+        exportDate: new Date().toISOString(),
+      };
+      
+      // For now, we'll create a downloadable JSON file
+      // In a real implementation, this would generate a PDF
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `migration-recommendations-${projectId}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      toast.success('Recommendations exported successfully');
+    } catch (error) {
+      console.error('Failed to export recommendations:', error);
+      toast.error('Failed to export recommendations');
+    }
+  };
+
+  const handleShareLink = async () => {
+    try {
+      const shareUrl = `${window.location.origin}/migration/${projectId}/recommendations`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Share link copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy share link:', error);
+      toast.error('Failed to copy share link');
+    }
+  };
+
+  const handleRegenerateWithNewWeights = async (newWeights: typeof weights) => {
     setWeights(newWeights);
     setLoading(true);
     try {
@@ -90,7 +204,8 @@ const ProviderRecommendations: React.FC = () => {
       toast.success('Recommendations updated with new weights');
     } catch (error) {
       console.error('Failed to update weights', error);
-      toast.error('Failed to update weights');
+      // Fallback: regenerate recommendations
+      await generateRecommendations();
     } finally {
       setLoading(false);
     }
@@ -114,6 +229,61 @@ const ProviderRecommendations: React.FC = () => {
       console.error('Failed to generate migration plan', error);
       toast.error('Failed to generate migration plan');
     }
+  };
+
+  // Scenario Management Functions
+  const loadScenarioHistory = async () => {
+    try {
+      const data = await migrationApi.getScenarioHistory(projectId!);
+      setScenarioHistory(data.scenarios);
+    } catch (error) {
+      console.error('Failed to load scenario history:', error);
+    }
+  };
+
+  const handleActivateScenario = async (scenarioId: string) => {
+    try {
+      await migrationApi.activateScenario(projectId!, scenarioId);
+      toast.success('Scenario activated successfully');
+      await loadRecommendations(); // Reload current recommendations
+      await loadScenarioHistory(); // Refresh scenario list
+    } catch (error) {
+      console.error('Failed to activate scenario:', error);
+      toast.error('Failed to activate scenario');
+    }
+  };
+
+  const handleCompareScenarios = async () => {
+    if (selectedScenarios.length < 2) {
+      toast.error('Please select at least 2 scenarios to compare');
+      return;
+    }
+
+    try {
+      const comparison = await migrationApi.compareScenarios(projectId!, selectedScenarios);
+      setScenarioComparison(comparison);
+    } catch (error) {
+      console.error('Failed to compare scenarios:', error);
+      toast.error('Failed to compare scenarios');
+    }
+  };
+
+  const handleModifyAssessment = async (modifications: any) => {
+    try {
+      const result = await migrationApi.modifyAssessmentAndRegenerate(projectId!, modifications);
+      setRecommendations(result.recommendations);
+      toast.success(`Assessment modified: ${result.modifications_applied.join(', ')}`);
+      await loadScenarioHistory(); // Refresh scenario list
+      setShowAssessmentModifier(false);
+    } catch (error) {
+      console.error('Failed to modify assessment:', error);
+      toast.error('Failed to modify assessment and regenerate recommendations');
+    }
+  };
+
+  const openScenarioManager = async () => {
+    await loadScenarioHistory();
+    setShowScenarioManager(true);
   };
 
   const getProviderLogo = (provider: string) => {
@@ -175,28 +345,126 @@ const ProviderRecommendations: React.FC = () => {
 
       {recommendations.length > 0 && (
         <>
-          <Box mb={3} display="flex" gap={2} justifyContent="flex-end">
-            <Button
-              variant="outlined"
-              startIcon={<TuneIcon />}
-              onClick={() => setShowWeightAdjustment(!showWeightAdjustment)}
-            >
-              Adjust Weights
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<CompareArrowsIcon />}
-              onClick={() => setShowComparison(true)}
-            >
-              Compare Providers
-            </Button>
+          <Box mb={3} display="flex" gap={2} justifyContent="space-between" alignItems="center">
+            <Box>
+              {recommendationMetadata && (
+                <Typography variant="body2" color="text.secondary">
+                  Generated {new Date(recommendationMetadata.generated_at).toLocaleString()} • 
+                  {recommendationMetadata.total_recommendations} providers analyzed
+                </Typography>
+              )}
+            </Box>
+            <Box display="flex" gap={1}>
+              <Button
+                variant="outlined"
+                startIcon={<TuneIcon />}
+                onClick={() => setShowWeightAdjustment(!showWeightAdjustment)}
+              >
+                Adjust Weights
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<CompareArrowsIcon />}
+                onClick={() => setShowComparison(true)}
+              >
+                Compare Providers
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={openScenarioManager}
+              >
+                Manage Scenarios
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => setShowAssessmentModifier(true)}
+              >
+                Modify Assessment
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => setShowExportOptions(!showExportOptions)}
+              >
+                Export & Share
+              </Button>
+            </Box>
           </Box>
+
+          {/* Constraint Violations Warning */}
+          {recommendations.some((rec: any) => rec.is_viable === false || (rec.constraint_violations && rec.constraint_violations > 0)) && (
+            <Alert severity="warning" sx={{ mb: 3 }}>
+              <Typography variant="body2">
+                <strong>Requirement Constraints Detected:</strong> Some providers may not fully meet your specified requirements. 
+                Providers marked as "Not Viable" have critical constraint violations, while others may have warnings that should be considered.
+                {recommendations.some((rec: any) => rec.is_viable === false) && (
+                  <span> Consider adjusting your requirements if no viable options meet your needs.</span>
+                )}
+              </Typography>
+            </Alert>
+          )}
+
+          {showExportOptions && (
+            <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.paper' }}>
+              <Box display="flex" gap={2} alignItems="center">
+                <Typography variant="subtitle2">Export Options:</Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleExportPDF}
+                >
+                  Download Report
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleShareLink}
+                >
+                  Copy Share Link
+                </Button>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={() => setShowExportOptions(false)}
+                >
+                  Close
+                </Button>
+              </Box>
+            </Paper>
+          )}
 
           {showWeightAdjustment && (
             <WeightAdjustmentPanel
               weights={weights}
-              onWeightsChange={handleWeightChange}
+              onWeightsChange={handleRegenerateWithNewWeights}
               onClose={() => setShowWeightAdjustment(false)}
+            />
+          )}
+
+          {showScenarioManager && (
+            <ScenarioManagerPanel
+              projectId={projectId!}
+              scenarioHistory={scenarioHistory}
+              onClose={() => setShowScenarioManager(false)}
+              onActivateScenario={handleActivateScenario}
+              onCompareScenarios={handleCompareScenarios}
+              selectedScenarios={selectedScenarios}
+              setSelectedScenarios={setSelectedScenarios}
+            />
+          )}
+
+          {showAssessmentModifier && (
+            <AssessmentModifierPanel
+              projectId={projectId!}
+              assessmentData={assessmentData}
+              onClose={() => setShowAssessmentModifier(false)}
+              onModifyAssessment={handleModifyAssessment}
+            />
+          )}
+
+          {scenarioComparison && (
+            <ScenarioComparisonModal
+              comparison={scenarioComparison}
+              onClose={() => setScenarioComparison(null)}
             />
           )}
 
@@ -243,7 +511,12 @@ const ProviderRecommendations: React.FC = () => {
 };
 
 interface ProviderRecommendationCardProps {
-  recommendation: ProviderRecommendation;
+  recommendation: ProviderRecommendation & {
+    is_viable?: boolean;
+    constraint_violations?: number;
+    critical_violations?: number;
+    constraint_summary?: any;
+  };
   rank: number;
   isSelected: boolean;
   onSelect: () => void;
@@ -282,7 +555,7 @@ const ProviderRecommendationCard: React.FC<ProviderRecommendationCardProps> = ({
             <Box>
               <Box display="flex" alignItems="center" gap={1}>
                 <Typography variant="h5">{recommendation.provider}</Typography>
-                {rank === 1 && (
+                {rank === 1 && recommendation.is_viable !== false && (
                   <Chip
                     label="Recommended"
                     color="primary"
@@ -290,19 +563,48 @@ const ProviderRecommendationCard: React.FC<ProviderRecommendationCardProps> = ({
                     icon={<CheckCircleIcon />}
                   />
                 )}
+                {recommendation.is_viable === false && (
+                  <Chip
+                    label="Has Constraints"
+                    color="error"
+                    size="small"
+                    icon={<WarningIcon />}
+                  />
+                )}
+                {recommendation.constraint_violations && recommendation.constraint_violations > 0 && recommendation.is_viable !== false && (
+                  <Chip
+                    label={`${recommendation.constraint_violations} Warnings`}
+                    color="warning"
+                    size="small"
+                    icon={<InfoIcon />}
+                  />
+                )}
               </Box>
               <Typography variant="body2" color="text.secondary">
                 Rank #{rank}
+                {recommendation.critical_violations && recommendation.critical_violations > 0 && (
+                  <span style={{ color: 'red', marginLeft: 8 }}>
+                    • {recommendation.critical_violations} critical constraint{recommendation.critical_violations > 1 ? 's' : ''}
+                  </span>
+                )}
               </Typography>
             </Box>
           </Box>
           <Box textAlign="right">
-            <Typography variant="h4" color={`${getScoreColor(recommendation.overall_score)}.main`}>
+            <Typography 
+              variant="h4" 
+              color={recommendation.is_viable === false ? 'error.main' : `${getScoreColor(recommendation.overall_score)}.main`}
+            >
               {recommendation.overall_score.toFixed(1)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Overall Score
             </Typography>
+            {recommendation.is_viable === false && (
+              <Typography variant="caption" color="error" display="block">
+                Not Viable
+              </Typography>
+            )}
           </Box>
         </Box>
 
@@ -369,13 +671,65 @@ const ProviderRecommendationCard: React.FC<ProviderRecommendationCardProps> = ({
             <Stack spacing={0.5}>
               {recommendation.weaknesses.map((weakness, idx) => (
                 <Box key={idx} display="flex" alignItems="flex-start" gap={1}>
-                  <WarningIcon fontSize="small" color="warning" />
-                  <Typography variant="body2">{weakness}</Typography>
+                  {weakness.startsWith('❌') ? (
+                    <WarningIcon fontSize="small" color="error" />
+                  ) : weakness.startsWith('⚠️') ? (
+                    <WarningIcon fontSize="small" color="warning" />
+                  ) : (
+                    <WarningIcon fontSize="small" color="warning" />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={weakness.startsWith('❌') ? 'error.main' : 'text.primary'}
+                  >
+                    {weakness}
+                  </Typography>
                 </Box>
               ))}
             </Stack>
           </Grid>
         </Grid>
+
+        {/* Constraint Violations Section */}
+        {recommendation.constraint_summary && recommendation.constraint_summary.total_violations > 0 && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Box>
+              <Typography variant="subtitle2" gutterBottom color="error.main">
+                Requirement Constraints
+              </Typography>
+              <Alert 
+                severity={recommendation.is_viable === false ? "error" : "warning"} 
+                sx={{ mb: 1 }}
+              >
+                <Typography variant="body2">
+                  {recommendation.is_viable === false 
+                    ? `This provider cannot meet ${recommendation.critical_violations || 0} critical requirement${(recommendation.critical_violations || 0) > 1 ? 's' : ''}.`
+                    : `This provider has ${recommendation.constraint_summary.warning_violations} warning${recommendation.constraint_summary.warning_violations > 1 ? 's' : ''} but can still be considered.`
+                  }
+                </Typography>
+              </Alert>
+              
+              {Object.entries(recommendation.constraint_summary.violations_by_type).map(([type, violations]: [string, any]) => (
+                <Box key={type} sx={{ mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                    {type.replace('_', ' ')} Issues:
+                  </Typography>
+                  {violations.slice(0, 2).map((violation: any, idx: number) => (
+                    <Typography 
+                      key={idx} 
+                      variant="body2" 
+                      color={violation.severity === 'critical' ? 'error.main' : 'warning.main'}
+                      sx={{ ml: 1, fontSize: '0.875rem' }}
+                    >
+                      • {violation.message}
+                    </Typography>
+                  ))}
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
 
         <Divider sx={{ my: 2 }} />
 
@@ -388,11 +742,26 @@ const ProviderRecommendationCard: React.FC<ProviderRecommendationCardProps> = ({
               Estimated Cost
             </Typography>
           </Box>
-          <Chip
-            label={getConfidenceLabel(recommendation.confidence_score)}
-            color={recommendation.confidence_score >= 0.8 ? 'success' : 'default'}
-            size="small"
-          />
+          <Box display="flex" gap={1} alignItems="center">
+            <Chip
+              label={getConfidenceLabel(recommendation.confidence_score)}
+              color={recommendation.confidence_score >= 0.8 ? 'success' : 'default'}
+              size="small"
+            />
+            <Chip
+              label="3-6 months"
+              size="small"
+              variant="outlined"
+            />
+            <Tooltip title="Migration complexity based on your requirements">
+              <Chip
+                label="Medium"
+                color="warning"
+                size="small"
+                variant="outlined"
+              />
+            </Tooltip>
+          </Box>
         </Box>
       </CardContent>
     </Card>
@@ -686,6 +1055,409 @@ const ProviderComparisonModal: React.FC<ProviderComparisonModalProps> = ({
         </Box>
       </Paper>
     </Box>
+  );
+};
+
+// Scenario Manager Panel Component
+interface ScenarioManagerPanelProps {
+  projectId: string;
+  scenarioHistory: any[];
+  onClose: () => void;
+  onActivateScenario: (scenarioId: string) => void;
+  onCompareScenarios: () => void;
+  selectedScenarios: string[];
+  setSelectedScenarios: (scenarios: string[]) => void;
+}
+
+const ScenarioManagerPanel: React.FC<ScenarioManagerPanelProps> = ({
+  projectId,
+  scenarioHistory,
+  onClose,
+  onActivateScenario,
+  onCompareScenarios,
+  selectedScenarios,
+  setSelectedScenarios,
+}) => {
+  const handleScenarioToggle = (scenarioId: string) => {
+    setSelectedScenarios(
+      selectedScenarios.includes(scenarioId)
+        ? selectedScenarios.filter(id => id !== scenarioId)
+        : [...selectedScenarios, scenarioId]
+    );
+  };
+
+  return (
+    <Paper sx={{ p: 3, mb: 3 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h6">Scenario Management</Typography>
+        <Button onClick={onClose}>Close</Button>
+      </Box>
+
+      {scenarioHistory.length === 0 ? (
+        <Alert severity="info">
+          No scenarios available. Generate recommendations with different weights or modify your assessment to create scenarios.
+        </Alert>
+      ) : (
+        <>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Select scenarios to compare or activate a previous scenario:
+          </Typography>
+          
+          <List>
+            {scenarioHistory.map((scenario) => (
+              <ListItem key={scenario.scenario_id} divider>
+                <Checkbox
+                  checked={selectedScenarios.includes(scenario.scenario_id)}
+                  onChange={() => handleScenarioToggle(scenario.scenario_id)}
+                />
+                <ListItemText
+                  primary={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="subtitle2">
+                        {scenario.description}
+                      </Typography>
+                      <Chip
+                        label={scenario.type.replace('_', ' ')}
+                        size="small"
+                        color={scenario.type === 'weight_adjustment' ? 'primary' : 'secondary'}
+                      />
+                    </Box>
+                  }
+                  secondary={
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(scenario.timestamp).toLocaleString()} • 
+                        Top: {scenario.top_provider} ({scenario.top_score?.toFixed(1)})
+                      </Typography>
+                      {scenario.weights && (
+                        <Box mt={0.5}>
+                          <Typography variant="caption" color="text.secondary">
+                            Weights: Service {(scenario.weights.service_weight * 100).toFixed(0)}%, 
+                            Cost {(scenario.weights.cost_weight * 100).toFixed(0)}%, 
+                            Compliance {(scenario.weights.compliance_weight * 100).toFixed(0)}%
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => onActivateScenario(scenario.scenario_id)}
+                >
+                  Activate
+                </Button>
+              </ListItem>
+            ))}
+          </List>
+
+          <Box mt={2} display="flex" gap={2}>
+            <Button
+              variant="contained"
+              disabled={selectedScenarios.length < 2}
+              onClick={onCompareScenarios}
+            >
+              Compare Selected ({selectedScenarios.length})
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+              Select at least 2 scenarios to compare
+            </Typography>
+          </Box>
+        </>
+      )}
+    </Paper>
+  );
+};
+
+// Assessment Modifier Panel Component
+interface AssessmentModifierPanelProps {
+  projectId: string;
+  assessmentData: any;
+  onClose: () => void;
+  onModifyAssessment: (modifications: any) => void;
+}
+
+const AssessmentModifierPanel: React.FC<AssessmentModifierPanelProps> = ({
+  projectId,
+  assessmentData,
+  onClose,
+  onModifyAssessment,
+}) => {
+  const [modifications, setModifications] = useState<any>({});
+  const [modificationSection, setModificationSection] = useState<string>('organization');
+
+  const handleFieldChange = (section: string, field: string, value: any) => {
+    setModifications((prev: any) => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (Object.keys(modifications).length === 0) {
+      toast.error('No modifications made');
+      return;
+    }
+    onModifyAssessment(modifications);
+  };
+
+  return (
+    <Paper sx={{ p: 3, mb: 3 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h6">Modify Assessment Data</Typography>
+        <Button onClick={onClose}>Close</Button>
+      </Box>
+
+      <Alert severity="info" sx={{ mb: 3 }}>
+        Modify your assessment data to explore different scenarios. Changes will generate new recommendations and create a new scenario for comparison.
+      </Alert>
+
+      <FormControl fullWidth sx={{ mb: 3 }}>
+        <InputLabel>Section to Modify</InputLabel>
+        <Select
+          value={modificationSection}
+          onChange={(e) => setModificationSection(e.target.value)}
+        >
+          <MenuItem value="organization">Organization Profile</MenuItem>
+          <MenuItem value="workload">Workload Profile</MenuItem>
+          <MenuItem value="requirements">Requirements</MenuItem>
+        </Select>
+      </FormControl>
+
+      {modificationSection === 'organization' && assessmentData?.organization && (
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>Company Size</InputLabel>
+              <Select
+                value={modifications.organization?.size || assessmentData.organization.size || ''}
+                onChange={(e) => handleFieldChange('organization', 'size', e.target.value)}
+              >
+                <MenuItem value="SMALL">Small (1-50 employees)</MenuItem>
+                <MenuItem value="MEDIUM">Medium (51-500 employees)</MenuItem>
+                <MenuItem value="LARGE">Large (501-5000 employees)</MenuItem>
+                <MenuItem value="ENTERPRISE">Enterprise (5000+ employees)</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>Cloud Experience</InputLabel>
+              <Select
+                value={modifications.organization?.experience || assessmentData.organization.experience || ''}
+                onChange={(e) => handleFieldChange('organization', 'experience', e.target.value)}
+              >
+                <MenuItem value="BEGINNER">Beginner</MenuItem>
+                <MenuItem value="INTERMEDIATE">Intermediate</MenuItem>
+                <MenuItem value="ADVANCED">Advanced</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      )}
+
+      {modificationSection === 'workload' && assessmentData?.workload && (
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Total Compute Cores"
+              type="number"
+              value={modifications.workload?.total_compute_cores || assessmentData.workload.total_compute_cores || ''}
+              onChange={(e) => handleFieldChange('workload', 'total_compute_cores', parseInt(e.target.value))}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Total Memory (GB)"
+              type="number"
+              value={modifications.workload?.total_memory_gb || assessmentData.workload.total_memory_gb || ''}
+              onChange={(e) => handleFieldChange('workload', 'total_memory_gb', parseInt(e.target.value))}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Total Storage (TB)"
+              type="number"
+              value={modifications.workload?.total_storage_tb || assessmentData.workload.total_storage_tb || ''}
+              onChange={(e) => handleFieldChange('workload', 'total_storage_tb', parseFloat(e.target.value))}
+            />
+          </Grid>
+        </Grid>
+      )}
+
+      {modificationSection === 'requirements' && (
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" gutterBottom>Budget Constraints</Typography>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Target Monthly Cost ($)"
+              type="number"
+              value={modifications.requirements?.budget?.target_monthly_cost || assessmentData?.budget?.target_monthly_cost || ''}
+              onChange={(e) => handleFieldChange('requirements', 'budget', { 
+                ...modifications.requirements?.budget, 
+                target_monthly_cost: parseFloat(e.target.value) 
+              })}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>Cost Priority</InputLabel>
+              <Select
+                value={modifications.requirements?.budget?.cost_priority || assessmentData?.budget?.cost_priority || ''}
+                onChange={(e) => handleFieldChange('requirements', 'budget', { 
+                  ...modifications.requirements?.budget, 
+                  cost_priority: e.target.value 
+                })}
+              >
+                <MenuItem value="LOW">Low</MenuItem>
+                <MenuItem value="MEDIUM">Medium</MenuItem>
+                <MenuItem value="HIGH">High</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      )}
+
+      <Box mt={3} display="flex" gap={2} justifyContent="flex-end">
+        <Button variant="outlined" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button 
+          variant="contained" 
+          onClick={handleSubmit}
+          disabled={Object.keys(modifications).length === 0}
+        >
+          Apply Changes & Regenerate
+        </Button>
+      </Box>
+    </Paper>
+  );
+};
+
+// Scenario Comparison Modal Component
+interface ScenarioComparisonModalProps {
+  comparison: any;
+  onClose: () => void;
+}
+
+const ScenarioComparisonModal: React.FC<ScenarioComparisonModalProps> = ({
+  comparison,
+  onClose,
+}) => {
+  return (
+    <Dialog open={true} onClose={onClose} maxWidth="lg" fullWidth>
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">Scenario Comparison</Typography>
+          <Button onClick={onClose}>Close</Button>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Comparing {comparison.scenarios.length} scenarios
+        </Typography>
+
+        {/* Scenario Overview */}
+        <Box mb={3}>
+          <Typography variant="subtitle1" gutterBottom>Scenarios</Typography>
+          <Grid container spacing={2}>
+            {comparison.scenarios.map((scenario: any, index: number) => (
+              <Grid item xs={12} md={6} key={scenario.scenario_id}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2">
+                      Scenario {index + 1}: {scenario.description}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(scenario.timestamp).toLocaleString()}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Top Provider: {scenario.recommendations[0]?.provider} 
+                      ({scenario.recommendations[0]?.overall_score.toFixed(1)})
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        {/* Provider Rankings Comparison */}
+        <Box mb={3}>
+          <Typography variant="subtitle1" gutterBottom>Provider Rankings</Typography>
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Provider</TableCell>
+                  {comparison.scenarios.map((scenario: any, index: number) => (
+                    <TableCell key={scenario.scenario_id} align="center">
+                      Scenario {index + 1}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {Object.entries(comparison.provider_rankings).map(([provider, rankings]: [string, any]) => (
+                  <TableRow key={provider}>
+                    <TableCell component="th" scope="row">
+                      {provider}
+                    </TableCell>
+                    {rankings.map((ranking: any) => (
+                      <TableCell key={ranking.scenario_id} align="center">
+                        #{ranking.rank} ({ranking.score.toFixed(1)})
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+
+        {/* Score Changes (for 2-scenario comparison) */}
+        {comparison.score_changes && Object.keys(comparison.score_changes).length > 0 && (
+          <Box>
+            <Typography variant="subtitle1" gutterBottom>Score Changes</Typography>
+            <Grid container spacing={2}>
+              {Object.entries(comparison.score_changes).map(([provider, change]: [string, any]) => (
+                <Grid item xs={12} sm={4} key={provider}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography variant="subtitle2">{provider}</Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography 
+                          variant="h6" 
+                          color={change.direction === 'increase' ? 'success.main' : 
+                                change.direction === 'decrease' ? 'error.main' : 'text.secondary'}
+                        >
+                          {change.direction === 'increase' ? '+' : change.direction === 'decrease' ? '-' : ''}
+                          {change.magnitude.toFixed(1)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {change.direction === 'no_change' ? 'No change' : 
+                           change.direction === 'increase' ? 'Improved' : 'Decreased'}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 

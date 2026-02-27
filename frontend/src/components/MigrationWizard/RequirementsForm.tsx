@@ -73,7 +73,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
     },
   };
 
-  const { control, watch } = useForm({
+  const { control, watch, reset } = useForm({
     defaultValues: data || defaultValues,
   });
 
@@ -83,12 +83,12 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
     onChange(formData);
   }, [formData, onChange]);
 
-  // Initialize with default values if no data provided
+  // Reset form when data prop changes
   useEffect(() => {
-    if (!data) {
-      onChange(defaultValues);
+    if (data) {
+      reset(data);
     }
-  }, [data, onChange]);
+  }, [data, reset]);
 
   return (
     <Box>

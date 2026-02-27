@@ -284,12 +284,36 @@ export const migrationApi = {
   // Recommendations
   async generateRecommendations(projectId: string): Promise<ProviderRecommendation[]> {
     const response = await api.post(`/api/v1/api/migrations/${projectId}/recommendations/generate`);
+    
+    // Handle new response format with metadata
+    if (response.data.recommendations) {
+      return response.data.recommendations;
+    }
+    
+    // Fallback for old response format
     return response.data;
   },
 
   async getRecommendations(projectId: string): Promise<ProviderRecommendation[]> {
     const response = await api.get(`/api/v1/api/migrations/${projectId}/recommendations`);
+    
+    // Handle response format (could be array or object with recommendations)
+    if (Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data.recommendations) {
+      return response.data.recommendations;
+    }
+    
     return response.data;
+  },
+
+  async checkRecommendationsExist(projectId: string): Promise<boolean> {
+    try {
+      const recommendations = await this.getRecommendations(projectId);
+      return recommendations && recommendations.length > 0;
+    } catch (error) {
+      return false;
+    }
   },
 
   async updateWeights(
@@ -454,6 +478,57 @@ export const migrationApi = {
 
   async generateInventoryReport(projectId: string, config: any): Promise<any> {
     const response = await api.post(`/api/v1/api/migrations/${projectId}/reports/inventory`, config);
+    return response.data;
+  },
+
+  // Scenario Management and Regeneration Features
+  async getScenarioHistory(projectId: string): Promise<{
+    scenarios: Array<{
+      scenario_id: string;
+      timestamp: string;
+      type: string;
+      description: string;
+      recommendation_count: number;
+      top_provider: string;
+      top_score: number;
+      weights?: any;
+    }>;
+  }> {
+    const response = await api.get(`/api/v1/api/migrations/${projectId}/scenarios`);
+    return response.data;
+  },
+
+  async getScenarioDetails(projectId: string, scenarioId: string): Promise<any> {
+    const response = await api.get(`/api/v1/api/migrations/${projectId}/scenarios/${scenarioId}`);
+    return response.data;
+  },
+
+  async activateScenario(projectId: string, scenarioId: string): Promise<any> {
+    const response = await api.post(`/api/v1/api/migrations/${projectId}/scenarios/${scenarioId}/activate`);
+    return response.data;
+  },
+
+  async compareScenarios(projectId: string, scenarioIds: string[]): Promise<any> {
+    const response = await api.post(`/api/v1/api/migrations/${projectId}/scenarios/compare`, {
+      scenario_ids: scenarioIds
+    });
+    return response.data;
+  },
+
+  async modifyAssessmentAndRegenerate(
+    projectId: string,
+    modifications: {
+      organization?: any;
+      workload?: any;
+      requirements?: any;
+    }
+  ): Promise<{
+    message: string;
+    modifications_applied: string[];
+    recommendations: ProviderRecommendation[];
+    scenario_id: string;
+  }> {
+    const response = await api.put(`/api/v1/api/migrations/${projectId}/assessment/modify`, modifications);
     return response.data;
   },
 };

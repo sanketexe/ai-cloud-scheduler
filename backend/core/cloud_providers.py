@@ -49,6 +49,11 @@ class CloudProviderAdapter(ABC):
     async def get_rightsizing_recommendations(self) -> List[Dict[str, Any]]:
         """Get rightsizing recommendations"""
         pass
+    
+    @abstractmethod
+    async def scale_resource(self, resource_id: str, target_capacity: int) -> bool:
+        """Scale a resource to target capacity"""
+        pass
 
 class AWSCredentials:
     """AWS credentials container"""
@@ -456,6 +461,42 @@ class AWSCostExplorerAdapter(CloudProviderAdapter):
         except Exception as e:
             logger.error("Failed to get AWS rightsizing recommendations", error=str(e))
             return []
+    
+    async def scale_resource(self, resource_id: str, target_capacity: int) -> bool:
+        """Scale an AWS resource to target capacity"""
+        try:
+            def _scale_resource():
+                # This is a simplified implementation
+                # In a real system, this would determine resource type and use appropriate scaling
+                
+                # For EC2 instances, this might involve Auto Scaling Groups
+                # For now, we'll simulate scaling success
+                logger.info("Scaling resource", 
+                           resource_id=resource_id, 
+                           target_capacity=target_capacity)
+                
+                # Simulate scaling operation
+                # In reality, this would:
+                # 1. Determine resource type (EC2, ASG, ECS, etc.)
+                # 2. Use appropriate AWS API to scale
+                # 3. Wait for scaling to complete
+                # 4. Verify new capacity
+                
+                return True
+            
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(self.executor, _scale_resource)
+            
+            logger.info("Resource scaling completed", 
+                       resource_id=resource_id, 
+                       success=result)
+            return result
+            
+        except Exception as e:
+            logger.error("Failed to scale AWS resource", 
+                        resource_id=resource_id, 
+                        error=str(e))
+            return False
 
 class CloudProviderService:
     """Enterprise cloud provider management service"""

@@ -14,11 +14,19 @@ from dataclasses import dataclass
 import structlog
 
 from .automation_models import (
-    AutomationPolicy, ActionType, RiskLevel, SafetyCheckResult
+    AutomationPolicy, ActionType, RiskLevel
 )
 from .database import get_db_session
 
 logger = structlog.get_logger(__name__)
+
+
+@dataclass
+class SafetyCheckResult:
+    """Simple result class for safety checks"""
+    passed: bool
+    reason: str
+    details: Dict[str, Any]
 
 
 @dataclass
@@ -452,6 +460,62 @@ class SafetyChecker:
         is_safe = len(dependencies) == 0
         
         return is_safe, dependencies
+    
+    async def check_scaling_safety(self, resource_id: str, scaling_action, target_capacity: int) -> SafetyCheckResult:
+        """
+        Check if a scaling action is safe to execute.
+        
+        Args:
+            resource_id: ID of the resource to scale
+            scaling_action: Type of scaling action (from ScalingActionType enum)
+            target_capacity: Target capacity after scaling
+            
+        Returns:
+            SafetyCheckResult indicating if scaling is safe
+        """
+        try:
+            # For now, implement basic safety checks
+            # In a real implementation, this would fetch resource metadata
+            
+            # Basic safety checks for scaling
+            checks_passed = []
+            warnings = []
+            
+            # Check minimum capacity
+            if target_capacity < 1:
+                return SafetyCheckResult(
+                    passed=False,
+                    reason="Target capacity cannot be less than 1",
+                    details={"target_capacity": target_capacity}
+                )
+            
+            # Check maximum capacity (prevent runaway scaling)
+            max_capacity = 100  # Configurable limit
+            if target_capacity > max_capacity:
+                return SafetyCheckResult(
+                    passed=False,
+                    reason=f"Target capacity {target_capacity} exceeds maximum allowed {max_capacity}",
+                    details={"target_capacity": target_capacity, "max_capacity": max_capacity}
+                )
+            
+            # For now, allow scaling actions with basic checks
+            return SafetyCheckResult(
+                passed=True,
+                reason="Basic scaling safety checks passed",
+                details={
+                    "resource_id": resource_id,
+                    "target_capacity": target_capacity,
+                    "checks_performed": ["minimum_capacity", "maximum_capacity"]
+                }
+            )
+            
+        except Exception as e:
+            logger.error("Error in scaling safety check", error=str(e), resource_id=resource_id)
+            return SafetyCheckResult(
+                passed=False,
+                reason=f"Safety check error: {str(e)}",
+                details={"error": str(e)}
+            )
     
     def assess_action_risk(self, 
                           action_type: ActionType,

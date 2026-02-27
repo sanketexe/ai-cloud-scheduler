@@ -1,0 +1,112 @@
+# AI Training and Deployment Pipeline Requirements
+
+# Core ML/AI frameworks
+torch>=1.12.0
+torchvision>=0.13.0
+scikit-learn>=1.1.0
+numpy>=1.21.0
+pandas>=1.4.0
+scipy>=1.8.0
+
+# MLflow for experiment tracking
+mlflow>=2.0.0
+mlflow[extras]>=2.0.0
+
+# Kubeflow Pipelines (optional, for orchestration)
+kfp>=1.8.0
+
+# Deep learning and specialized ML
+transformers>=4.20.0
+torch-geometric>=2.1.0
+stable-baselines3>=1.6.0
+
+# Data processing and visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+plotly>=5.10.0
+
+# Statistical analysis and drift detection
+evidently>=0.2.0
+alibi-detect>=0.10.0
+
+# Time series analysis
+prophet>=1.1.0
+statsmodels>=0.13.0
+
+# Graph processing
+networkx>=2.8.0
+dgl>=0.9.0
+
+# NLP libraries
+spacy>=3.4.0
+nltk>=3.7.0
+sentence-transformers>=2.2.0
+
+# Hyperparameter optimization
+optuna>=3.0.0
+ray[tune]>=2.0.0
+
+# Model serving and deployment
+fastapi>=0.80.0
+uvicorn>=0.18.0
+pydantic>=1.9.0
+
+# Kubernetes and cloud integration
+kubernetes>=24.0.0
+boto3>=1.24.0
+google-cloud-storage>=2.5.0
+azure-storage-blob>=12.12.0
+
+# Monitoring and observability
+prometheus-client>=0.14.0
+grafana-api>=1.0.3
+
+# Database and caching
+redis>=4.3.0
+psycopg2-binary>=2.9.0
+sqlalchemy>=1.4.0
+alembic>=1.8.0
+
+# Async support
+aiofiles>=0.8.0
+asyncio-mqtt>=0.11.0
+
+# Testing
+pytest>=7.1.0
+pytest-asyncio>=0.19.0
+pytest-mock>=3.8.0
+pytest-cov>=3.0.0
+
+# Utilities
+pyyaml>=6.0.0
+python-dotenv>=0.20.0
+click>=8.1.0
+tqdm>=4.64.0
+joblib>=1.1.0
+
+# Security
+cryptography>=37.0.0
+bcrypt>=3.2.0
+
+# Distributed computing
+dask>=2022.7.0
+distributed>=2022.7.0
+
+# Model interpretability
+shap>=0.41.0
+lime>=0.2.0.1
+
+# Feature engineering
+featuretools>=1.11.0
+category-encoders>=2.5.0
+
+# Data validation
+great-expectations>=0.15.0
+pandera>=0.12.0
+
+# Workflow orchestration
+prefect>=2.0.0
+airflow>=2.3.0
+
+# Container and deployment tools
+docker>=6.0.0

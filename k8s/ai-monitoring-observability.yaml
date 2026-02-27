@@ -1,0 +1,798 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-monitoring-config
+  namespace: finops-ai-services
+data:
+  # AI System Monitoring Configuration
+  MONITORING_ENABLED: "true"
+  METRICS_COLLECTION_INTERVAL: "30"
+  PERFORMANCE_MONITORING_ENABLED: "true"
+  MODEL_DRIFT_MONITORING_ENABLED: "true"
+  EXPLAINABILITY_LOGGING_ENABLED: "true"
+  
+  # Prometheus Configuration
+  PROMETHEUS_SCRAPE_INTERVAL: "15s"
+  PROMETHEUS_EVALUATION_INTERVAL: "15s"
+  PROMETHEUS_RETENTION: "30d"
+  
+  # Grafana Configuration
+  GRAFANA_ADMIN_USER: "admin"
+  GRAFANA_ORG_NAME: "FinOps AI Services"
+  GRAFANA_TIMEZONE: "UTC"
+  
+  # Alerting Configuration
+  ALERT_MANAGER_ENABLED: "true"
+  ALERT_SEVERITY_LEVELS: "info,warning,critical"
+  ALERT_NOTIFICATION_CHANNELS: "slack,email,webhook"
+  
+  # Logging Configuration
+  LOG_LEVEL: "INFO"
+  STRUCTURED_LOGGING: "true"
+  LOG_RETENTION_DAYS: "30"
+  AUDIT_LOGGING_ENABLED: "true"
+  
+  # Tracing Configuration
+  JAEGER_ENABLED: "true"
+  JAEGER_SAMPLING_RATE: "0.1"
+  JAEGER_AGENT_HOST: "jaeger-agent"
+  JAEGER_AGENT_PORT: "6831"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-ai-config
+  namespace: finops-ai-services
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'finops-ai-production'
+        environment: 'production'
+    
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+    
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+              - alertmanager:9093
+    
+    scrape_configs:
+      # AI Services Metrics
+      - job_name: 'ai-services'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - finops-ai-services
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+      
+      # GPU Metrics
+      - job_name: 'gpu-metrics'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - finops-ai-services
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: dcgm-exporter
+          - source_labels: [__address__]
+            action: replace
+            regex: ([^:]+)(?::\d+)?
+            replacement: $1:9400
+            target_label: __address__
+      
+      # Kubernetes Metrics
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+      
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+      
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: finops-ai-services
+  labels:
+    app: prometheus
+    component: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        component: monitoring
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.45.0
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--storage.tsdb.path=/prometheus'
+          - '--storage.tsdb.retention.time=30d'
+          - '--storage.tsdb.retention.size=50GB'
+          - '--web.console.libraries=/etc/prometheus/console_libraries'
+          - '--web.console.templates=/etc/prometheus/consoles'
+          - '--web.enable-lifecycle'
+          - '--web.enable-admin-api'
+          - '--log.level=info'
+        ports:
+        - containerPort: 9090
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: rules
+          mountPath: /etc/prometheus/rules
+        - name: storage
+          mountPath: /prometheus
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+          initialDelaySeconds: 30
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-ai-config
+      - name: rules
+        configMap:
+          name: prometheus-ai-rules
+      - name: storage
+        persistentVolumeClaim:
+          claimName: prometheus-storage-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage-pvc
+  namespace: finops-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: gp3-sc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: finops-ai-services
+  labels:
+    app: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+    name: http
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-ai-rules
+  namespace: finops-ai-services
+data:
+  ai-services.yml: |
+    groups:
+    - name: ai-services.rules
+      rules:
+      # AI Service Health Rules
+      - alert: AIServiceDown
+        expr: up{job="ai-services"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI service {{ $labels.kubernetes_pod_name }} is down"
+          description: "AI service {{ $labels.kubernetes_pod_name }} has been down for more than 2 minutes."
+      
+      - alert: AIServiceHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="ai-services"}[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on AI service {{ $labels.kubernetes_pod_name }}"
+          description: "95th percentile latency is {{ $value }}s on {{ $labels.kubernetes_pod_name }}."
+      
+      - alert: AIServiceHighErrorRate
+        expr: rate(http_requests_total{job="ai-services",status=~"5.."}[5m]) / rate(http_requests_total{job="ai-services"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on AI service {{ $labels.kubernetes_pod_name }}"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.kubernetes_pod_name }}."
+      
+      # Model Performance Rules
+      - alert: ModelAccuracyDegraded
+        expr: ai_model_accuracy < 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model accuracy degraded for {{ $labels.model_name }}"
+          description: "Model {{ $labels.model_name }} accuracy has dropped to {{ $value }}."
+      
+      - alert: ModelDriftDetected
+        expr: ai_model_drift_score > 0.3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model drift detected for {{ $labels.model_name }}"
+          description: "Model {{ $labels.model_name }} has drift score {{ $value }}."
+      
+      - alert: ModelInferenceLatencyHigh
+        expr: histogram_quantile(0.95, rate(ai_model_inference_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High model inference latency for {{ $labels.model_name }}"
+          description: "95th percentile inference latency is {{ $value }}s for {{ $labels.model_name }}."
+      
+      # Resource Utilization Rules
+      - alert: AIServiceHighCPU
+        expr: rate(container_cpu_usage_seconds_total{namespace="finops-ai-services"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.pod }}"
+          description: "CPU usage is {{ $value | humanizePercentage }} on {{ $labels.pod }}."
+      
+      - alert: AIServiceHighMemory
+        expr: container_memory_usage_bytes{namespace="finops-ai-services"} / container_spec_memory_limit_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.pod }}"
+          description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.pod }}."
+      
+      # GPU Utilization Rules
+      - alert: GPUUtilizationLow
+        expr: DCGM_FI_DEV_GPU_UTIL < 20
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low GPU utilization on {{ $labels.gpu }}"
+          description: "GPU {{ $labels.gpu }} utilization has been below 20% for 30 minutes."
+      
+      - alert: GPUMemoryLeak
+        expr: increase(DCGM_FI_DEV_FB_USED[1h]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Potential GPU memory leak on {{ $labels.gpu }}"
+          description: "GPU {{ $labels.gpu }} memory usage increased by {{ $value }}MB in the last hour."
+      
+      # Training Pipeline Rules
+      - alert: TrainingJobFailed
+        expr: ai_training_job_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Training job failed for {{ $labels.job_name }}"
+          description: "Training job {{ $labels.job_name }} has failed."
+      
+      - alert: TrainingJobStalled
+        expr: increase(ai_training_job_progress[30m]) == 0 and ai_training_job_status == 1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Training job stalled for {{ $labels.job_name }}"
+          description: "Training job {{ $labels.job_name }} has made no progress in 30 minutes."
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: finops-ai-services
+  labels:
+    app: grafana
+    component: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: monitoring
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        fsGroup: 472
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.0.0
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            configMapKeyRef:
+              name: ai-monitoring-config
+              key: GRAFANA_ADMIN_USER
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: GRAFANA_PASSWORD
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        - name: GF_INSTALL_PLUGINS
+          value: "grafana-piechart-panel,grafana-worldmap-panel,grafana-clock-panel"
+        - name: GF_SERVER_ROOT_URL
+          value: "https://grafana.finops-ai.example.com"
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: grafana-config
+          mountPath: /etc/grafana/provisioning
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-storage-pvc
+      - name: grafana-config
+        configMap:
+          name: grafana-config
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-storage-pvc
+  namespace: finops-ai-services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: gp3-sc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: finops-ai-services
+  labels:
+    app: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: finops-ai-services
+data:
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+      editable: true
+    - name: Jaeger
+      type: jaeger
+      access: proxy
+      url: http://jaeger-query:16686
+      editable: true
+  
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+    - name: 'AI Services Dashboards'
+      orgId: 1
+      folder: 'AI Services'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards
+  
+  ai-services-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "AI Services Overview",
+        "tags": ["ai", "ml", "finops"],
+        "timezone": "UTC",
+        "panels": [
+          {
+            "id": 1,
+            "title": "AI Service Health",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"ai-services\"}",
+                "legendFormat": "{{ kubernetes_pod_name }}"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "green", "value": 1}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"ai-services\"}[5m])",
+                "legendFormat": "{{ kubernetes_pod_name }}"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Response Time (95th percentile)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"ai-services\"}[5m]))",
+                "legendFormat": "{{ kubernetes_pod_name }}"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Model Accuracy",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "ai_model_accuracy",
+                "legendFormat": "{{ model_name }}"
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "title": "GPU Utilization",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "DCGM_FI_DEV_GPU_UTIL",
+                "legendFormat": "GPU {{ gpu }}"
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "title": "Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes{namespace=\"finops-ai-services\"} / container_spec_memory_limit_bytes",
+                "legendFormat": "{{ pod }}"
+              }
+            ]
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+---
+# Jaeger for Distributed Tracing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-all-in-one
+  namespace: finops-ai-services
+  labels:
+    app: jaeger
+    component: all-in-one
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+      component: all-in-one
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        component: all-in-one
+    spec:
+      containers:
+      - name: jaeger
+        image: jaegertracing/all-in-one:1.47
+        ports:
+        - containerPort: 16686
+          name: query
+        - containerPort: 14268
+          name: collector
+        - containerPort: 6831
+          protocol: UDP
+          name: agent-compact
+        - containerPort: 6832
+          protocol: UDP
+          name: agent-binary
+        env:
+        - name: COLLECTOR_ZIPKIN_HOST_PORT
+          value: ":9411"
+        - name: SPAN_STORAGE_TYPE
+          value: "memory"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: finops-ai-services
+  labels:
+    app: jaeger
+    component: query
+spec:
+  selector:
+    app: jaeger
+    component: all-in-one
+  ports:
+  - port: 16686
+    targetPort: 16686
+    name: query
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: finops-ai-services
+  labels:
+    app: jaeger
+    component: collector
+spec:
+  selector:
+    app: jaeger
+    component: all-in-one
+  ports:
+  - port: 14268
+    targetPort: 14268
+    name: collector
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-agent
+  namespace: finops-ai-services
+  labels:
+    app: jaeger
+    component: agent
+spec:
+  selector:
+    app: jaeger
+    component: all-in-one
+  ports:
+  - port: 6831
+    targetPort: 6831
+    protocol: UDP
+    name: agent-compact
+  - port: 6832
+    targetPort: 6832
+    protocol: UDP
+    name: agent-binary
+
+---
+# ServiceMonitors for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ai-services-metrics
+  namespace: finops-ai-services
+  labels:
+    app: ai-services
+spec:
+  selector:
+    matchLabels:
+      component: ai-service
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-metrics
+  namespace: finops-ai-services
+  labels:
+    app: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: grafana-metrics
+  namespace: finops-ai-services
+  labels:
+    app: grafana
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics

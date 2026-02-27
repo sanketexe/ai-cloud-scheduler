@@ -1,0 +1,1352 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: finops-ai-services
+  labels:
+    name: finops-ai-services
+    environment: production
+    app: finops-ai-ml
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-services-config
+  namespace: finops-ai-services
+data:
+  # AI Service Configuration
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  DEBUG: "false"
+  
+  # Database Configuration
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "finops_ai_db"
+  
+  # Redis Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # MLflow Configuration
+  MLFLOW_TRACKING_URI: "http://mlflow-server:5000"
+  MLFLOW_EXPERIMENT_NAME: "finops_ai_production"
+  MLFLOW_ARTIFACT_ROOT: "s3://finops-ai-artifacts"
+  
+  # Model Registry Configuration
+  MODEL_REGISTRY_PATH: "/models"
+  MODEL_CACHE_SIZE: "10GB"
+  MODEL_CACHE_TTL: "3600"
+  
+  # GPU Configuration
+  GPU_ENABLED: "true"
+  GPU_MEMORY_FRACTION: "0.8"
+  CUDA_VISIBLE_DEVICES: "0"
+  
+  # Predictive Scaling Configuration
+  SCALING_PREDICTION_HORIZON: "24"
+  SCALING_CONFIDENCE_THRESHOLD: "0.9"
+  SCALING_SAFETY_MARGIN: "0.2"
+  
+  # Workload Intelligence Configuration
+  WORKLOAD_ANALYSIS_INTERVAL: "300"
+  PLACEMENT_OPTIMIZATION_ENABLED: "true"
+  COST_OPTIMIZATION_THRESHOLD: "0.15"
+  
+  # Reinforcement Learning Configuration
+  RL_LEARNING_RATE: "0.001"
+  RL_EXPLORATION_RATE: "0.1"
+  RL_BATCH_SIZE: "32"
+  RL_MEMORY_SIZE: "10000"
+  
+  # Natural Language Interface Configuration
+  NLP_MODEL_NAME: "sentence-transformers/all-MiniLM-L6-v2"
+  NLP_MAX_CONTEXT_LENGTH: "512"
+  NLP_RESPONSE_TIMEOUT: "5"
+  
+  # Graph Neural Network Configuration
+  GNN_UPDATE_INTERVAL: "3600"
+  GNN_DEPENDENCY_DEPTH: "5"
+  GNN_BATCH_SIZE: "64"
+  
+  # Predictive Maintenance Configuration
+  MAINTENANCE_PREDICTION_WINDOW: "72"
+  MAINTENANCE_ALERT_THRESHOLD: "0.7"
+  MAINTENANCE_CHECK_INTERVAL: "1800"
+  
+  # Smart Contract Optimizer Configuration
+  CONTRACT_OPTIMIZATION_INTERVAL: "86400"
+  CONTRACT_CONFIDENCE_THRESHOLD: "0.85"
+  CONTRACT_RISK_TOLERANCE: "0.2"
+  
+  # Monitoring Configuration
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "9090"
+  HEALTH_CHECK_INTERVAL: "30"
+  PERFORMANCE_MONITORING_ENABLED: "true"
+  
+  # Auto-scaling Configuration
+  AUTO_SCALING_ENABLED: "true"
+  MIN_REPLICAS: "2"
+  MAX_REPLICAS: "20"
+  CPU_TARGET_UTILIZATION: "70"
+  MEMORY_TARGET_UTILIZATION: "80"
+  GPU_TARGET_UTILIZATION: "75"
+  
+  # Disaster Recovery Configuration
+  BACKUP_ENABLED: "true"
+  BACKUP_INTERVAL: "3600"
+  BACKUP_RETENTION_DAYS: "30"
+  DISASTER_RECOVERY_ENABLED: "true"
+  FAILOVER_TIMEOUT: "300"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-services-secrets
+  namespace: finops-ai-services
+type: Opaque
+stringData:
+  # Database Secrets
+  DATABASE_USER: "finops_ai"
+  DATABASE_PASSWORD: "CHANGE_ME_IN_PRODUCTION"
+  
+  # Redis Secrets
+  REDIS_PASSWORD: "CHANGE_ME_IN_PRODUCTION"
+  
+  # MLflow Secrets
+  MLFLOW_S3_ENDPOINT_URL: ""
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  
+  # Model Registry Secrets
+  MODEL_REGISTRY_TOKEN: "CHANGE_ME_IN_PRODUCTION"
+  
+  # API Keys
+  OPENAI_API_KEY: ""
+  HUGGINGFACE_API_TOKEN: ""
+  
+  # Encryption Keys
+  ENCRYPTION_KEY: "CHANGE_ME_IN_PRODUCTION_32_CHARS_EXACTLY"
+  JWT_SECRET_KEY: "CHANGE_ME_IN_PRODUCTION_32_CHARS_MIN"
+  
+  # Notification Secrets
+  SLACK_WEBHOOK_URL: ""
+  EMAIL_SMTP_PASSWORD: ""
+  WEBHOOK_SECRET_TOKEN: ""
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-models-pvc
+  namespace: finops-ai-services
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: efs-sc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-training-data-pvc
+  namespace: finops-ai-services
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: efs-sc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-backup-pvc
+  namespace: finops-ai-services
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 200Gi
+  storageClassName: efs-sc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predictive-scaling-engine
+  namespace: finops-ai-services
+  labels:
+    app: predictive-scaling-engine
+    component: ai-service
+    tier: ml-inference
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: predictive-scaling-engine
+  template:
+    metadata:
+      labels:
+        app: predictive-scaling-engine
+        component: ai-service
+        tier: ml-inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      nodeSelector:
+        node-type: gpu-enabled
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: predictive-scaling-engine
+        image: finops/predictive-scaling-engine:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "predictive-scaling-engine"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/0"
+        - name: MLFLOW_TRACKING_URI
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: MLFLOW_TRACKING_URI
+        - name: MODEL_REGISTRY_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: MODEL_REGISTRY_PATH
+        - name: GPU_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: GPU_ENABLED
+        - name: SCALING_PREDICTION_HORIZON
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: SCALING_PREDICTION_HORIZON
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+            nvidia.com/gpu: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 12
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: training-data
+          mountPath: /data
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: training-data
+        persistentVolumeClaim:
+          claimName: ai-training-data-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workload-intelligence-system
+  namespace: finops-ai-services
+  labels:
+    app: workload-intelligence-system
+    component: ai-service
+    tier: ml-inference
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: workload-intelligence-system
+  template:
+    metadata:
+      labels:
+        app: workload-intelligence-system
+        component: ai-service
+        tier: ml-inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: workload-intelligence-system
+        image: finops/workload-intelligence-system:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "workload-intelligence-system"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/1"
+        - name: WORKLOAD_ANALYSIS_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: WORKLOAD_ANALYSIS_INTERVAL
+        - name: PLACEMENT_OPTIMIZATION_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: PLACEMENT_OPTIMIZATION_ENABLED
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reinforcement-learning-agent
+  namespace: finops-ai-services
+  labels:
+    app: reinforcement-learning-agent
+    component: ai-service
+    tier: ml-training
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: reinforcement-learning-agent
+  template:
+    metadata:
+      labels:
+        app: reinforcement-learning-agent
+        component: ai-service
+        tier: ml-training
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      nodeSelector:
+        node-type: gpu-enabled
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: reinforcement-learning-agent
+        image: finops/reinforcement-learning-agent:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "reinforcement-learning-agent"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/2"
+        - name: RL_LEARNING_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: RL_LEARNING_RATE
+        - name: RL_BATCH_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: RL_BATCH_SIZE
+        - name: GPU_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: GPU_ENABLED
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "6Gi"
+            cpu: "3000m"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "12Gi"
+            cpu: "6000m"
+            nvidia.com/gpu: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: training-data
+          mountPath: /data
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: training-data
+        persistentVolumeClaim:
+          claimName: ai-training-data-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: natural-language-interface
+  namespace: finops-ai-services
+  labels:
+    app: natural-language-interface
+    component: ai-service
+    tier: ml-inference
+spec:
+  replicas: 4
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: natural-language-interface
+  template:
+    metadata:
+      labels:
+        app: natural-language-interface
+        component: ai-service
+        tier: ml-inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: natural-language-interface
+        image: finops/natural-language-interface:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "natural-language-interface"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/3"
+        - name: NLP_MODEL_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: NLP_MODEL_NAME
+        - name: NLP_RESPONSE_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: NLP_RESPONSE_TIMEOUT
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: OPENAI_API_KEY
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "3Gi"
+            cpu: "1500m"
+          limits:
+            memory: "6Gi"
+            cpu: "3000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graph-neural-network-system
+  namespace: finops-ai-services
+  labels:
+    app: graph-neural-network-system
+    component: ai-service
+    tier: ml-inference
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: graph-neural-network-system
+  template:
+    metadata:
+      labels:
+        app: graph-neural-network-system
+        component: ai-service
+        tier: ml-inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      nodeSelector:
+        node-type: gpu-enabled
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: graph-neural-network-system
+        image: finops/graph-neural-network-system:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "graph-neural-network-system"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/4"
+        - name: GNN_UPDATE_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: GNN_UPDATE_INTERVAL
+        - name: GNN_BATCH_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: GNN_BATCH_SIZE
+        - name: GPU_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: GPU_ENABLED
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+            nvidia.com/gpu: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predictive-maintenance-system
+  namespace: finops-ai-services
+  labels:
+    app: predictive-maintenance-system
+    component: ai-service
+    tier: ml-inference
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: predictive-maintenance-system
+  template:
+    metadata:
+      labels:
+        app: predictive-maintenance-system
+        component: ai-service
+        tier: ml-inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: predictive-maintenance-system
+        image: finops/predictive-maintenance-system:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "predictive-maintenance-system"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/5"
+        - name: MAINTENANCE_PREDICTION_WINDOW
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: MAINTENANCE_PREDICTION_WINDOW
+        - name: MAINTENANCE_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: MAINTENANCE_CHECK_INTERVAL
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-contract-optimizer
+  namespace: finops-ai-services
+  labels:
+    app: smart-contract-optimizer
+    component: ai-service
+    tier: ml-inference
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: smart-contract-optimizer
+  template:
+    metadata:
+      labels:
+        app: smart-contract-optimizer
+        component: ai-service
+        tier: ml-inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: smart-contract-optimizer
+        image: finops/smart-contract-optimizer:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "smart-contract-optimizer"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/6"
+        - name: CONTRACT_OPTIMIZATION_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: CONTRACT_OPTIMIZATION_INTERVAL
+        - name: CONTRACT_CONFIDENCE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: CONTRACT_CONFIDENCE_THRESHOLD
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-orchestrator
+  namespace: finops-ai-services
+  labels:
+    app: ai-orchestrator
+    component: ai-service
+    tier: orchestration
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ai-orchestrator
+  template:
+    metadata:
+      labels:
+        app: ai-orchestrator
+        component: ai-service
+        tier: orchestration
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ai-services-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: ai-orchestrator
+        image: finops/ai-orchestrator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: SERVICE_NAME
+          value: "ai-orchestrator"
+        - name: DATABASE_URL
+          value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@$(REDIS_HOST):$(REDIS_PORT)/7"
+        - name: AUTO_SCALING_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: AUTO_SCALING_ENABLED
+        - name: PERFORMANCE_MONITORING_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ai-services-config
+              key: PERFORMANCE_MONITORING_ENABLED
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: DATABASE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-services-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "3Gi"
+            cpu: "1500m"
+          limits:
+            memory: "6Gi"
+            cpu: "3000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: models-storage
+          mountPath: /models
+        - name: backup-storage
+          mountPath: /backup
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: ai-models-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: ai-backup-pvc
+
+---
+# Services for AI Components
+apiVersion: v1
+kind: Service
+metadata:
+  name: predictive-scaling-engine
+  namespace: finops-ai-services
+  labels:
+    app: predictive-scaling-engine
+spec:
+  selector:
+    app: predictive-scaling-engine
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workload-intelligence-system
+  namespace: finops-ai-services
+  labels:
+    app: workload-intelligence-system
+spec:
+  selector:
+    app: workload-intelligence-system
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reinforcement-learning-agent
+  namespace: finops-ai-services
+  labels:
+    app: reinforcement-learning-agent
+spec:
+  selector:
+    app: reinforcement-learning-agent
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: natural-language-interface
+  namespace: finops-ai-services
+  labels:
+    app: natural-language-interface
+spec:
+  selector:
+    app: natural-language-interface
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graph-neural-network-system
+  namespace: finops-ai-services
+  labels:
+    app: graph-neural-network-system
+spec:
+  selector:
+    app: graph-neural-network-system
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: predictive-maintenance-system
+  namespace: finops-ai-services
+  labels:
+    app: predictive-maintenance-system
+spec:
+  selector:
+    app: predictive-maintenance-system
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smart-contract-optimizer
+  namespace: finops-ai-services
+  labels:
+    app: smart-contract-optimizer
+spec:
+  selector:
+    app: smart-contract-optimizer
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-orchestrator
+  namespace: finops-ai-services
+  labels:
+    app: ai-orchestrator
+spec:
+  selector:
+    app: ai-orchestrator
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+
+---
+# Service Account and RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-services-service-account
+  namespace: finops-ai-services
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/FinOpsAIServicesRole
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ai-services-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers", "verticalpodautoscalers"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses", "networkpolicies"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["servicemonitors", "prometheusrules"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ai-services-cluster-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ai-services-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: ai-services-service-account
+  namespace: finops-ai-services

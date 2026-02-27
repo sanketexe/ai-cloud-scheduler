@@ -9,7 +9,7 @@ import { HelmetProvider } from 'react-helmet-async';
 // Components
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
-import LandingPage from './pages/LandingPage';
+import OnboardingQuickStart from './pages/OnboardingQuickStart';
 import Dashboard from './pages/Dashboard';
 import CostAnalysis from './pages/CostAnalysis';
 import BudgetManagement from './pages/BudgetManagement';
@@ -21,6 +21,7 @@ import Compliance from './pages/Compliance';
 import MigrationWizard from './pages/MigrationWizard';
 import MigrationResults from './pages/MigrationResults';
 import MigrationDashboard from './pages/MigrationDashboard';
+import ProviderRecommendations from './pages/ProviderRecommendations';
 import ResourceOrganization from './pages/ResourceOrganization';
 import DimensionalFiltering from './pages/DimensionalFiltering';
 import MigrationReport from './pages/MigrationReport';
@@ -28,6 +29,10 @@ import AWSCostAnalysis from './pages/AWSCostAnalysis';
 import AWSCostAlerts from './pages/AWSCostAlerts';
 import AutomationDashboard from './pages/AutomationDashboard';
 import AutomationSettings from './pages/AutomationSettings';
+import AnomalyDashboard from './pages/AnomalyDashboard';
+import MultiCloudDashboard from './pages/MultiCloudDashboard';
+import MigrationPlanner from './pages/MigrationPlanner';
+import AIDashboard from './pages/AIDashboard';
 
 // Theme
 const theme = createTheme({
@@ -104,18 +109,19 @@ function App() {
           <CssBaseline />
           <Router>
             <Routes>
-              {/* Landing Page - No Sidebar/Header */}
-              <Route path="/" element={<LandingPage />} />
-              
+              {/* Root - Go directly to AWS Login */}
+              <Route path="/" element={<OnboardingQuickStart />} />
+
               {/* Migration Wizard - No Sidebar/Header */}
               <Route path="/migration-wizard" element={<MigrationWizard />} />
               <Route path="/migration-wizard/:projectId" element={<MigrationWizard />} />
+              <Route path="/migration/:projectId/recommendations" element={<ProviderRecommendations />} />
               <Route path="/migration/:projectId/results" element={<MigrationResults />} />
               <Route path="/migration/:projectId/dashboard" element={<MigrationDashboard />} />
               <Route path="/migration/:projectId/resources" element={<ResourceOrganization />} />
               <Route path="/migration/:projectId/filtering" element={<DimensionalFiltering />} />
               <Route path="/migration/:projectId/report" element={<MigrationReport />} />
-              
+
               {/* FinOps Dashboard Routes - With Sidebar/Header */}
               <Route path="/dashboard" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -128,7 +134,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/cost-analysis" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -140,7 +146,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/aws-cost-analysis" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -152,7 +158,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/aws-cost-alerts" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -164,7 +170,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/budgets" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -176,7 +182,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/optimization" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -188,7 +194,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/automation" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -200,7 +206,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/automation/settings" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -212,7 +218,55 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
+              <Route path="/anomaly-detection" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <AnomalyDashboard />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+
+              <Route path="/multi-cloud" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <MultiCloudDashboard />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+
+              <Route path="/migration-planner" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <MigrationPlanner />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+
+              <Route path="/ai-dashboard" element={
+                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                  <Sidebar />
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Header />
+                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+                      <AIDashboard />
+                    </Box>
+                  </Box>
+                </Box>
+              } />
+
               <Route path="/reports" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -224,7 +278,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/alerts" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -236,7 +290,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/compliance" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />
@@ -248,7 +302,7 @@ function App() {
                   </Box>
                 </Box>
               } />
-              
+
               <Route path="/settings" element={
                 <Box sx={{ display: 'flex', minHeight: '100vh' }}>
                   <Sidebar />

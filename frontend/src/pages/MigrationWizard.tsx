@@ -9,7 +9,13 @@ import {
   Paper,
   Container,
   LinearProgress,
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+  Divider,
 } from '@mui/material';
+import { SmartToy, Assignment, Chat } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { migrationApi, MigrationProject } from '../services/migrationApi';
@@ -17,6 +23,7 @@ import OrganizationProfileForm from '../components/MigrationWizard/OrganizationP
 import WorkloadProfileForm from '../components/MigrationWizard/WorkloadProfileForm';
 import RequirementsForm from '../components/MigrationWizard/RequirementsForm';
 import AIAssistant from '../components/MigrationWizard/AIAssistant';
+import MigrationChatInterface from '../components/MigrationChatbot/MigrationChatInterface';
 
 const steps = [
   'Organization Profile',
@@ -32,6 +39,7 @@ const MigrationWizard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [project, setProject] = useState<MigrationProject | null>(null);
+  const [activeTab, setActiveTab] = useState(0); // 0 = Wizard, 1 = AI Assistant
   const [assessmentStatus, setAssessmentStatus] = useState({
     organization_complete: false,
     workload_complete: false,
@@ -39,14 +47,54 @@ const MigrationWizard: React.FC = () => {
     overall_progress: 0,
   });
 
-  // Form data state
-  const [organizationData, setOrganizationData] = useState<any>(null);
-  const [workloadData, setWorkloadData] = useState<any>(null);
-  const [requirementsData, setRequirementsData] = useState<any>(null);
-  
+  // Form data state with proper initialization
+  const [organizationData, setOrganizationData] = useState<any>({
+    company_size: 'MEDIUM',
+    industry: 'Technology',
+    current_infrastructure: 'ON_PREMISES',
+    geographic_presence: ['North America'],
+    it_team_size: 10,
+    cloud_experience_level: 'BEGINNER',
+  });
+  const [workloadData, setWorkloadData] = useState<any>({
+    total_compute_cores: 4,
+    total_memory_gb: 16,
+    total_storage_tb: 1,
+    database_types: [],
+    data_volume_tb: 0.5,
+    peak_transaction_rate: 100,
+  });
+  const [requirementsData, setRequirementsData] = useState<any>({
+    performance: {
+      latency_target_ms: 100,
+      availability_target: 99.9,
+      disaster_recovery_rto_minutes: 60,
+      disaster_recovery_rpo_minutes: 15,
+      geographic_distribution: [],
+    },
+    compliance: {
+      regulatory_frameworks: [],
+      data_residency_requirements: [],
+      industry_certifications: [],
+      security_standards: [],
+    },
+    budget: {
+      current_monthly_cost: 5000,
+      migration_budget: 50000,
+      target_monthly_cost: 4000,
+      cost_optimization_priority: 'MEDIUM',
+    },
+    technical: {
+      required_services: ['Compute', 'Storage', 'Database'],
+      ml_ai_required: false,
+      analytics_required: false,
+      container_orchestration: false,
+      serverless_required: false,
+    },
+  });
+
   // Validation state
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
-  const [isValidating, setIsValidating] = useState(false);
 
   // Form data persistence and validation
   useEffect(() => {
@@ -75,76 +123,75 @@ const MigrationWizard: React.FC = () => {
 
   // Load persisted data on initialization
   useEffect(() => {
-    if (projectId && !organizationData) {
+    if (projectId) {
       const savedOrgData = localStorage.getItem(`migration-org-${projectId}`);
       if (savedOrgData) {
         try {
-          setOrganizationData(JSON.parse(savedOrgData));
+          const parsedData = JSON.parse(savedOrgData);
+          setOrganizationData(parsedData);
         } catch (error) {
           console.error('Failed to parse saved organization data:', error);
         }
       }
-    }
-    
-    if (projectId && !workloadData) {
+
       const savedWorkloadData = localStorage.getItem(`migration-workload-${projectId}`);
       if (savedWorkloadData) {
         try {
-          setWorkloadData(JSON.parse(savedWorkloadData));
+          const parsedData = JSON.parse(savedWorkloadData);
+          setWorkloadData(parsedData);
         } catch (error) {
           console.error('Failed to parse saved workload data:', error);
         }
       }
-    }
-    
-    if (projectId && !requirementsData) {
+
       const savedRequirementsData = localStorage.getItem(`migration-requirements-${projectId}`);
       if (savedRequirementsData) {
         try {
-          setRequirementsData(JSON.parse(savedRequirementsData));
+          const parsedData = JSON.parse(savedRequirementsData);
+          setRequirementsData(parsedData);
         } catch (error) {
           console.error('Failed to parse saved requirements data:', error);
         }
       }
     }
-  }, [projectId, organizationData, workloadData, requirementsData]);
-
-  useEffect(() => {
-    initializeProject();
   }, [projectId]);
 
-  const initializeProject = async () => {
-    try {
-      setInitializing(true);
-      
-      if (projectId) {
-        // Load existing project
-        await loadProject();
-        await loadAssessmentStatus();
-      } else {
-        // Create new project
-        const newProject = await migrationApi.createProject({
-          organization_name: 'My Organization',
+  useEffect(() => {
+    const initProject = async () => {
+      try {
+        setInitializing(true);
+
+        if (projectId) {
+          // Load existing project
+          await loadProject();
+          await loadAssessmentStatus();
+        } else {
+          // Create new project
+          const newProject = await migrationApi.createProject({
+            organization_name: 'My Organization',
+          });
+          setProject(newProject);
+          // Update URL with new project ID
+          navigate(`/migration-wizard/${newProject.project_id}`, { replace: true });
+        }
+      } catch (error) {
+        console.error('Failed to initialize project:', error);
+        // Set a mock project to allow user to continue
+        setProject({
+          project_id: 'demo-project',
+          organization_name: 'Demo Organization',
+          created_date: new Date().toISOString(),
+          status: 'ASSESSMENT',
+          current_phase: 'Organization Profile',
+          estimated_completion: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
         });
-        setProject(newProject);
-        // Update URL with new project ID
-        navigate(`/migration-wizard/${newProject.project_id}`, { replace: true });
+      } finally {
+        setInitializing(false);
       }
-    } catch (error) {
-      console.error('Failed to initialize project:', error);
-      // Set a mock project to allow user to continue
-      setProject({
-        project_id: 'demo-project',
-        organization_name: 'Demo Organization',
-        created_date: new Date().toISOString(),
-        status: 'ASSESSMENT',
-        current_phase: 'Organization Profile',
-        estimated_completion: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      });
-    } finally {
-      setInitializing(false);
-    }
-  };
+    };
+
+    initProject();
+  }, [projectId, navigate]);
 
   const loadProject = async () => {
     try {
@@ -160,7 +207,7 @@ const MigrationWizard: React.FC = () => {
     try {
       const status = await migrationApi.getAssessmentStatus(projectId!);
       setAssessmentStatus(status);
-      
+
       // Set active step based on completion
       if (!status.organization_complete) {
         setActiveStep(0);
@@ -201,19 +248,43 @@ const MigrationWizard: React.FC = () => {
       }
 
       if (activeStep === steps.length - 1) {
-        // Complete assessment and navigate to recommendations
+        // Complete assessment and generate recommendations automatically
         toast.success('Assessment complete! Generating recommendations...');
-        navigate(`/migration/${projectId}/recommendations`);
+
+        try {
+          // Check if recommendations already exist
+          const recommendationsExist = await migrationApi.checkRecommendationsExist(projectId!);
+
+          if (!recommendationsExist) {
+            // Generate new recommendations
+            await migrationApi.generateRecommendations(projectId!);
+            toast.success('Recommendations generated successfully!');
+          } else {
+            toast.success('Using existing recommendations');
+          }
+
+          navigate(`/migration/${projectId}/recommendations`);
+        } catch (error: any) {
+          console.error('Failed to generate recommendations:', error);
+          const errorMessage = error.response?.data?.detail ||
+            error.response?.data?.error?.message ||
+            error.message ||
+            'Failed to generate recommendations';
+          toast.error(errorMessage);
+
+          // Still navigate to recommendations page to show error state
+          navigate(`/migration/${projectId}/recommendations`);
+        }
       } else {
         setActiveStep((prevStep) => prevStep + 1);
         await loadAssessmentStatus();
       }
     } catch (error: any) {
       console.error('Error in handleNext:', error);
-      const errorMessage = error.response?.data?.detail || 
-                          error.response?.data?.error?.message || 
-                          error.message || 
-                          'Failed to save data';
+      const errorMessage = error.response?.data?.detail ||
+        error.response?.data?.error?.message ||
+        error.message ||
+        'Failed to save data';
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -315,78 +386,78 @@ const MigrationWizard: React.FC = () => {
   // Validation functions for each step
   const validateOrganizationData = (data: any): string[] => {
     const errors: string[] = [];
-    
+
     if (!data) {
       errors.push('Organization data is required');
       return errors;
     }
-    
+
     if (!data.company_size) {
       errors.push('Company size is required');
     }
-    
+
     if (!data.industry) {
       errors.push('Industry is required');
     }
-    
+
     if (!data.current_infrastructure) {
       errors.push('Current infrastructure type is required');
     }
-    
+
     if (!data.geographic_presence || data.geographic_presence.length === 0) {
       errors.push('At least one geographic region is required');
     }
-    
+
     if (!data.it_team_size || data.it_team_size < 1) {
       errors.push('IT team size must be at least 1');
     }
-    
+
     if (!data.cloud_experience_level) {
       errors.push('Cloud experience level is required');
     }
-    
+
     return errors;
   };
 
   const validateWorkloadData = (data: any): string[] => {
     const errors: string[] = [];
-    
+
     if (!data) {
       errors.push('Workload data is required');
       return errors;
     }
-    
+
     if (typeof data.total_compute_cores !== 'number' || data.total_compute_cores < 0) {
       errors.push('Total compute cores must be a valid number (0 or greater)');
     }
-    
+
     if (typeof data.total_memory_gb !== 'number' || data.total_memory_gb < 0) {
       errors.push('Total memory must be a valid number (0 or greater)');
     }
-    
+
     if (typeof data.total_storage_tb !== 'number' || data.total_storage_tb < 0) {
       errors.push('Total storage must be a valid number (0 or greater)');
     }
-    
+
     if (typeof data.data_volume_tb !== 'number' || data.data_volume_tb < 0) {
       errors.push('Data volume must be a valid number (0 or greater)');
     }
-    
+
     if (typeof data.peak_transaction_rate !== 'number' || data.peak_transaction_rate < 0) {
       errors.push('Peak transaction rate must be a valid number (0 or greater)');
     }
-    
+
     return errors;
   };
 
   const validateRequirementsData = (data: any): string[] => {
     const errors: string[] = [];
-    
+
     if (!data) {
       errors.push('Requirements data is required');
       return errors;
     }
-    
+
     // Performance requirements validation
     if (!data.performance) {
       errors.push('Performance requirements are required');
@@ -394,24 +465,24 @@ const MigrationWizard: React.FC = () => {
       if (typeof data.performance.latency_target_ms !== 'number' || data.performance.latency_target_ms < 0) {
         errors.push('Latency target must be a valid number (0 or greater)');
       }
-      
-      if (typeof data.performance.availability_target !== 'number' || 
-          data.performance.availability_target < 90 || 
-          data.performance.availability_target > 100) {
+
+      if (typeof data.performance.availability_target !== 'number' ||
+        data.performance.availability_target < 90 ||
+        data.performance.availability_target > 100) {
         errors.push('Availability target must be between 90 and 100 percent');
       }
-      
-      if (typeof data.performance.disaster_recovery_rto_minutes !== 'number' || 
-          data.performance.disaster_recovery_rto_minutes < 0) {
+
+      if (typeof data.performance.disaster_recovery_rto_minutes !== 'number' ||
+        data.performance.disaster_recovery_rto_minutes < 0) {
         errors.push('RTO must be a valid number (0 or greater)');
       }
-      
-      if (typeof data.performance.disaster_recovery_rpo_minutes !== 'number' || 
-          data.performance.disaster_recovery_rpo_minutes < 0) {
+
+      if (typeof data.performance.disaster_recovery_rpo_minutes !== 'number' ||
+        data.performance.disaster_recovery_rpo_minutes < 0) {
         errors.push('RPO must be a valid number (0 or greater)');
       }
     }
-    
+
     // Budget requirements validation
     if (!data.budget) {
       errors.push('Budget requirements are required');
@@ -419,25 +490,25 @@ const MigrationWizard: React.FC = () => {
       if (typeof data.budget.current_monthly_cost !== 'number' || data.budget.current_monthly_cost < 0) {
         errors.push('Current monthly cost must be a valid number (0 or greater)');
       }
-      
+
       if (typeof data.budget.migration_budget !== 'number' || data.budget.migration_budget < 0) {
         errors.push('Migration budget must be a valid number (0 or greater)');
       }
-      
+
       if (typeof data.budget.target_monthly_cost !== 'number' || data.budget.target_monthly_cost < 0) {
         errors.push('Target monthly cost must be a valid number (0 or greater)');
       }
-      
+
       if (!data.budget.cost_optimization_priority) {
         errors.push('Cost optimization priority is required');
       }
     }
-    
+
     // Compliance requirements validation
     if (!data.compliance) {
       errors.push('Compliance requirements are required');
     }
-    
+
     // Technical requirements validation
     if (!data.technical) {
       errors.push('Technical requirements are required');
@@ -446,16 +517,14 @@ const MigrationWizard: React.FC = () => {
         errors.push('At least one required service must be selected');
       }
     }
-    
+
     return errors;
   };
 
   // Real-time validation effect
   useEffect(() => {
-    setIsValidating(true);
-    
     const newErrors: Record<string, string[]> = {};
-    
+
     // Validate current step
     switch (activeStep) {
       case 0:
@@ -468,15 +537,14 @@ const MigrationWizard: React.FC = () => {
         newErrors.requirements = validateRequirementsData(requirementsData);
         break;
     }
-    
+
     setValidationErrors(newErrors);
-    setIsValidating(false);
   }, [activeStep, organizationData, workloadData, requirementsData]);
 
   const canProceed = () => {
     console.log('Checking canProceed for step:', activeStep);
-    console.log('Validation errors:', validationErrors);
-    
+    console.log('Current data:', { organizationData, workloadData, requirementsData });
+
     switch (activeStep) {
       case 0:
         const orgErrors = validateOrganizationData(organizationData);
@@ -544,179 +612,73 @@ const MigrationWizard: React.FC = () => {
             {project.organization_name} - Project ID: {project.project_id}
           </Typography>
 
-        <Paper sx={{ p: 3, mt: 3 }}>
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-            {steps.map((label, index) => (
-              <Step key={label} completed={isStepComplete(index)}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-
-          {loading && <LinearProgress sx={{ mb: 2 }} />}
-
-          <Box sx={{ minHeight: 400 }}>
-            {getStepContent(activeStep)}
-          </Box>
-
-          {/* Validation Feedback */}
-          {getCurrentStepErrors().length > 0 && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'error.light', borderRadius: 1, border: '1px solid', borderColor: 'error.main' }}>
-              <Typography variant="subtitle2" sx={{ color: 'error.dark', fontWeight: 'bold', mb: 1 }}>
-                Please fix the following issues to continue:
-              </Typography>
-              {getCurrentStepErrors().map((error, index) => (
-                <Typography key={index} variant="body2" sx={{ color: 'error.dark', ml: 1 }}>
-                  • {error}
-                </Typography>
+          <Paper sx={{ p: 3, mt: 3 }}>
+            <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+              {steps.map((label, index) => (
+                <Step key={label} completed={isStepComplete(index)}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
               ))}
-            </Box>
-          )}
+            </Stepper>
 
-          {/* Debug Panel - Remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1, border: '1px solid #ccc' }}>
-              <Typography variant="caption" display="block" sx={{ color: 'black', fontWeight: 'bold' }}>
-                Debug Info - Step {activeStep}:
-              </Typography>
-              <Typography variant="caption" display="block" sx={{ color: canProceed() ? 'green' : 'red', fontWeight: 'bold' }}>
-                Can Proceed: {canProceed() ? 'Yes' : 'No'}
-              </Typography>
-              <Typography variant="caption" display="block" sx={{ color: organizationData ? 'green' : 'red' }}>
-                Organization Data: {organizationData ? 'Present' : 'Missing'}
-              </Typography>
-              <Typography variant="caption" display="block" sx={{ color: workloadData ? 'green' : 'red' }}>
-                Workload Data: {workloadData ? 'Present' : 'Missing'}
-              </Typography>
-              <Typography variant="caption" display="block" sx={{ color: requirementsData ? 'green' : 'red' }}>
-                Requirements Data: {requirementsData ? 'Present' : 'Missing'}
-              </Typography>
-              <Typography variant="caption" display="block" sx={{ color: 'orange', mt: 1 }}>
-                Current Step Errors: {getCurrentStepErrors().length}
-              </Typography>
-              {getCurrentStepErrors().length > 0 && (
-                <Box sx={{ ml: 1, mt: 0.5 }}>
-                  {getCurrentStepErrors().map((error, index) => (
-                    <Typography key={index} variant="caption" display="block" sx={{ color: 'red' }}>
-                      • {error}
-                    </Typography>
-                  ))}
-                </Box>
-              )}
-              {organizationData && activeStep === 0 && (
-                <Typography variant="caption" display="block" sx={{ color: 'blue', mt: 1, fontSize: '10px' }}>
-                  Org Data: {JSON.stringify(organizationData, null, 2)}
+            {loading && <LinearProgress sx={{ mb: 2 }} />}
+
+            <Box sx={{ minHeight: 400 }}>
+              {getStepContent(activeStep)}
+            </Box>
+
+            {/* Validation Feedback */}
+            {getCurrentStepErrors().length > 0 && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'error.light', borderRadius: 1, border: '1px solid', borderColor: 'error.main' }}>
+                <Typography variant="subtitle2" sx={{ color: 'error.dark', fontWeight: 'bold', mb: 1 }}>
+                  Please fix the following issues to continue:
                 </Typography>
-              )}
-            </Box>
-          )}
+                {getCurrentStepErrors().map((error, index) => (
+                  <Typography key={index} variant="body2" sx={{ color: 'error.dark', ml: 1 }}>
+                    • {error}
+                  </Typography>
+                ))}
+              </Box>
+            )}
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-            <Button
-              disabled={activeStep === 0 || loading}
-              onClick={handleBack}
-            >
-              Back
-            </Button>
-            <Box sx={{ flex: '1 1 auto' }} />
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {process.env.NODE_ENV === 'development' && (
-                <>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      if (activeStep === 0) {
-                        setOrganizationData({
-                          company_size: 'MEDIUM',
-                          industry: 'Technology',
-                          current_infrastructure: 'ON_PREMISES',
-                          geographic_presence: ['North America'],
-                          it_team_size: 10,
-                          cloud_experience_level: 'BEGINNER',
-                        });
-                      } else if (activeStep === 1) {
-                        setWorkloadData({
-                          total_compute_cores: 8,
-                          total_memory_gb: 32,
-                          total_storage_tb: 2,
-                          database_types: ['PostgreSQL', 'Redis'],
-                          data_volume_tb: 1.5,
-                          peak_transaction_rate: 500,
-                        });
-                      } else if (activeStep === 2) {
-                        setRequirementsData({
-                          performance: {
-                            latency_target_ms: 100,
-                            availability_target: 99.9,
-                            disaster_recovery_rto_minutes: 60,
-                            disaster_recovery_rpo_minutes: 15,
-                            geographic_distribution: [],
-                          },
-                          compliance: {
-                            regulatory_frameworks: ['GDPR'],
-                            data_residency_requirements: [],
-                            industry_certifications: [],
-                            security_standards: ['SOC 2'],
-                          },
-                          budget: {
-                            current_monthly_cost: 5000,
-                            migration_budget: 50000,
-                            target_monthly_cost: 4000,
-                            cost_optimization_priority: 'MEDIUM',
-                          },
-                          technical: {
-                            required_services: ['Compute', 'Storage', 'Database'],
-                            ml_ai_required: false,
-                            analytics_required: false,
-                            container_orchestration: false,
-                            serverless_required: false,
-                          },
-                        });
-                      }
-                    }}
-                    disabled={loading}
-                    size="small"
-                  >
-                    Fill Form
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setActiveStep((prev) => Math.min(prev + 1, steps.length - 1))}
-                    disabled={loading}
-                    size="small"
-                  >
-                    Skip (Dev)
-                  </Button>
-                </>
-              )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
               <Button
-                variant="contained"
-                onClick={handleNext}
-                disabled={!canProceed() || loading}
-                sx={{ 
-                  minWidth: 120,
-                  backgroundColor: canProceed() ? 'primary.main' : 'grey.400'
-                }}
+                disabled={activeStep === 0 || loading}
+                onClick={handleBack}
               >
-                {activeStep === steps.length - 1 ? 'Complete Assessment' : 'Next'}
+                Back
               </Button>
+              <Box sx={{ flex: '1 1 auto' }} />
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  disabled={!canProceed() || loading}
+                  sx={{
+                    minWidth: 120,
+                    backgroundColor: canProceed() ? 'primary.main' : 'grey.400'
+                  }}
+                >
+                  {activeStep === steps.length - 1 ? 'Complete Assessment' : 'Next'}
+                </Button>
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </Paper>
 
-        {/* Progress indicator */}
-        <Paper sx={{ p: 2, mt: 3 }}>
-          <Typography variant="body2" gutterBottom>
-            Overall Progress: {assessmentStatus.overall_progress}%
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={assessmentStatus.overall_progress}
-            sx={{ height: 8, borderRadius: 4 }}
-          />
-        </Paper>
-      </Box>
-    </Container>
+          {/* Progress indicator */}
+          <Paper sx={{ p: 2, mt: 3 }}>
+            <Typography variant="body2" gutterBottom>
+              Overall Progress: {assessmentStatus.overall_progress}%
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={assessmentStatus.overall_progress}
+              sx={{ height: 8, borderRadius: 4 }}
+            />
+          </Paper>
+        </Box>
+      </Container>
     </>
   );
 };

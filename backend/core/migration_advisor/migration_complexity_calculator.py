@@ -474,8 +474,23 @@ class MigrationComplexityCalculator:
         if not risks:
             return RiskLevel.LOW
         
-        max_risk = max(risk.risk_level for risk in risks)
-        return max_risk
+        # Define risk level ordering
+        risk_order = {
+            RiskLevel.LOW: 1,
+            RiskLevel.MEDIUM: 2,
+            RiskLevel.HIGH: 3,
+            RiskLevel.CRITICAL: 4
+        }
+        
+        # Find the highest risk level
+        max_risk_value = max(risk_order[risk.risk_level] for risk in risks)
+        
+        # Return the corresponding risk level
+        for risk_level, value in risk_order.items():
+            if value == max_risk_value:
+                return risk_level
+        
+        return RiskLevel.LOW
     
     def _estimate_duration(
         self,

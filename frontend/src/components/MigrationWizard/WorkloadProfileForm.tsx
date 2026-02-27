@@ -40,9 +40,14 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
     database_types: [],
     data_volume_tb: 0.5,
     peak_transaction_rate: 100,
+    // Physical Infrastructure Fields
+    physical_servers: 2,
+    power_consumption_watts: 500,
+    hardware_age_years: 3,
+    storage_type: 'HDD', // HDD, SSD, Hybrid
   };
 
-  const { control, watch } = useForm({
+  const { control, watch, reset } = useForm({
     defaultValues: data || defaultValues,
   });
 
@@ -52,12 +57,12 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
     onChange(formData);
   }, [formData, onChange]);
 
-  // Initialize with default values if no data provided
+  // Reset form when data prop changes
   useEffect(() => {
-    if (!data) {
-      onChange(defaultValues);
+    if (data) {
+      reset(data);
     }
-  }, [data, onChange]);
+  }, [data, reset]);
 
   return (
     <Box>
@@ -150,6 +155,84 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
                 helperText="Transactions per second at peak"
                 inputProps={{ min: 0 }}
               />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+            Physical Infrastructure Details (For TCO Calculation)
+          </Typography>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="physical_servers"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Number of Physical Servers"
+                helperText="Total count of physical machines"
+                inputProps={{ min: 1 }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="power_consumption_watts"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Avg. Power per Server (Watts)"
+                helperText="Average power consumption per server"
+                inputProps={{ min: 0 }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="hardware_age_years"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Hardware Age (Years)"
+                helperText="Average age of current hardware"
+                inputProps={{ min: 0 }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="storage_type"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                fullWidth
+                label="Current Storage Type"
+                helperText="Primary storage technology used"
+              >
+                <MenuItem value="HDD">HDD (Hard Disk Drive)</MenuItem>
+                <MenuItem value="SSD">SSD (Solid State Drive)</MenuItem>
+                <MenuItem value="SAS">SAS (Serial Attached SCSI)</MenuItem>
+                <MenuItem value="Hybrid">Hybrid / Tiered</MenuItem>
+              </TextField>
             )}
           />
         </Grid>

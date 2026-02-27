@@ -19,7 +19,8 @@ interface OrganizationProfileFormProps {
 }
 
 const companySizes = ['SMALL', 'MEDIUM', 'LARGE', 'ENTERPRISE'];
-const infrastructureTypes = ['ON_PREMISES', 'CLOUD', 'HYBRID'];
+// Focused on Physical to Cloud migration
+const infrastructureTypes = ['ON_PREMISES'];
 const experienceLevels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 const industries = [
   'Technology',
@@ -48,12 +49,12 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
     company_size: 'MEDIUM',
     industry: 'Technology',
     current_infrastructure: 'ON_PREMISES',
-    geographic_presence: [],
+    geographic_presence: ['North America'],
     it_team_size: 10,
     cloud_experience_level: 'BEGINNER',
   };
 
-  const { control, watch, setValue } = useForm({
+  const { control, watch, setValue, reset } = useForm({
     defaultValues: data || defaultValues,
   });
 
@@ -63,12 +64,12 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
     onChange(formData);
   }, [formData, onChange]);
 
-  // Initialize with default values if no data provided
+  // Reset form when data prop changes
   useEffect(() => {
-    if (!data) {
-      onChange(defaultValues);
+    if (data) {
+      reset(data);
     }
-  }, [data, onChange]);
+  }, [data, reset]);
 
   return (
     <Box>

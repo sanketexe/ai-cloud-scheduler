@@ -1,0 +1,405 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-resource-config
+  namespace: finops-ai-services
+data:
+  # GPU Resource Management Configuration
+  GPU_MEMORY_FRACTION: "0.8"
+  GPU_ALLOW_GROWTH: "true"
+  GPU_DEVICE_COUNT: "1"
+  GPU_COMPUTE_CAPABILITY: "7.0"
+  
+  # CUDA Configuration
+  CUDA_VISIBLE_DEVICES: "0"
+  CUDA_CACHE_PATH: "/tmp/cuda-cache"
+  CUDA_LAUNCH_BLOCKING: "0"
+  
+  # TensorFlow GPU Configuration
+  TF_GPU_ALLOCATOR: "cuda_malloc_async"
+  TF_FORCE_GPU_ALLOW_GROWTH: "true"
+  TF_GPU_THREAD_MODE: "gpu_private"
+  
+  # PyTorch GPU Configuration
+  PYTORCH_CUDA_ALLOC_CONF: "max_split_size_mb:512"
+  TORCH_CUDNN_V8_API_ENABLED: "1"
+  
+  # GPU Monitoring Configuration
+  NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+  NVIDIA_REQUIRE_CUDA: "cuda>=11.0"
+  NVIDIA_VISIBLE_DEVICES: "all"
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ai-services-gpu-quota
+  namespace: finops-ai-services
+spec:
+  hard:
+    requests.nvidia.com/gpu: "20"
+    limits.nvidia.com/gpu: "20"
+    requests.cpu: "100"
+    requests.memory: "200Gi"
+    limits.cpu: "200"
+    limits.memory: "400Gi"
+    persistentvolumeclaims: "10"
+    services: "20"
+    secrets: "20"
+    configmaps: "20"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ai-services-limits
+  namespace: finops-ai-services
+spec:
+  limits:
+  - default:
+      cpu: "2000m"
+      memory: "4Gi"
+      nvidia.com/gpu: "1"
+    defaultRequest:
+      cpu: "1000m"
+      memory: "2Gi"
+      nvidia.com/gpu: "1"
+    max:
+      cpu: "8000m"
+      memory: "16Gi"
+      nvidia.com/gpu: "2"
+    min:
+      cpu: "500m"
+      memory: "1Gi"
+    type: Container
+  - default:
+      storage: "100Gi"
+    defaultRequest:
+      storage: "50Gi"
+    max:
+      storage: "1Ti"
+    min:
+      storage: "10Gi"
+    type: PersistentVolumeClaim
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ai-services-high-priority
+value: 1000
+globalDefault: false
+description: "High priority class for critical AI services"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ai-services-medium-priority
+value: 500
+globalDefault: false
+description: "Medium priority class for standard AI services"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ai-services-low-priority
+value: 100
+globalDefault: false
+description: "Low priority class for batch AI services"
+
+---
+# Node Affinity Rules for GPU Nodes
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-node-selector-config
+  namespace: finops-ai-services
+data:
+  gpu-node-selector.yaml: |
+    nodeSelector:
+      node-type: gpu-enabled
+      accelerator: nvidia-tesla-v100
+    tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: node-type
+      operator: Equal
+      value: gpu-enabled
+      effect: NoSchedule
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: node-type
+              operator: In
+              values: ["gpu-enabled"]
+            - key: accelerator
+              operator: In
+              values: ["nvidia-tesla-v100", "nvidia-tesla-t4", "nvidia-a100"]
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: accelerator
+              operator: In
+              values: ["nvidia-a100"]
+        - weight: 80
+          preference:
+            matchExpressions:
+            - key: accelerator
+              operator: In
+              values: ["nvidia-tesla-v100"]
+        - weight: 60
+          preference:
+            matchExpressions:
+            - key: accelerator
+              operator: In
+              values: ["nvidia-tesla-t4"]
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values: ["ml-training"]
+            topologyKey: kubernetes.io/hostname
+
+---
+# GPU Device Plugin DaemonSet
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: finops-ai-services
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: node-type
+        operator: Equal
+        value: gpu-enabled
+        effect: NoSchedule
+      priorityClassName: system-node-critical
+      containers:
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.14.1
+        name: nvidia-device-plugin-ctr
+        args: ["--fail-on-init-error=false"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+      nodeSelector:
+        node-type: gpu-enabled
+
+---
+# GPU Metrics Exporter
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dcgm-exporter
+  namespace: finops-ai-services
+  labels:
+    app: dcgm-exporter
+spec:
+  selector:
+    matchLabels:
+      app: dcgm-exporter
+  template:
+    metadata:
+      labels:
+        app: dcgm-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9400"
+        prometheus.io/path: "/metrics"
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: node-type
+        operator: Equal
+        value: gpu-enabled
+        effect: NoSchedule
+      containers:
+      - name: dcgm-exporter
+        image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.8-3.1.5-ubuntu20.04
+        ports:
+        - containerPort: 9400
+          name: metrics
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+        volumeMounts:
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: sys
+          mountPath: /host/sys
+          readOnly: true
+        env:
+        - name: DCGM_EXPORTER_LISTEN
+          value: ":9400"
+        - name: DCGM_EXPORTER_KUBERNETES
+          value: "true"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      nodeSelector:
+        node-type: gpu-enabled
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dcgm-exporter
+  namespace: finops-ai-services
+  labels:
+    app: dcgm-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9400"
+spec:
+  selector:
+    app: dcgm-exporter
+  ports:
+  - port: 9400
+    targetPort: 9400
+    name: metrics
+
+---
+# GPU Resource Monitoring ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dcgm-exporter
+  namespace: finops-ai-services
+  labels:
+    app: dcgm-exporter
+spec:
+  selector:
+    matchLabels:
+      app: dcgm-exporter
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+
+---
+# GPU Utilization Alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gpu-utilization-alerts
+  namespace: finops-ai-services
+spec:
+  groups:
+  - name: gpu-utilization.rules
+    rules:
+    - alert: GPUHighUtilization
+      expr: DCGM_FI_DEV_GPU_UTIL > 90
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU utilization is high on {{ $labels.gpu }}"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been above 90% utilization for more than 5 minutes."
+    
+    - alert: GPUMemoryHigh
+      expr: DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL > 0.9
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU memory usage is high on {{ $labels.gpu }}"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been above 90% memory usage for more than 5 minutes."
+    
+    - alert: GPUTemperatureHigh
+      expr: DCGM_FI_DEV_GPU_TEMP > 80
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU temperature is high on {{ $labels.gpu }}"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is above 80°C."
+    
+    - alert: GPUDown
+      expr: up{job="dcgm-exporter"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU monitoring is down"
+        description: "DCGM exporter on node {{ $labels.kubernetes_node }} has been down for more than 1 minute."
+    
+    - alert: GPUPowerLimitReached
+      expr: DCGM_FI_DEV_POWER_USAGE / DCGM_FI_DEV_POWER_MGMT_LIMIT > 0.95
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU power usage near limit on {{ $labels.gpu }}"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is using more than 95% of its power limit."
+
+---
+# GPU Node Taints and Labels
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-node-setup-script
+  namespace: finops-ai-services
+data:
+  setup-gpu-nodes.sh: |
+    #!/bin/bash
+    # Script to set up GPU nodes with proper taints and labels
+    
+    # Label GPU nodes
+    kubectl label nodes -l accelerator=nvidia-tesla-v100 node-type=gpu-enabled --overwrite
+    kubectl label nodes -l accelerator=nvidia-tesla-t4 node-type=gpu-enabled --overwrite
+    kubectl label nodes -l accelerator=nvidia-a100 node-type=gpu-enabled --overwrite
+    
+    # Taint GPU nodes to prevent non-GPU workloads
+    kubectl taint nodes -l node-type=gpu-enabled nvidia.com/gpu=present:NoSchedule --overwrite
+    kubectl taint nodes -l node-type=gpu-enabled node-type=gpu-enabled:NoSchedule --overwrite
+    
+    # Set up node affinity for different GPU types
+    kubectl label nodes -l accelerator=nvidia-a100 gpu-tier=premium --overwrite
+    kubectl label nodes -l accelerator=nvidia-tesla-v100 gpu-tier=standard --overwrite
+    kubectl label nodes -l accelerator=nvidia-tesla-t4 gpu-tier=basic --overwrite
+    
+    echo "GPU nodes setup completed successfully"

@@ -556,3 +556,151 @@ class WebhookSecurityException(WebhookException):
             error_code='WEBHOOK_SECURITY_ERROR',
             **kwargs
         )
+
+
+class NLPProcessingError(FinOpsException):
+    """
+    Exception for Natural Language Processing errors.
+    
+    Raised when there are issues with NLP model loading,
+    query parsing, intent classification, or response generation.
+    """
+    
+    def __init__(
+        self, 
+        message: str, 
+        model_name: str = None,
+        query: str = None,
+        **kwargs
+    ):
+        details = kwargs.get('details', {})
+        if model_name:
+            details['model_name'] = model_name
+        if query:
+            details['query'] = query[:100] + "..." if len(query) > 100 else query
+            
+        super().__init__(
+            message=message,
+            error_code=kwargs.get('error_code', 'NLP_PROCESSING_ERROR'),
+            details=details,
+            **{k: v for k, v in kwargs.items() if k not in ['details', 'error_code']}
+        )
+
+
+class AIServiceError(FinOpsException):
+    """
+    Exception for AI service errors.
+    
+    Raised when there are issues with AI service operations,
+    model loading, inference, or system coordination.
+    """
+    
+    def __init__(
+        self, 
+        message: str, 
+        service_name: str = None,
+        operation: str = None,
+        **kwargs
+    ):
+        details = kwargs.get('details', {})
+        if service_name:
+            details['service_name'] = service_name
+        if operation:
+            details['operation'] = operation
+            
+        super().__init__(
+            message=message,
+            error_code=kwargs.get('error_code', 'AI_SERVICE_ERROR'),
+            details=details,
+            **{k: v for k, v in kwargs.items() if k not in ['details', 'error_code']}
+        )
+
+
+class ModelNotFoundError(AIServiceError):
+    """Exception for model not found errors."""
+    
+    def __init__(self, message: str, model_id: str = None, **kwargs):
+        details = kwargs.get('details', {})
+        if model_id:
+            details['model_id'] = model_id
+            
+        super().__init__(
+            message=message,
+            error_code='MODEL_NOT_FOUND',
+            details=details,
+            **{k: v for k, v in kwargs.items() if k != 'details'}
+        )
+
+
+class ModelManagerError(AIServiceError):
+    """Exception for ML model management errors."""
+    
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message=message,
+            error_code='MODEL_MANAGER_ERROR',
+            service_name='ml_model_manager',
+            **kwargs
+        )
+
+
+class ABTestingError(AIServiceError):
+    """Exception for A/B testing framework errors."""
+    
+    def __init__(self, message: str, test_id: str = None, **kwargs):
+        details = kwargs.get('details', {})
+        if test_id:
+            details['test_id'] = test_id
+            
+        super().__init__(
+            message=message,
+            error_code='AB_TESTING_ERROR',
+            service_name='ab_testing_framework',
+            details=details,
+            **{k: v for k, v in kwargs.items() if k != 'details'}
+        )
+
+
+class ExperimentTrackerError(AIServiceError):
+    """Exception for experiment tracker errors."""
+    
+    def __init__(self, message: str, experiment_id: str = None, **kwargs):
+        details = kwargs.get('details', {})
+        if experiment_id:
+            details['experiment_id'] = experiment_id
+            
+        super().__init__(
+            message=message,
+            error_code='EXPERIMENT_TRACKER_ERROR',
+            service_name='experiment_tracker',
+            details=details,
+            **{k: v for k, v in kwargs.items() if k != 'details'}
+        )
+
+
+class RLAgentError(AIServiceError):
+    """Exception for reinforcement learning agent errors."""
+    
+    def __init__(self, message: str, **kwargs):
+        super().__init__(
+            message=message,
+            error_code='RL_AGENT_ERROR',
+            service_name='reinforcement_learning_agent',
+            **kwargs
+        )
+
+
+class OptimizerError(AIServiceError):
+    """Exception for optimizer errors."""
+    
+    def __init__(self, message: str, optimizer_type: str = None, **kwargs):
+        details = kwargs.get('details', {})
+        if optimizer_type:
+            details['optimizer_type'] = optimizer_type
+            
+        super().__init__(
+            message=message,
+            error_code='OPTIMIZER_ERROR',
+            details=details,
+            **{k: v for k, v in kwargs.items() if k != 'details'}
+        )

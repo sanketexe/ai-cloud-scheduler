@@ -62,6 +62,13 @@ def create_celery_app() -> Celery:
             'backend.core.tasks.analyze_optimization_opportunities': {'queue': 'analysis'},
             'backend.core.tasks.detect_cost_anomalies': {'queue': 'analysis'},
             'backend.core.tasks.cleanup_old_data': {'queue': 'maintenance'},
+            # Multi-cloud pricing update tasks
+            'backend.tasks.pricing_update_tasks.update_aws_pricing': {'queue': 'pricing_updates'},
+            'backend.tasks.pricing_update_tasks.update_gcp_pricing': {'queue': 'pricing_updates'},
+            'backend.tasks.pricing_update_tasks.update_azure_pricing': {'queue': 'pricing_updates'},
+            'backend.tasks.pricing_update_tasks.update_all_provider_pricing': {'queue': 'pricing_updates'},
+            'backend.tasks.pricing_update_tasks.detect_pricing_changes': {'queue': 'pricing_analysis'},
+            'backend.tasks.pricing_update_tasks.validate_pricing_data': {'queue': 'pricing_analysis'},
         },
         
         # Define queues
@@ -73,6 +80,8 @@ def create_celery_app() -> Celery:
             Queue('monitoring', routing_key='monitoring'),
             Queue('analysis', routing_key='analysis'),
             Queue('maintenance', routing_key='maintenance'),
+            Queue('pricing_updates', routing_key='pricing_updates'),
+            Queue('pricing_analysis', routing_key='pricing_analysis'),
         ),
         
         # Beat schedule for periodic tasks
@@ -118,6 +127,28 @@ def create_celery_app() -> Celery:
                 'schedule': 7 * 24 * 60 * 60,  # Weekly
                 'options': {'queue': 'maintenance'}
             },
+            
+            # Multi-cloud pricing update tasks
+            # Update all provider pricing daily at 1 AM UTC
+            'update-all-pricing': {
+                'task': 'backend.tasks.pricing_update_tasks.update_all_provider_pricing',
+                'schedule': 24 * 60 * 60,  # Daily
+                'options': {'queue': 'pricing_updates'}
+            },
+            
+            # Detect pricing changes every 6 hours
+            'detect-pricing-changes': {
+                'task': 'backend.tasks.pricing_update_tasks.detect_pricing_changes',
+                'schedule': 6 * 60 * 60,  # 6 hours in seconds
+                'options': {'queue': 'pricing_analysis'}
+            },
+            
+            # Validate pricing data daily at 4 AM UTC
+            'validate-pricing-data': {
+                'task': 'backend.tasks.pricing_update_tasks.validate_pricing_data',
+                'schedule': 24 * 60 * 60,  # Daily
+                'options': {'queue': 'pricing_analysis'}
+            },
         },
         
         # Error handling
@@ -135,7 +166,7 @@ def create_celery_app() -> Celery:
 celery_app = create_celery_app()
 
 # Auto-discover tasks
-celery_app.autodiscover_tasks(['backend.core'])
+celery_app.autodiscover_tasks(['backend.core', 'backend.tasks'])
 
 if __name__ == '__main__':
     celery_app.start()

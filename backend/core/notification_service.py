@@ -446,6 +446,71 @@ class NotificationService:
     def clear_history(self):
         """Clear notification history"""
         self.notification_history.clear()
+    
+    async def send_pricing_change_alert(self, change_info: Dict[str, Any]) -> Dict[str, bool]:
+        """
+        Send pricing change alert to configured channels.
+        
+        Args:
+            change_info: Dictionary containing pricing change details
+            
+        Returns:
+            Dict mapping channel_id to success status
+        """
+        # Create notification message
+        provider = change_info.get('provider', 'Unknown')
+        service = change_info.get('service', 'Unknown')
+        region = change_info.get('region', 'Unknown')
+        change_percentage = change_info.get('change_percentage', 0)
+        change_direction = change_info.get('change_direction', 'change')
+        current_price = change_info.get('current_price', 0)
+        previous_price = change_info.get('previous_price', 0)
+        
+        # Determine priority based on change magnitude
+        if change_percentage >= 50:
+            priority = NotificationPriority.HIGH
+        elif change_percentage >= 25:
+            priority = NotificationPriority.MEDIUM
+        else:
+            priority = NotificationPriority.LOW
+        
+        title = f"Pricing {change_direction.title()} Alert: {provider.upper()} {service}"
+        
+        message = (
+            f"Significant pricing {change_direction} detected for {provider.upper()} {service} "
+            f"in {region}.\n\n"
+            f"Previous Price: ${previous_price:.4f}\n"
+            f"Current Price: ${current_price:.4f}\n"
+            f"Change: {change_percentage:.1f}% {change_direction}\n\n"
+            f"Please review your cost projections and consider updating your budgets."
+        )
+        
+        notification = NotificationMessage(
+            title=title,
+            message=message,
+            priority=priority,
+            metadata={
+                'alert_type': 'pricing_change',
+                'provider': provider,
+                'service': service,
+                'region': region,
+                'change_percentage': change_percentage,
+                'change_direction': change_direction,
+                'current_price': current_price,
+                'previous_price': previous_price,
+                **change_info
+            },
+            alert_id=f"pricing_{provider}_{service}_{region}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            cost_amount=current_price
+        )
+        
+        # Send to all registered channels (in production, you'd configure specific channels for pricing alerts)
+        channel_ids = list(self.channels.keys())
+        if not channel_ids:
+            logger.warning("No notification channels configured for pricing alerts")
+            return {}
+        
+        return await self.send_notification(channel_ids, notification)
 
 
 # Global notification service instance

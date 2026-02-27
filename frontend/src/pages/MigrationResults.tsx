@@ -22,6 +22,12 @@ import {
   Avatar,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  CircularProgress,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -36,6 +42,7 @@ import {
   Storage,
   Memory,
   Speed,
+  ContentCopy,
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -55,6 +62,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { reportApi, ComprehensiveReport } from '../services/reportApi';
 
 interface CloudProvider {
   name: string;
@@ -100,9 +108,16 @@ const MigrationResults: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<MigrationResults | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [comprehensiveReport, setComprehensiveReport] = useState<ComprehensiveReport | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareLink, setShareLink] = useState<string>('');
+  const [expirationDays, setExpirationDays] = useState(30);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   useEffect(() => {
     loadResults();
+    loadComprehensiveReport();
   }, [projectId]);
 
   const loadResults = async () => {
@@ -212,6 +227,67 @@ const MigrationResults: React.FC = () => {
     }
   };
 
+  const loadComprehensiveReport = async () => {
+    if (!projectId) return;
+    
+    try {
+      const report = await reportApi.getLatestReport(projectId);
+      setComprehensiveReport(report);
+    } catch (error) {
+      console.error('Failed to load comprehensive report:', error);
+      // Don't show error toast here as this is optional
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!projectId || !results) return;
+    
+    try {
+      setExportingPDF(true);
+      await reportApi.downloadPDF(projectId, results.organization_name);
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast.error('Failed to export PDF report');
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  const handleCreateShareLink = async () => {
+    if (!projectId) return;
+    
+    try {
+      const shareData = await reportApi.createShareableLink(projectId, expirationDays);
+      setShareLink(shareData.share_url);
+      toast.success('Shareable link created successfully');
+    } catch (error) {
+      console.error('Failed to create shareable link:', error);
+      toast.error('Failed to create shareable link');
+    }
+  };
+
+  const handleCopyShareLink = () => {
+    navigator.clipboard.writeText(shareLink);
+    toast.success('Link copied to clipboard');
+  };
+
+  const handleGenerateReport = async () => {
+    if (!projectId) return;
+    
+    try {
+      setGeneratingReport(true);
+      await reportApi.generateReport(projectId);
+      await loadComprehensiveReport();
+      toast.success('Comprehensive report generated successfully');
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+      toast.error('Failed to generate comprehensive report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg">
@@ -284,12 +360,31 @@ const MigrationResults: React.FC = () => {
             </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button startIcon={<Download />} variant="outlined">
-              Export PDF
+            <Button 
+              startIcon={exportingPDF ? <CircularProgress size={16} /> : <Download />} 
+              variant="outlined"
+              onClick={handleExportPDF}
+              disabled={exportingPDF}
+            >
+              {exportingPDF ? 'Exporting...' : 'Export PDF'}
             </Button>
-            <Button startIcon={<Share />} variant="outlined">
+            <Button 
+              startIcon={<Share />} 
+              variant="outlined"
+              onClick={() => setShareDialogOpen(true)}
+            >
               Share
             </Button>
+            {!comprehensiveReport && (
+              <Button 
+                startIcon={generatingReport ? <CircularProgress size={16} /> : <Info />}
+                variant="contained"
+                onClick={handleGenerateReport}
+                disabled={generatingReport}
+              >
+                {generatingReport ? 'Generating...' : 'Generate Full Report'}
+              </Button>
+            )}
           </Box>
         </Box>
 
@@ -499,6 +594,62 @@ const MigrationResults: React.FC = () => {
           </Grid>
         </Paper>
       </Box>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onClose={() => setShareDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Share Migration Report</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Create a shareable link that allows others to view your migration report without requiring login.
+          </Typography>
+          
+          <TextField
+            label="Link expires in (days)"
+            type="number"
+            value={expirationDays}
+            onChange={(e) => setExpirationDays(parseInt(e.target.value) || 30)}
+            fullWidth
+            sx={{ mb: 2 }}
+            inputProps={{ min: 1, max: 365 }}
+          />
+          
+          {shareLink && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Shareable Link:
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  value={shareLink}
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+                <Button
+                  startIcon={<ContentCopy />}
+                  onClick={handleCopyShareLink}
+                  variant="outlined"
+                  size="small"
+                >
+                  Copy
+                </Button>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                This link will expire in {expirationDays} days
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShareDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleCreateShareLink} variant="contained">
+            {shareLink ? 'Generate New Link' : 'Create Link'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
