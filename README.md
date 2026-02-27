@@ -1,332 +1,308 @@
-# 🌟 FinOps Automated Cost Optimization Platform
+# ☁️ AI Cloud Scheduler — FinOps Platform
 
-> **Enterprise-grade multi-cloud cost optimization and migration planning platform with automated remediation**
+**An intelligent cloud financial operations (FinOps) platform that helps startups and SMBs optimize cloud costs, plan on-premises to cloud migrations, and automate infrastructure management using AI/ML.**
 
-[![Platform Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/sanketexe/ai-cloud-scheduler)
-[![Implementation](https://img.shields.io/badge/Implementation-Complete-blue)](https://github.com/sanketexe/ai-cloud-scheduler)
-[![Tests](https://img.shields.io/badge/Property%20Tests-21%2F21%20Passing-green)](https://github.com/sanketexe/ai-cloud-scheduler)
-[![Tech Stack](https://img.shields.io/badge/Stack-FastAPI%20%7C%20React%20%7C%20PostgreSQL-orange)](https://github.com/sanketexe/ai-cloud-scheduler)
-
-A comprehensive FinOps platform for **automated cost optimization**, **multi-cloud migration planning**, and **enterprise resource management** with production-grade safety mechanisms.
-
-## 🎯 **Key Achievements**
-
-- ✅ **18/18 Tasks Completed** from automated-cost-optimization specification
-- ✅ **AI Anomaly Detection** with real-time ML-based cost monitoring ⭐ NEW!
-- ✅ **22/22 Property-Based Tests Passing** with comprehensive validation
-- ✅ **Production-Ready Implementation** with safety mechanisms
-- ✅ **Multi-Account AWS Support** with cross-account coordination
-- ✅ **Real-time Cost Optimization** with automated remediation
-- ✅ **Enterprise Compliance** with audit logging and data privacy
-
-## 💰 **Proven Results**
-
-- **25-40% cost reduction** across cloud infrastructure
-- **$2,400+ monthly savings** potential (demonstrated in platform)
-- **87% forecast accuracy** for 30-day cost predictions ⭐ NEW!
-- **10-30% cost overrun prevention** through AI early warning ⭐ NEW!
-- **Automated optimization actions** with safety validation
-- **Multi-cloud** AWS, GCP, Azure support
-- **Production-grade** safety and rollback mechanisms
-
-## 🚀 **Core Features**
-
-### 🤖 **AI-Powered Cost Anomaly Detection** ⭐ NEW!
-- **Real-time Anomaly Detection**: ML models detect cost spikes within 5 minutes
-- **Predictive Forecasting**: 30-day cost forecasts with 87% accuracy
-- **Budget Overrun Prevention**: 3-7 day advance warning of budget issues
-- **Explainable AI**: Human-readable explanations for every anomaly
-- **Service-level Analysis**: Drill-down to specific AWS services and resources
-
-### 🤖 **Automated Cost Optimization**
-- **EC2 Instance Optimization**: Stop unused instances, resize underutilized resources
-- **Storage Optimization**: Delete unattached volumes, GP2→GP3 upgrades
-- **Network Cleanup**: Release unused Elastic IPs, optimize load balancers
-- **Real-time Savings Calculation**: Track ROI and cost impact
-- **Safety Validation**: Production resource protection with tag-based rules
-
-### 🌐 **Multi-Cloud Migration Planning**
-- **Migration Assessment**: Analyze workloads for cloud migration
-- **Provider Recommendations**: Compare AWS, GCP, Azure costs and benefits
-- **Migration Wizard**: Step-by-step migration planning interface
-- **Cost Comparison**: Detailed cost analysis across cloud providers
-- **Resource Organization**: Categorize and organize cloud resources
-
-### 🏢 **Enterprise Management**
-- **Multi-Account Support**: Manage multiple AWS accounts with consolidated reporting
-- **Policy Enforcement**: Configurable safety rules and approval workflows
-- **Compliance & Audit**: Immutable audit trails with 730-day retention
-- **Business Hours Enforcement**: Intelligent scheduling with maintenance windows
-- **Notification System**: Multi-channel alerts (Email, Slack, Teams)
-
-### ⚡ Quick Start
-
-> **Note**: For detailed setup instructions, including prerequisites and troubleshooting, please refer to our [Quick Start Guide](docs/QUICK_START.md).
-
-### 📊 **Advanced Analytics**
-- **Cost Analysis Dashboard**: Real-time cost tracking and trend analysis
-- **Budget Management**: Set budgets, track spending, receive alerts
-- **Waste Detection**: Identify unused resources and optimization opportunities
-- **Reserved Instance Optimization**: RI purchase recommendations
-- **Comprehensive Reporting**: Detailed cost and migration reports
-
-## 🏗️ **Architecture**
-
-### **Backend (FastAPI)**
-```
-backend/
-├── core/                           # Core business logic
-│   ├── auto_remediation_engine.py  # Main automation orchestrator
-│   ├── safety_checker.py           # Production safety validation
-│   ├── ec2_instance_optimizer.py   # EC2 optimization logic
-│   ├── storage_optimizer.py        # EBS volume optimization
-│   ├── network_optimizer.py        # Network resource cleanup
-│   ├── savings_calculator.py       # Cost tracking and ROI
-│   ├── multi_account_manager.py    # Cross-account coordination
-│   ├── policy_manager.py           # Rule enforcement
-│   ├── scheduling_engine.py        # Intelligent timing
-│   ├── notification_service.py     # Multi-channel alerts
-│   ├── compliance_manager.py       # Audit and compliance
-│   └── migration_advisor/          # Migration planning system
-├── test_property_*.py              # 21 Property-based tests
-└── main.py                         # FastAPI application
-```
-
-### **Frontend (React + TypeScript)**
-```
-frontend/src/
-├── pages/
-│   ├── Dashboard.tsx               # Main cost dashboard
-│   ├── MigrationWizard.tsx         # Multi-cloud migration planning
-│   ├── AutomationDashboard.tsx     # Automation monitoring
-│   ├── CostAnalysis.tsx            # Detailed cost analysis
-│   ├── BudgetManagement.tsx        # Budget tracking
-│   └── Compliance.tsx              # Audit and compliance
-├── components/
-│   ├── ActionApproval.tsx          # Approval workflow UI
-│   ├── PolicyConfiguration.tsx     # Policy management
-│   └── SavingsReports.tsx          # Cost reporting
-└── services/                       # API integration
-```
-
-## 🚀 **Quick Start**
-
-### **Option 1: Complete Platform (Recommended - ALL Features Working)**
-```bash
-# Clone the repository
-git clone <repository-url>
-cd TS_AI_CLOUD_SCHEDULER
-
-# Start complete platform with ALL features
-python start_complete_platform.py
-
-# Access the platform
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-```
-
-### **Option 2: Full Docker Setup**
-```bash
-# Start all services with monitoring
-docker-compose up -d
-
-# Access the platform
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# Grafana: http://localhost:3001
-```
-
-### **Option 3: Manual Setup**
-```bash
-# Backend (Terminal 1)
-python complete_backend.py
-
-# Frontend (Terminal 2)
-cd frontend
-npm install
-npm start
-
-# Access at http://localhost:3000
-```
-
-## 🔧 **Configuration**
-
-### **Environment Variables**
-```bash
-# Database
-DATABASE_URL=postgresql://finops:password@postgres:5432/finops_db
-
-# AWS Configuration
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-AWS_REGION=us-west-2
-
-# Notifications
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
-SMTP_SERVER=smtp.gmail.com
-SMTP_USERNAME=your-email@company.com
-SMTP_PASSWORD=your-app-password
-```
-
-### **AWS IAM Setup**
-Deploy this CloudFormation template to each AWS account:
-```yaml
-# Deploy FinOps IAM role for cross-account access
-aws cloudformation create-stack \
-  --stack-name finops-access-role \
-  --template-body file://scripts/finops-iam-role.yaml \
-  --capabilities CAPABILITY_NAMED_IAM
-```
-
-## 🧪 **Testing & Validation**
-
-### **Property-Based Testing**
-The platform includes 21 comprehensive property-based tests:
-```bash
-# Run all property tests
-cd backend
-python -m pytest test_property_*.py -v
-
-# Example: Test safety validation
-python -m pytest test_property_safety_validation.py -v
-```
-
-### **Key Test Categories**
-- **Safety Validation**: Production resource protection
-- **Multi-Account Coordination**: Cross-account operations
-- **Savings Calculation**: Cost optimization accuracy
-- **Policy Enforcement**: Rule validation
-- **Compliance**: Audit trail integrity
-
-## 📊 **Monitoring & Observability**
-
-### **Metrics & Dashboards**
-- **Prometheus**: Metrics collection (port 9090)
-- **Grafana**: Visualization dashboards (port 3001)
-- **ELK Stack**: Centralized logging
-- **Health Checks**: Comprehensive system monitoring
-
-### **Key Metrics Tracked**
-- Cost optimization savings
-- Action success rates
-- Safety check violations
-- Multi-account coordination status
-- System performance metrics
-
-## 🔐 **Security & Compliance**
-
-### **Security Features**
-- JWT-based authentication
-- Role-based access control
-- Cross-account IAM role assumption
-- Production resource protection
-- Audit trail immutability
-
-### **Compliance**
-- 730-day data retention policy
-- PII anonymization and scrubbing
-- Regulatory compliance reporting
-- Data integrity verification
-- GDPR and SOX compliance ready
-
-## 🌐 **Multi-Cloud Support**
-
-### **Supported Providers**
-- **AWS**: Full integration with cost optimization
-- **GCP**: Migration planning and cost comparison
-- **Azure**: Migration assessment and recommendations
-
-### **Migration Capabilities**
-- Cross-cloud cost comparison
-- Workload compatibility analysis
-- Migration timeline planning
-- Risk assessment and mitigation
-
-## 📈 **Business Impact**
-
-### **Cost Optimization Results**
-- **Average 25% cost reduction** across implementations
-- **ROI of 340%** within first 6 months
-- **Automated detection** of 95% of optimization opportunities
-- **Zero production incidents** with safety mechanisms
-
-### **Operational Benefits**
-- **80% reduction** in manual cost optimization tasks
-- **Real-time visibility** into cloud spending
-- **Proactive cost management** with predictive analytics
-- **Compliance automation** reducing audit overhead
-
-## 🛠️ **Development**
-
-### **Tech Stack**
-- **Backend**: FastAPI, SQLAlchemy, Celery, Redis
-- **Frontend**: React, TypeScript, Material-UI, Recharts
-- **Database**: PostgreSQL with Redis caching
-- **Monitoring**: Prometheus, Grafana, ELK Stack
-- **Testing**: Pytest, Hypothesis (Property-based testing)
-- **Deployment**: Docker, Kubernetes, Helm
-
-### **API Documentation**
-- **Interactive Docs**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **OpenAPI Spec**: Full REST API with authentication
-
-## 📋 **Implementation Status**
-
-### ✅ **Completed Features**
-1. **Core Automation Infrastructure** - Production ready
-2. **EC2 Instance Optimization** - Fully implemented
-3. **Storage Optimization Engine** - Complete with GP2→GP3 upgrades
-4. **Network Resource Cleanup** - Automated IP and LB management
-5. **Policy Enforcement System** - Rule-based validation
-6. **Intelligent Scheduling** - Business hours and maintenance windows
-7. **Monitoring & Notifications** - Multi-channel alert system
-8. **Cost Tracking & Savings** - Real-time ROI calculation
-9. **Multi-Account Management** - Cross-account coordination
-10. **Compliance & Audit System** - Immutable logging
-11. **External Integrations** - Webhook and API management
-12. **REST API Endpoints** - Complete API implementation
-13. **Frontend Dashboard** - React-based UI
-14. **Production Deployment** - Docker and Kubernetes ready
-15. **Migration Planning System** - Multi-cloud assessment
-16. **Property-Based Testing** - 21 tests covering all features
-17. **Production Readiness** - Monitoring, backup, disaster recovery
-
-### 🎯 **All Specification Requirements Met**
-- **Automated Cost Optimization**: ✅ Complete
-- **Migration Analysis & Recommendations**: ✅ Complete
-- **Enterprise Management**: ✅ Complete
-- **Production Deployment**: ✅ Complete
-
-## 🤝 **Contributing**
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 **License**
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 **Support**
-
-- **Documentation**: Comprehensive guides in `/docs`
-- **API Reference**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **Issues**: GitHub Issues for bug reports and feature requests
-
-## 🎉 **Acknowledgments**
-
-- Built with modern cloud-native technologies
-- Implements FinOps best practices and industry standards
-- Production-tested with enterprise-grade safety mechanisms
-- Comprehensive property-based testing for reliability
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB?logo=react)](frontend/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)](backend/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python)](requirements.txt)
 
 ---
 
-**🚀 Ready to optimize your cloud costs? Get started in 5 minutes!**
+## 📌 What is this?
 
-**Built with ❤️ for the FinOps community**
+AI Cloud Scheduler is a **full-stack FinOps platform** designed for startups migrating from on-premises infrastructure to cloud providers (AWS, GCP, Azure). It provides:
+
+- **Cost Analysis & Optimization** — Real-time AWS cost monitoring with anomaly detection
+- **On-Prem → Cloud Migration Planner** — TCO comparison, risk assessment, and phased migration plans
+- **Multi-Cloud Cost Comparison** — Side-by-side pricing across AWS, GCP, and Azure
+- **AI-Powered Recommendations** — ML-based cost forecasting, anomaly alerts, and savings suggestions
+- **Budget & Compliance Management** — Automated budget tracking with alert thresholds
+- **Automation Engine** — Policy-based auto-scaling, scheduling, and remediation
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (React 18)                      │
+│                        localhost:3000                            │
+│                                                                 │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────────┐  │
+│  │Dashboard │ │Migration │ │MultiCloud│ │  Cost Analysis     │  │
+│  │          │ │ Planner  │ │Dashboard │ │  & Optimization    │  │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────────┬───────────┘  │
+│       │             │            │                 │              │
+│  ┌────┴─────────────┴────────────┴─────────────────┴───────────┐ │
+│  │              API Service Layer (Axios)                       │ │
+│  │  api.ts | multiCloudApi.ts | migrationApi.ts | anomalyApi   │ │
+│  └─────────────────────────┬───────────────────────────────────┘ │
+└────────────────────────────┼─────────────────────────────────────┘
+                             │  HTTP (REST API)
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     BACKEND (FastAPI + Python)                   │
+│                        localhost:8000                            │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                    API Layer (api/)                        │   │
+│  │  onboarding.py | multi_cloud.py | anomaly_detection.py    │   │
+│  └──────────────────────────┬───────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────┴───────────────────────────────┐   │
+│  │                 Core Services (core/)                      │   │
+│  │                                                           │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐  │   │
+│  │  │ Cost Engine  │  │  Migration  │  │   AI / ML        │  │   │
+│  │  │ & Optimizer  │  │   Advisor   │  │   Services       │  │   │
+│  │  └─────────────┘  └─────────────┘  └──────────────────┘  │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐  │   │
+│  │  │ Compliance  │  │ Automation  │  │   Budget &       │  │   │
+│  │  │ Framework   │  │   Engine    │  │   Alerts         │  │   │
+│  │  └─────────────┘  └─────────────┘  └──────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────┴───────────────────────────────┐   │
+│  │              ML Pipeline (ml/)                             │   │
+│  │  anomaly_detector | forecast_engine | cost_data_collector  │   │
+│  │  lstm_detector | prophet_forecaster | feature_store        │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔧 Tech Stack
+
+| Layer         | Technology                                                  |
+|---------------|-------------------------------------------------------------|
+| **Frontend**  | React 18, TypeScript, Material UI (MUI), React Query, Axios |
+| **Backend**   | Python 3.10+, FastAPI, Uvicorn, Pydantic                    |
+| **ML/AI**     | Scikit-learn, Prophet, LSTM (PyTorch), Isolation Forest      |
+| **Database**  | PostgreSQL (prod), SQLite (dev), SQLAlchemy ORM              |
+| **Caching**   | Redis                                                        |
+| **Task Queue**| Celery + Redis                                               |
+| **DevOps**    | Docker, Docker Compose, Kubernetes (k8s manifests)           |
+| **Monitoring**| Prometheus, Grafana, InfluxDB (time-series)                  |
+
+---
+
+## 📂 Project Structure
+
+```
+TS_AI_CLOUD_SCHEDULER/
+├── frontend/                    # React SPA
+│   ├── src/
+│   │   ├── pages/               # 26 page components
+│   │   │   ├── Dashboard.tsx           # Main FinOps dashboard
+│   │   │   ├── MigrationPlanner.tsx    # On-Prem → Cloud migration planner
+│   │   │   ├── MigrationWizard.tsx     # Step-by-step migration wizard
+│   │   │   ├── MultiCloudDashboard.tsx # AWS vs GCP vs Azure comparison
+│   │   │   ├── CostAnalysis.tsx        # Detailed cost breakdown
+│   │   │   ├── AWSCostAnalysis.tsx     # AWS-specific cost analysis
+│   │   │   ├── AnomalyDashboard.tsx    # Cost anomaly detection
+│   │   │   ├── AutomationDashboard.tsx # Automation rules & policies
+│   │   │   ├── BudgetManagement.tsx    # Budget tracking & alerts
+│   │   │   ├── Compliance.tsx          # Compliance monitoring
+│   │   │   ├── Optimization.tsx        # Cost optimization suggestions
+│   │   │   └── ...                     # Reports, Settings, Alerts, etc.
+│   │   ├── components/          # Reusable UI components
+│   │   │   ├── Layout/                 # Sidebar, Header
+│   │   │   ├── Migration/              # Timeline, CostBenefit, RiskAssessment
+│   │   │   ├── MigrationWizard/        # Multi-step wizard forms
+│   │   │   ├── MultiCloud/             # CostMatrix, TCO, ProviderOverview
+│   │   │   └── AI/                     # AI dashboard components
+│   │   └── services/            # API service layer
+│   │       ├── api.ts                  # Core API client
+│   │       ├── multiCloudApi.ts        # Multi-cloud endpoints
+│   │       ├── migrationApi.ts         # Migration endpoints
+│   │       └── anomalyApi.ts           # Anomaly detection endpoints
+│   └── package.json
+│
+├── backend/                     # FastAPI backend
+│   ├── main.py                  # App entry point & route registration
+│   ├── api/                     # REST API endpoints
+│   │   ├── onboarding.py               # AWS credential setup & demo mode
+│   │   ├── multi_cloud.py              # Multi-cloud comparison API
+│   │   ├── anomaly_detection.py        # Anomaly detection API
+│   │   └── multi_cloud_models.py       # Pydantic models
+│   ├── core/                    # Business logic (146 modules)
+│   │   ├── finops_engine.py            # Core FinOps cost engine
+│   │   ├── aws_cost_analyzer.py        # AWS cost analysis
+│   │   ├── cost_anomaly_detector.py    # Cost anomaly detection
+│   │   ├── migration_advisor/          # Migration planning (69 files)
+│   │   ├── tco_calculator.py           # Total Cost of Ownership
+│   │   ├── multi_cloud_cost_engine.py  # Multi-cloud pricing
+│   │   ├── automation_endpoints.py     # Automation rules
+│   │   ├── compliance_manager.py       # Compliance framework
+│   │   ├── budget_management_system.py # Budget tracking
+│   │   ├── ai_orchestrator.py          # AI service orchestration
+│   │   ├── policy_manager.py           # Policy engine
+│   │   └── ...                         # 130+ more modules
+│   ├── ml/                      # Machine Learning pipeline
+│   │   ├── anomaly_detector.py         # Anomaly detection models
+│   │   ├── forecast_engine.py          # Cost forecasting
+│   │   ├── prophet_forecaster.py       # Facebook Prophet integration
+│   │   ├── lstm_anomaly_detector.py    # LSTM neural network
+│   │   ├── training_pipeline.py        # Model training
+│   │   ├── feature_store.py            # ML feature engineering
+│   │   └── ...                         # 20+ ML modules
+│   └── requirements.txt
+│
+├── start_backend.py             # Simplified dev server (mock data)
+├── docker-compose.yml           # Full-stack Docker setup
+├── k8s/                         # Kubernetes deployment manifests
+├── monitoring/                  # Prometheus & Grafana configs
+├── docs/                        # Documentation
+└── scripts/                     # Utility scripts
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** 16+ and **npm**
+- **Python** 3.10+
+- **pip** (Python package manager)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/sanketexe/ai-cloud-scheduler.git
+cd ai-cloud-scheduler
+```
+
+### 2. Install Dependencies
+
+```bash
+# Backend
+pip install fastapi uvicorn pydantic
+
+# Frontend
+cd frontend
+npm install
+cd ..
+```
+
+### 3. Start the Application
+
+**Terminal 1 — Backend API:**
+```bash
+python start_backend.py
+```
+> Backend runs at **http://localhost:8000**
+> API docs available at **http://localhost:8000/docs**
+
+**Terminal 2 — Frontend:**
+```bash
+cd frontend
+npm start
+```
+> Frontend runs at **http://localhost:3000**
+
+### 4. Login
+
+Open **http://localhost:3000** and click **"Try Demo Mode"** to explore the platform with sample data — no AWS credentials needed.
+
+---
+
+## 📋 Key Features
+
+### 1. On-Premises → Cloud Migration Planner
+Plan your migration from physical servers to AWS/cloud:
+- Select on-prem workloads (e.g., Dell PowerEdge, HP ProLiant servers)
+- Choose target cloud provider (AWS, GCP, Azure)
+- Get migration cost breakdown, timeline (in days), and ROI analysis
+- Risk assessment with mitigation strategies
+- Phased migration process: Infrastructure Audit → TCO Comparison → Risk Assessment → Timeline → Training → Go-Live
+
+### 2. Multi-Cloud Cost Comparison
+- Compare pricing across **AWS**, **GCP**, and **Azure** for identical workloads
+- Cost breakdown by category: compute, storage, network, database
+- TCO analysis over 1-5 year time horizons
+- Savings recommendations with provider-specific tips
+
+### 3. Cost Analysis & Anomaly Detection
+- Real-time AWS cost monitoring and trending
+- ML-powered anomaly detection (LSTM, Isolation Forest)
+- Cost forecasting with Facebook Prophet
+- Automated alerts for cost spikes
+
+### 4. Budget Management
+- Set monthly/quarterly budget limits per team or project
+- Track budget utilization in real-time
+- Customizable alert thresholds (50%, 80%, 100%)
+- Budget forecasting and trend analysis
+
+### 5. Automation & Optimization
+- Policy-based cost optimization rules
+- Auto-scaling recommendations for EC2, RDS, EKS
+- Scheduled resource start/stop for dev environments
+- Waste detection for idle/underutilized resources
+
+### 6. Compliance & Governance
+- Built-in compliance frameworks (SOC2, HIPAA, PCI-DSS, GDPR)
+- Tagging policy enforcement
+- Resource organization and taxonomy management
+- Audit logging and reporting
+
+---
+
+## 🐳 Docker Deployment
+
+For a full production-like deployment with all services:
+
+```bash
+docker-compose up -d
+```
+
+This starts:
+- FastAPI backend with PostgreSQL
+- React frontend (Nginx)
+- Redis (caching & task queue)
+- Celery workers (background jobs)
+- Prometheus + Grafana (monitoring)
+
+---
+
+## 🧪 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/onboarding/quick-setup` | Connect AWS credentials or start demo mode |
+| `GET`  | `/api/v1/multi-cloud/providers` | List supported cloud providers |
+| `GET`  | `/api/v1/multi-cloud/workloads` | Get on-premises workload inventory |
+| `POST` | `/api/v1/multi-cloud/migration` | Analyze on-prem → cloud migration |
+| `POST` | `/api/v1/multi-cloud/compare` | Compare workload costs across providers |
+| `POST` | `/api/v1/multi-cloud/tco` | Calculate Total Cost of Ownership |
+| `GET`  | `/api/cost-analysis` | AWS cost analysis data |
+| `GET`  | `/api/dashboard` | Dashboard overview metrics |
+| `GET`  | `/api/budgets` | Budget tracking data |
+| `GET`  | `/api/alerts` | Cost alerts and notifications |
+| `GET`  | `/health` | Health check |
+
+Full API documentation: **http://localhost:8000/docs** (Swagger UI)
+
+---
+
+## 🤖 AI/ML Capabilities
+
+The platform includes a comprehensive ML pipeline for intelligent cost management:
+
+| Model | Purpose | Module |
+|-------|---------|--------|
+| **LSTM Neural Network** | Time-series anomaly detection | `ml/lstm_anomaly_detector.py` |
+| **Isolation Forest** | Statistical anomaly detection | `ml/isolation_forest_detector.py` |
+| **Facebook Prophet** | Cost forecasting & seasonality | `ml/prophet_forecaster.py` |
+| **Ensemble Scorer** | Combined anomaly confidence scoring | `ml/ensemble_scorer.py` |
+| **Feature Store** | Automated feature engineering | `ml/feature_store.py` |
+| **Training Pipeline** | Automated model retraining | `ml/training_pipeline.py` |
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file.
