@@ -32,25 +32,42 @@ const OnboardingQuickStart: React.FC = () => {
         secret_access_key: '',
         region: 'us-east-1',
     });
+    const [analysisResult, setAnalysisResult] = useState<any>(null);
 
     const onboardingMutation = useMutation(
         async (data: typeof credentials) => {
-            // In dev/demo, we might use a different URL if proxy isn't set up perfectly, 
-            // but typically package.json proxy handles this.
-            const response = await axios.post('/api/v1/onboarding/quick-setup', data);
+            const response = await axios.post('http://localhost:8000/api/v1/onboarding/quick-setup', data);
             return response.data;
         },
         {
             onSuccess: (data) => {
                 toast.success(data.message);
                 setActiveStep(1);
-                // Simulate analysis time for UX
-                setTimeout(() => {
-                    setActiveStep(2);
-                }, 3000);
+
+                // Fetch dashboard data to get real savings info
+                fetch('http://localhost:8000/api/dashboard')
+                    .then(res => res.json())
+                    .then(dashData => {
+                        setAnalysisResult({
+                            account_id: data.account_id,
+                            potential_savings: dashData?.finops_summary?.monthlySavings || 0,
+                            total_cost: dashData?.finops_summary?.totalMonthlyCost || 0,
+                            optimization_opportunities: dashData?.finops_summary?.optimizationOpportunities || 0,
+                        });
+                        setActiveStep(2);
+                    })
+                    .catch(() => {
+                        setAnalysisResult({
+                            account_id: data.account_id,
+                            potential_savings: 0,
+                            total_cost: 0,
+                            optimization_opportunities: 0,
+                        });
+                        setActiveStep(2);
+                    });
             },
             onError: (error: any) => {
-                toast.error(error.response?.data?.detail || 'Failed to connect. Please check credentials.');
+                toast.error(error.response?.data?.message || error.response?.data?.detail || 'Failed to connect. Please check credentials.');
             },
         }
     );
@@ -58,21 +75,13 @@ const OnboardingQuickStart: React.FC = () => {
     const handleNext = () => {
         if (activeStep === 0) {
             if (!credentials.access_key_id || !credentials.secret_access_key) {
-                toast.error("Please enter credentials");
+                toast.error("Please enter your AWS credentials");
                 return;
             }
             onboardingMutation.mutate(credentials);
         } else if (activeStep === 2) {
             navigate('/dashboard');
         }
-    };
-
-    const handleDemoMode = () => {
-        setCredentials({
-            access_key_id: 'DEMO',
-            secret_access_key: 'DEMO',
-            region: 'us-east-1'
-        });
     };
 
     return (
@@ -124,9 +133,6 @@ const OnboardingQuickStart: React.FC = () => {
                                 <Alert severity="info" sx={{ mb: 3 }}>
                                     We use read-only access to analyze your Cost & Usage Reports.
                                     Your credentials are encrypted and never shared.
-                                    <Button size="small" onClick={handleDemoMode} sx={{ ml: 2, fontWeight: 'bold' }}>
-                                        Try Demo Mode instead
-                                    </Button>
                                 </Alert>
 
                                 <Grid container spacing={3}>
@@ -194,10 +200,28 @@ const OnboardingQuickStart: React.FC = () => {
                                     We've successfully connected to your account and identified initial savings.
                                 </Typography>
 
-                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap' }}>
+                                    <Box sx={{ p: 2, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                                        <Typography variant="caption" color="text.secondary">ACCOUNT ID</Typography>
+                                        <Typography variant="h6" color="primary.main">{analysisResult?.account_id || 'N/A'}</Typography>
+                                    </Box>
+                                    <Box sx={{ p: 2, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                                        <Typography variant="caption" color="text.secondary">MONTHLY COST</Typography>
+                                        <Typography variant="h4" color="primary.main">
+                                            ${analysisResult?.total_cost?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}
+                                        </Typography>
+                                    </Box>
                                     <Box sx={{ p: 2, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
                                         <Typography variant="caption" color="text.secondary">POTENTIAL SAVINGS</Typography>
-                                        <Typography variant="h4" color="primary.main">$1,240/mo</Typography>
+                                        <Typography variant="h4" sx={{ color: '#4caf50' }}>
+                                            ${analysisResult?.potential_savings?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}/mo
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ p: 2, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                                        <Typography variant="caption" color="text.secondary">OPPORTUNITIES</Typography>
+                                        <Typography variant="h4" color="warning.main">
+                                            {analysisResult?.optimization_opportunities || 0}
+                                        </Typography>
                                     </Box>
                                 </Box>
 
