@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -33,6 +33,30 @@ const OnboardingQuickStart: React.FC = () => {
         region: 'us-east-1',
     });
     const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                const response = await axios.get('http://localhost:8000/api/v1/aws/status');
+                if (response.data.connected) {
+                    // Fetch real numbers for the success screen
+                    const dashRes = await fetch('http://localhost:8000/api/dashboard');
+                    const dashData = await dashRes.json();
+
+                    setAnalysisResult({
+                        account_id: response.data.account_id,
+                        potential_savings: dashData?.finops_summary?.monthlySavings || 0,
+                        total_cost: dashData?.finops_summary?.totalMonthlyCost || 0,
+                        optimization_opportunities: dashData?.finops_summary?.optimizationOpportunities || 0,
+                    });
+                    setActiveStep(2);
+                }
+            } catch (error) {
+                console.error("Error checking AWS status:", error);
+            }
+        };
+        checkStatus();
+    }, []);
 
     const onboardingMutation = useMutation(
         async (data: typeof credentials) => {
@@ -81,6 +105,22 @@ const OnboardingQuickStart: React.FC = () => {
             onboardingMutation.mutate(credentials);
         } else if (activeStep === 2) {
             navigate('/dashboard');
+        }
+    };
+
+    const handleDisconnect = async () => {
+        try {
+            await axios.post('http://localhost:8000/api/v1/aws/disconnect');
+            setActiveStep(0);
+            setAnalysisResult(null);
+            setCredentials({
+                access_key_id: '',
+                secret_access_key: '',
+                region: 'us-east-1',
+            });
+            toast.success("Disconnected. You can now enter new credentials.");
+        } catch (error) {
+            toast.error("Failed to disconnect.");
         }
     };
 
@@ -225,14 +265,22 @@ const OnboardingQuickStart: React.FC = () => {
                                     </Box>
                                 </Box>
 
-                                <Box sx={{ mt: 6 }}>
+                                <Box sx={{ mt: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                                     <Button
                                         variant="contained"
                                         size="large"
                                         onClick={handleNext}
-                                        sx={{ px: 6, py: 1.5, fontSize: '1.1rem' }}
+                                        sx={{ px: 6, py: 1.5, fontSize: '1.1rem', width: 'fit-content' }}
                                     >
                                         Go to Dashboard
+                                    </Button>
+                                    <Button
+                                        variant="text"
+                                        color="inherit"
+                                        onClick={handleDisconnect}
+                                        sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}
+                                    >
+                                        Switch Account / Disconnect
                                     </Button>
                                 </Box>
                             </Box>

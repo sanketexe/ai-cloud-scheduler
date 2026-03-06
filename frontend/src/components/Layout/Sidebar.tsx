@@ -16,38 +16,69 @@ import {
   TrendingUp as TrendingUpIcon,
   AccountBalance as BudgetIcon,
   Lightbulb as OptimizationIcon,
-  Assessment as ReportsIcon,
   Notifications as AlertsIcon,
   Security as ComplianceIcon,
   Settings as SettingsIcon,
   AttachMoney as MoneyIcon,
-  Cloud as CloudIcon,
-  NotificationsActive as NotificationsActiveIcon,
-  AutoMode as AutomationIcon,
-  Psychology as AnomalyIcon,
-  CompareArrows as MultiCloudIcon,
+  EventNote as SchedulerIcon,
+  Assessment as ReportsIcon,
   FlightTakeoff as MigrationIcon,
-  SmartToy as AIIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 280;
 
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Cost Analysis', icon: <TrendingUpIcon />, path: '/cost-analysis' },
-  { text: 'Multi-Cloud Comparison', icon: <MultiCloudIcon />, path: '/multi-cloud' },
-  { text: 'Migration Planner', icon: <MigrationIcon />, path: '/migration-planner' },
-  { text: 'AI Dashboard', icon: <AIIcon />, path: '/ai-dashboard' },
-  { text: 'AWS Cost Analysis', icon: <CloudIcon />, path: '/aws-cost-analysis' },
-  { text: 'AWS Cost Alerts', icon: <NotificationsActiveIcon />, path: '/aws-cost-alerts' },
-  { text: 'Budget Management', icon: <BudgetIcon />, path: '/budgets' },
-  { text: 'Optimization', icon: <OptimizationIcon />, path: '/optimization' },
-  { text: 'Automation', icon: <AutomationIcon />, path: '/automation' },
-  { text: 'AI Anomaly Detection', icon: <AnomalyIcon />, path: '/anomaly-detection' },
-  { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
-  { text: 'Alerts', icon: <AlertsIcon />, path: '/alerts' },
-  { text: 'Compliance', icon: <ComplianceIcon />, path: '/compliance' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+interface MenuItem {
+  text: string;
+  icon: React.ReactElement;
+  path: string;
+}
+
+interface MenuSection {
+  label?: string;
+  items: MenuItem[];
+}
+
+const menuSections: MenuSection[] = [
+  {
+    items: [
+      { text: 'Home', icon: <HomeIcon />, path: '/' },
+      { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { text: 'Smart Scheduler', icon: <SchedulerIcon />, path: '/scheduler' },
+      { text: 'Optimization', icon: <OptimizationIcon />, path: '/optimization' },
+    ],
+  },
+  {
+    label: 'Cost Management',
+    items: [
+      { text: 'Cost Analysis', icon: <TrendingUpIcon />, path: '/cost-analysis' },
+      { text: 'Budgets', icon: <BudgetIcon />, path: '/budgets' },
+      { text: 'Alerts', icon: <AlertsIcon />, path: '/alerts' },
+    ],
+  },
+  {
+    label: 'Governance',
+    items: [
+      { text: 'Compliance', icon: <ComplianceIcon />, path: '/compliance' },
+      { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
+    ],
+  },
+  {
+    label: 'Cloud Strategy',
+    items: [
+      { text: 'Migration Planner', icon: <MigrationIcon />, path: '/migration-planner' },
+    ],
+  },
+  {
+    items: [
+      { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+    ],
+  },
 ];
 
 const Sidebar: React.FC = () => {
@@ -70,20 +101,25 @@ const Sidebar: React.FC = () => {
     >
       {/* Logo Section */}
       <Box
+        onClick={() => navigate('/')}
         sx={{
           p: 3,
           display: 'flex',
           alignItems: 'center',
           gap: 2,
+          cursor: 'pointer',
+          '&:hover': {
+            bgcolor: 'rgba(255,255,255,0.02)'
+          }
         }}
       >
         <MoneyIcon sx={{ fontSize: 40, color: 'primary.main' }} />
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
-            FinOps Platform
+            CloudPilot
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Financial Operations
+            AWS Cost Intelligence
           </Typography>
         </Box>
       </Box>
@@ -92,43 +128,66 @@ const Sidebar: React.FC = () => {
 
       {/* Navigation Menu */}
       <List sx={{ px: 2, py: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              onClick={() => navigate(item.path)}
-              selected={location.pathname === item.path}
-              sx={{
-                borderRadius: 2,
-                '&.Mui-selected': {
-                  background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                  },
-                },
-                '&:hover': {
-                  background: 'rgba(255, 255, 255, 0.05)',
-                },
-              }}
-            >
-              <ListItemIcon
+        {menuSections.map((section, sectionIndex) => (
+          <React.Fragment key={sectionIndex}>
+            {section.label && (
+              <Typography
+                variant="overline"
                 sx={{
-                  color: location.pathname === item.path ? 'white' : 'text.secondary',
-                  minWidth: 40,
+                  px: 2,
+                  pt: sectionIndex === 0 ? 0 : 1.5,
+                  pb: 0.5,
+                  display: 'block',
+                  color: 'rgba(255,255,255,0.35)',
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.1em',
                 }}
               >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                sx={{
-                  '& .MuiListItemText-primary': {
-                    fontWeight: location.pathname === item.path ? 600 : 400,
-                    color: location.pathname === item.path ? 'white' : 'text.primary',
-                  },
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
+                {section.label}
+              </Typography>
+            )}
+            {!section.label && sectionIndex > 0 && (
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 1 }} />
+            )}
+            {section.items.map((item) => (
+              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => navigate(item.path)}
+                  selected={location.pathname === item.path}
+                  sx={{
+                    borderRadius: 2,
+                    '&.Mui-selected': {
+                      background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                      },
+                    },
+                    '&:hover': {
+                      background: 'rgba(255, 255, 255, 0.05)',
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      color: location.pathname === item.path ? 'white' : 'text.secondary',
+                      minWidth: 40,
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    sx={{
+                      '& .MuiListItemText-primary': {
+                        fontWeight: location.pathname === item.path ? 600 : 400,
+                        color: location.pathname === item.path ? 'white' : 'text.primary',
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </React.Fragment>
         ))}
       </List>
 

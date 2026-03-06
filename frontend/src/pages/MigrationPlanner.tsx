@@ -45,7 +45,8 @@ import {
   Schedule as ScheduleIcon,
   TrendingUp as TrendingUpIcon,
   Storage as StorageIcon,
-  Cloud as CloudIcon
+  Cloud as CloudIcon,
+  HelpOutline as HelpIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation } from 'react-query';
 import { Helmet } from 'react-helmet-async';
@@ -104,7 +105,7 @@ const migrationSteps: MigrationStep[] = [
 
 const MigrationPlanner: React.FC = () => {
   const [selectedWorkloadId, setSelectedWorkloadId] = useState<string>('');
-  const [targetProvider, setTargetProvider] = useState<'aws' | 'gcp' | 'azure'>('aws');
+  const [targetProvider, setTargetProvider] = useState<'aws'>('aws');
   const [serverCount, setServerCount] = useState<number>(5);
   const [migrationAnalysis, setMigrationAnalysis] = useState<MigrationAnalysis | null>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -290,16 +291,10 @@ const MigrationPlanner: React.FC = () => {
                       <FormControl fullWidth size="small" sx={{ mt: 0.5 }}>
                         <Select
                           value={targetProvider}
-                          onChange={(e) => setTargetProvider(e.target.value as 'aws' | 'gcp' | 'azure')}
+                          onChange={(e) => setTargetProvider(e.target.value as 'aws')}
                         >
                           <MenuItem value="aws">
                             Amazon Web Services (AWS)
-                          </MenuItem>
-                          <MenuItem value="gcp">
-                            Google Cloud Platform
-                          </MenuItem>
-                          <MenuItem value="azure">
-                            Microsoft Azure
                           </MenuItem>
                         </Select>
                       </FormControl>
@@ -409,46 +404,70 @@ const MigrationPlanner: React.FC = () => {
                       />
                     </Box>
 
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      <strong>What does this mean?</strong> Based on your {serverCount} physical servers, we've calculated the projected costs, timeline, and risks of migrating them to AWS. The numbers below represent our AI estimates for this specific shift.
+                    </Alert>
+
                     <Grid container spacing={3}>
                       <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" color="primary">
-                            {multiCloudApi.formatCurrency(migrationAnalysis.migration_cost)}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Migration Cost
-                          </Typography>
-                        </Box>
+                        <Tooltip title="The estimated total upfront cost to migrate all physical servers to AWS, including labor, data transfer, and parallel running costs." arrow placement="top">
+                          <Box sx={{ textAlign: 'center', cursor: 'help' }}>
+                            <Typography variant="h4" color="primary">
+                              {multiCloudApi.formatCurrency(migrationAnalysis.migration_cost)}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                Migration Cost
+                              </Typography>
+                              <HelpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            </Box>
+                          </Box>
+                        </Tooltip>
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" color="info.main">
-                            {migrationAnalysis.migration_timeline_days}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Days to Complete
-                          </Typography>
-                        </Box>
+                        <Tooltip title="Estimated length of the migration project from initial planning to final cutover." arrow placement="top">
+                          <Box sx={{ textAlign: 'center', cursor: 'help' }}>
+                            <Typography variant="h4" color="info.main">
+                              {migrationAnalysis.migration_timeline_days}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                Days to Complete
+                              </Typography>
+                              <HelpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            </Box>
+                          </Box>
+                        </Tooltip>
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" color="success.main">
-                            {migrationAnalysis.break_even_months || 'N/A'}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Break-even (Months)
-                          </Typography>
-                        </Box>
+                        <Tooltip title="The 'Break-even' point. This is how many months it will take for the monthly savings on AWS to pay back the upfront Migration Cost." arrow placement="top">
+                          <Box sx={{ textAlign: 'center', cursor: 'help' }}>
+                            <Typography variant="h4" color="success.main">
+                              {migrationAnalysis.break_even_months || 'N/A'}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                Break-even (Months)
+                              </Typography>
+                              <HelpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            </Box>
+                          </Box>
+                        </Tooltip>
                       </Grid>
                       <Grid item xs={12} sm={6} md={3}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h4" color="warning.main">
-                            {migrationAnalysis.risk_assessment.overall_risk_level.toUpperCase()}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Risk Level
-                          </Typography>
-                        </Box>
+                        <Tooltip title="Calculated risk score based on workload complexity. Higher risks may require more extensive testing and parallel run phases." arrow placement="top">
+                          <Box sx={{ textAlign: 'center', cursor: 'help' }}>
+                            <Typography variant="h4" color="warning.main">
+                              {migrationAnalysis.risk_assessment.overall_risk_level.toUpperCase()}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                Risk Level
+                              </Typography>
+                              <HelpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            </Box>
+                          </Box>
+                        </Tooltip>
                       </Grid>
                     </Grid>
                   </CardContent>
@@ -506,7 +525,7 @@ const MigrationPlanner: React.FC = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
+      </Box >
     </>
   );
 };

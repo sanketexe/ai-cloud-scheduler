@@ -5,6 +5,7 @@ Start the FinOps Platform Backend API
 
 import sys
 import os
+import sqlite3
 from pathlib import Path
 
 # Add the project root to Python path
@@ -45,6 +46,9 @@ try:
     import logging
 
     from backend.core.aws_data_service import AWSDataService
+    from backend.core.scheduler_service import SchedulerService
+    from backend.core.ai_assistant import platform_assistant
+    from backend.core.ai_assistant_endpoints import router as ai_router
 
     logger = logging.getLogger(__name__)
 
@@ -60,14 +64,24 @@ try:
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_origins=[
+            "http://localhost:3000", 
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001"
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
+    # Include AI Assistant Router
+    app.include_router(ai_router, prefix="/api/v1")
+
     # Global AWS Data Service instance — set after onboarding or from .env
     aws_service: Optional[AWSDataService] = None
+    # Global Scheduler Service instance — initialized alongside aws_service
+    scheduler_service: Optional[SchedulerService] = None
 
     def _no_aws_response():
         """Return a standard response when no AWS account is connected."""
@@ -76,18 +90,62 @@ try:
             "message": "Please connect your AWS account first via the onboarding page.",
         }
 
+    def init_credentials_db():
+        """Initialize the SQLite database for AWS credentials."""
+        db_path = project_root / "backend" / "finops_platform.db"
+        try:
+            conn = sqlite3.connect(str(db_path))
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS aws_credentials (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    access_key_id TEXT NOT NULL,
+                    secret_access_key TEXT NOT NULL,
+                    region TEXT DEFAULT 'us-east-1',
+                    connected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error(f"❌ Error initializing credentials DB: {e}")
+
     @app.on_event("startup")
     async def auto_connect_aws():
-        """Auto-connect to AWS on startup if credentials are in .env"""
+        """Auto-connect to AWS on startup if credentials are in .env or DB"""
         global aws_service
+        global scheduler_service
+        
+        # 1. Initialize DB table
+        init_credentials_db()
+        
+        # 2. Try .env first
         access_key = os.environ.get("AWS_ACCESS_KEY_ID", "")
         secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
         region = os.environ.get("AWS_REGION", "us-east-1")
 
-        # Skip if placeholder or empty credentials
-        if (access_key and secret_key
+        # Skip if placeholder or empty credentials in .env
+        is_env_valid = (access_key and secret_key
                 and access_key != "your-aws-access-key"
-                and secret_key != "your-aws-secret-key"):
+                and secret_key != "your-aws-secret-key")
+        
+        if not is_env_valid:
+            # 3. Try SQLite DB if .env is missing/invalid
+            db_path = project_root / "backend" / "finops_platform.db"
+            try:
+                conn = sqlite3.connect(str(db_path))
+                cursor = conn.cursor()
+                cursor.execute("SELECT access_key_id, secret_access_key, region FROM aws_credentials ORDER BY connected_at DESC LIMIT 1")
+                row = cursor.fetchone()
+                if row:
+                    access_key, secret_key, region = row
+                    is_env_valid = True
+                    logger.info("ℹ️ Found saved credentials in DB")
+                conn.close()
+            except Exception as e:
+                logger.error(f"❌ Error reading credentials from DB: {e}")
+
+        if is_env_valid:
             try:
                 service = AWSDataService(
                     access_key_id=access_key,
@@ -97,17 +155,108 @@ try:
                 result = service.test_connection()
                 if result.get("success"):
                     aws_service = service
-                    logger.info(f"✅ Auto-connected to AWS account {result['account_id']} from .env")
+                    scheduler_service = SchedulerService(service.session, region)
+                    # Initialize AI assistant with the AWS service
+                    platform_assistant.aws_service = service
+                    logger.info(f"✅ Auto-connected to AWS account {result['account_id']}")
                     print(f"✅ Auto-connected to AWS account {result['account_id']}")
                 else:
-                    logger.warning(f"⚠️ AWS credentials in .env are invalid: {result.get('error')}")
-                    print(f"⚠️ AWS credentials in .env are invalid: {result.get('error')}")
+                    logger.warning(f"⚠️ Saved AWS credentials are invalid: {result.get('error')}")
             except Exception as e:
                 logger.warning(f"⚠️ Could not auto-connect to AWS: {e}")
-                print(f"⚠️ Could not auto-connect to AWS from .env: {e}")
         else:
-            logger.info("ℹ️ No AWS credentials in .env — use onboarding to connect")
-            print("ℹ️ No AWS credentials in .env — connect via /onboarding")
+            logger.info("ℹ️ No AWS credentials found — connect via /onboarding")
+            print("ℹ️ No AWS credentials found — connect via /onboarding")
+
+    # Onboarding endpoint
+    @app.post("/api/v1/onboarding/quick-setup")
+    async def quick_setup(data: dict):
+        global aws_service
+        global scheduler_service
+        
+        access_key = data.get("access_key_id")
+        secret_key = data.get("secret_access_key")
+        region = data.get("region", "us-east-1")
+        
+        try:
+            service = AWSDataService(
+                access_key_id=access_key,
+                secret_access_key=secret_key,
+                region=region,
+            )
+            result = service.test_connection()
+            if result.get("success"):
+                aws_service = service
+                scheduler_service = SchedulerService(service.session, region)
+                
+                # Save credentials to DB for persistence
+                db_path = project_root / "backend" / "finops_platform.db"
+                try:
+                    conn = sqlite3.connect(str(db_path))
+                    cursor = conn.cursor()
+                    # Clear old ones first to keep only one active account for now
+                    cursor.execute("DELETE FROM aws_credentials")
+                    cursor.execute(
+                        "INSERT INTO aws_credentials (access_key_id, secret_access_key, region) VALUES (?, ?, ?)",
+                        (access_key, secret_key, region)
+                    )
+                    conn.commit()
+                    conn.close()
+                    logger.info("💾 Saved AWS credentials to DB")
+                except Exception as e:
+                    logger.error(f"❌ Error saving credentials to DB: {e}")
+
+                return {
+                    "success": True,
+                    "account_id": result["account_id"],
+                    "message": "Connected successfully to AWS account!"
+                }
+            else:
+                return JSONResponse(
+                    status_code=400,
+                    content={"message": f"Connection failed: {result.get('error')}"}
+                )
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content={"message": f"Server error during connection: {str(e)}"}
+            )
+
+    # AWS Status endpoint
+    @app.get("/api/v1/aws/status")
+    async def get_aws_status():
+        if aws_service:
+            try:
+                account_id = aws_service.get_account_id()
+                return {
+                    "connected": True,
+                    "account_id": account_id,
+                    "region": aws_service.region
+                }
+            except:
+                return {"connected": False}
+        return {"connected": False}
+
+    # Disconnect AWS endpoint
+    @app.post("/api/v1/aws/disconnect")
+    async def disconnect_aws():
+        global aws_service
+        global scheduler_service
+        
+        aws_service = None
+        scheduler_service = None
+        
+        # Clear from DB
+        db_path = project_root / "backend" / "finops_platform.db"
+        try:
+            conn = sqlite3.connect(str(db_path))
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM aws_credentials")
+            conn.commit()
+            conn.close()
+            return {"success": True, "message": "Disconnected and cleared credentials"}
+        except Exception as e:
+            return JSONResponse(status_code=500, content={"message": f"Error clearing DB: {str(e)}"})
 
     # Root endpoint
     @app.get("/")
@@ -262,6 +411,86 @@ try:
         return aws_service.get_dashboard_summary()
 
     # ============================================================
+    # Mock Multi-Cloud API (for non-AWS users)
+    # ============================================================
+
+    @app.get("/api/v1/multi-cloud/workloads")
+    async def get_mock_workloads():
+        """Mock workloads for the Migration Planner."""
+        return {
+            "workloads": [
+                {
+                    "id": "workload-onprem-001",
+                    "name": "Legacy Enterprise ERP",
+                    "description": "Primary SAP workload running on 15 physical blades",
+                    "created_at": datetime.utcnow().isoformat(),
+                    "updated_at": datetime.utcnow().isoformat(),
+                    "regions": ["us-east-1"],
+                    "compliance_requirements": ["HIPAA", "SOC2"]
+                },
+                {
+                    "id": "workload-onprem-002",
+                    "name": "Customer Data Hub",
+                    "description": "SQL Server cluster and secondary storage nodes",
+                    "created_at": datetime.utcnow().isoformat(),
+                    "updated_at": datetime.utcnow().isoformat(),
+                    "regions": ["us-west-2"],
+                    "compliance_requirements": ["GDPR"]
+                }
+            ],
+            "total_count": 2,
+            "page": 1,
+            "page_size": 20
+        }
+
+    @app.post("/api/v1/multi-cloud/migration")
+    async def analyze_mock_migration(data: dict):
+        """Mock migration analysis."""
+        workload_id = data.get("workload_id", "unknown")
+        target = data.get("target_provider", "aws")
+        
+        return {
+            "id": f"mig-analysis-{datetime.now().strftime('%Y%m%d%H%M')}",
+            "workload_id": workload_id,
+            "source_provider": "on_premises",
+            "target_provider": target,
+            "analysis_date": datetime.utcnow().isoformat(),
+            "migration_cost": 24500.00,
+            "migration_timeline_days": 45,
+            "break_even_months": 7,
+            "monthly_savings": 3200.00,
+            "annual_savings": 38400.00,
+            "roi_percentage": 156.0,
+            "cost_breakdown": {
+                "compute": 12000,
+                "storage": 5000,
+                "network": 2500,
+                "retraining": 5000
+            },
+            "risk_assessment": {
+                "overall_risk_level": "medium",
+                "technical_risks": [
+                    "Data latency during cutover",
+                    "OS compatibility for legacy apps"
+                ],
+                "business_risks": [
+                    "Project timeline overrun",
+                    "Temporary parallel running costs"
+                ],
+                "mitigation_strategies": [
+                    "Use AWS Application Migration Service (MGN)",
+                    "Phased database replication"
+                ],
+                "success_probability": 0.92
+            },
+            "recommendations": [
+                "Proceed with AWS as primary target",
+                "Start with the Customer Data Hub as a Pilot",
+                "Leverage AWS MAP (Migration Acceleration Program)"
+            ]
+        }
+
+    # ============================================================
     # Budget management
     # ============================================================
 
@@ -369,6 +598,8 @@ try:
 
             # Store the service globally
             aws_service = service
+            scheduler_service = SchedulerService(service.session, creds.region)
+            platform_assistant.aws_service = service
 
             # Start initial data fetch in background
             try:
@@ -614,6 +845,98 @@ try:
             ],
         }
         return services.get(provider, [])
+
+    # ============================================================
+    # Intelligent Resource Scheduler
+    # ============================================================
+
+    @app.get("/api/scheduler/resources")
+    async def get_schedulable_resources():
+        global scheduler_service
+        if scheduler_service is None:
+            import boto3
+            scheduler_service = SchedulerService(boto3.Session(region_name="us-east-1"), "us-east-1")
+        return {"resources": scheduler_service.get_schedulable_resources()}
+
+    @app.post("/api/scheduler/analyze/{instance_id}")
+    async def analyze_resource(instance_id: str):
+        global scheduler_service
+        if scheduler_service is None:
+            import boto3
+            scheduler_service = SchedulerService(boto3.Session(region_name="us-east-1"), "us-east-1")
+        return scheduler_service.analyze_resource(instance_id)
+
+    @app.get("/api/scheduler/schedules")
+    async def get_schedules():
+        global scheduler_service
+        if scheduler_service is None:
+            import boto3
+            scheduler_service = SchedulerService(boto3.Session(region_name="us-east-1"), "us-east-1")
+        return {"schedules": scheduler_service.get_schedules()}
+
+    @app.post("/api/scheduler/schedules")
+    async def create_schedule(schedule_data: dict):
+        global scheduler_service
+        if scheduler_service is None:
+            import boto3
+            scheduler_service = SchedulerService(boto3.Session(region_name="us-east-1"), "us-east-1")
+        return scheduler_service.create_schedule(schedule_data)
+
+    @app.put("/api/scheduler/schedules/{schedule_id}")
+    async def update_schedule(schedule_id: str, data: dict):
+        if scheduler_service is None:
+            return _no_aws_response()
+        result = scheduler_service.update_schedule(schedule_id, data)
+        if result is None:
+            return JSONResponse(status_code=404, content={"error": "Schedule not found"})
+        return result
+
+    @app.delete("/api/scheduler/schedules/{schedule_id}")
+    async def delete_schedule(schedule_id: str):
+        if scheduler_service is None:
+            return _no_aws_response()
+        success = scheduler_service.delete_schedule(schedule_id)
+        if not success:
+            return JSONResponse(status_code=404, content={"error": "Schedule not found"})
+        return {"success": True, "message": f"Schedule {schedule_id} deleted"}
+
+    @app.get("/api/scheduler/savings")
+    async def get_scheduler_savings():
+        if scheduler_service is None:
+            return _no_aws_response()
+        return scheduler_service.get_savings_summary()
+
+    # ============================================================
+    # Action Execution
+    # ============================================================
+
+    @app.post("/api/actions/execute")
+    async def execute_action(request: dict):
+        if scheduler_service is None:
+            return _no_aws_response()
+
+        action_type = request.get("action_type", "")
+        resource_id = request.get("resource_id", "")
+
+        if action_type in ("stop", "start"):
+            return scheduler_service.execute_action(resource_id, action_type)
+        elif action_type == "delete_volume":
+            return scheduler_service.execute_delete_volume(resource_id)
+        elif action_type == "release_eip":
+            return scheduler_service.execute_release_eip(resource_id)
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"error": f"Unknown action type: {action_type}"}
+            )
+
+    @app.get("/api/actions/history")
+    async def get_action_history():
+        global scheduler_service
+        if scheduler_service is None:
+            import boto3
+            scheduler_service = SchedulerService(boto3.Session(region_name="us-east-1"), "us-east-1")
+        return {"history": scheduler_service.get_action_history()}
 
     if __name__ == "__main__":
         print("🚀 Starting FinOps Platform Backend API...")

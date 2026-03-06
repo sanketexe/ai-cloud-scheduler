@@ -176,7 +176,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
@@ -196,7 +196,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
@@ -213,7 +213,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
@@ -245,7 +245,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="category" />
                   <YAxis />
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     formatter={(value, name) => {
                       if (name === 'riskScore') return [value, 'Risk Score'];
                       if (name === 'probability') return [`${value}%`, 'Probability'];
@@ -258,7 +258,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
@@ -294,7 +294,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
           <Typography variant="h6" gutterBottom>
             Detailed Risk Analysis
           </Typography>
-          
+
           {riskCategories.map((category, index) => (
             <Accordion
               key={category.name}
@@ -380,7 +380,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
           <Typography variant="h6" gutterBottom>
             Risk Mitigation Strategies
           </Typography>
-          
+
           {risks.mitigation_strategies && risks.mitigation_strategies.length > 0 ? (
             <TableContainer component={Paper} variant="outlined">
               <Table>
@@ -393,7 +393,7 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {risks.mitigation_strategies.map((strategy, index) => (
+                  {risks.mitigation_strategies.map((strategy: any, index: number) => (
                     <TableRow key={index}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -438,14 +438,14 @@ const RiskAssessment: React.FC<RiskAssessmentProps> = ({ risks }) => {
               No specific mitigation strategies provided. Consider developing risk mitigation plans based on the identified risks above.
             </Alert>
           )}
-          
+
           {/* Risk Recommendations */}
           <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
               Recommendations:
             </Typography>
             <Alert severity="success" sx={{ mb: 1 }}>
-              <strong>Proceed with Caution:</strong> The migration shows a {(risks.success_probability * 100).toFixed(0)}% success probability. 
+              <strong>Proceed with Caution:</strong> The migration shows a {(risks.success_probability * 100).toFixed(0)}% success probability.
               Implement the recommended mitigation strategies to improve outcomes.
             </Alert>
             <Alert severity="info" sx={{ mb: 1 }}>

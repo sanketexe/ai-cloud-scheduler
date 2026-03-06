@@ -29,7 +29,8 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   Schedule as TimelineIcon,
-  AccountBalance as AccountBalanceIcon
+  AccountBalance as AccountBalanceIcon,
+  HelpOutline as HelpIcon
 } from '@mui/icons-material';
 import {
   LineChart,
@@ -88,14 +89,14 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
   const generateCostProjection = () => {
     const months = 36; // 3 years
     const data = [];
-    
+
     const migrationCost = analysis.migration_cost;
     const monthlySavings = analysis.monthly_savings || 0;
     const breakEvenMonth = analysis.break_even_months || 12;
-    
+
     let cumulativeCost = migrationCost;
     let cumulativeSavings = 0;
-    
+
     for (let month = 0; month <= months; month++) {
       if (month === 0) {
         // Initial migration cost
@@ -109,7 +110,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
       } else {
         cumulativeSavings += monthlySavings;
         const netBenefit = cumulativeSavings - migrationCost;
-        
+
         data.push({
           month,
           cumulativeCost: migrationCost,
@@ -119,14 +120,14 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
         });
       }
     }
-    
+
     return data;
   };
 
   // Generate cost breakdown data
   const generateCostBreakdown = () => {
     if (!analysis.cost_breakdown) return [];
-    
+
     return Object.entries(analysis.cost_breakdown).map(([category, cost]) => ({
       category: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       cost: Number(cost),
@@ -139,11 +140,11 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
     const data = [];
     const monthlySavings = analysis.monthly_savings || 0;
     const migrationCost = analysis.migration_cost;
-    
+
     for (let year = 1; year <= 5; year++) {
       const totalSavings = monthlySavings * 12 * year;
       const roi = ((totalSavings - migrationCost) / migrationCost) * 100;
-      
+
       data.push({
         year: `Year ${year}`,
         roi: Math.round(roi),
@@ -151,7 +152,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
         netBenefit: totalSavings - migrationCost
       });
     }
-    
+
     return data;
   };
 
@@ -181,6 +182,9 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <AccountBalanceIcon color="primary" sx={{ mr: 1 }} />
                 <Typography variant="h6">Migration Cost</Typography>
+                <Tooltip title="The estimated total upfront cost to migrate all physical servers to AWS, including labor, data transfer, and parallel running costs." arrow placement="top">
+                  <HelpIcon sx={{ ml: 1, fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                </Tooltip>
               </Box>
               <Typography variant="h4" color="primary">
                 {formatCurrency(analysis.migration_cost)}
@@ -191,13 +195,16 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <TrendingUpIcon color="success" sx={{ mr: 1 }} />
                 <Typography variant="h6">Monthly Savings</Typography>
+                <Tooltip title="The estimated recurring monthly savings compared to your current on-premises running costs after migrating to AWS." arrow placement="top">
+                  <HelpIcon sx={{ ml: 1, fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                </Tooltip>
               </Box>
               <Typography variant="h4" color="success.main">
                 {formatCurrency(analysis.monthly_savings || 0)}
@@ -208,13 +215,16 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <TimelineIcon color="info" sx={{ mr: 1 }} />
                 <Typography variant="h6">Break-even</Typography>
+                <Tooltip title="This is how many months it will take for the monthly savings on AWS to pay back the upfront Migration Cost." arrow placement="top">
+                  <HelpIcon sx={{ ml: 1, fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                </Tooltip>
               </Box>
               <Typography variant="h4" color="info.main">
                 {analysis.break_even_months || 'N/A'}
@@ -225,13 +235,16 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <TrendingUpIcon color="warning" sx={{ mr: 1 }} />
                 <Typography variant="h6">3-Year ROI</Typography>
+                <Tooltip title="Return On Investment over 3 years. A positive percentage means the migration pays for itself and generates savings equivalent to this percentage of the initial cost." arrow placement="top">
+                  <HelpIcon sx={{ ml: 1, fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                </Tooltip>
               </Box>
               <Typography variant="h4" color="warning.main">
                 {analysis.roi_percentage ? `${analysis.roi_percentage.toFixed(1)}%` : 'N/A'}
@@ -261,19 +274,22 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
             <Typography variant="h6" gutterBottom>
               Break-even Analysis
             </Typography>
-            
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This chart projects your cumulative costs against savings over 36 months to visualize exactly when the migration becomes profitable.
+            </Typography>
+
             {breakEvenPoint && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 Break-even point reached at month {breakEvenPoint.month} with net benefit of {formatCurrency(breakEvenPoint.netBenefit)}
               </Alert>
             )}
-            
+
             <ResponsiveContainer width="100%" height={400}>
               <AreaChart data={costProjectionData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`} />
-                <RechartsTooltip 
+                <RechartsTooltip
                   formatter={(value, name) => [formatCurrency(Number(value)), name]}
                   labelFormatter={(label) => `Month ${label}`}
                 />
@@ -304,7 +320,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
             <Typography variant="h6" gutterBottom>
               Migration Cost Breakdown
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid item xs={12} md={8}>
                 <ResponsiveContainer width="100%" height={300}>
@@ -326,7 +342,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
                   </PieChart>
                 </ResponsiveContainer>
               </Grid>
-              
+
               <Grid item xs={12} md={4}>
                 <TableContainer component={Paper} variant="outlined">
                   <Table size="small">
@@ -376,13 +392,13 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
             <Typography variant="h6" gutterBottom>
               ROI Timeline (5-Year Projection)
             </Typography>
-            
+
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={roiTimelineData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
                 <YAxis tickFormatter={(value) => `${value}%`} />
-                <RechartsTooltip 
+                <RechartsTooltip
                   formatter={(value, name) => {
                     if (name === 'roi') return [`${value}%`, 'ROI'];
                     return [formatCurrency(Number(value)), name];
@@ -391,7 +407,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
                 <Bar dataKey="roi" fill="#8884d8" name="ROI %" />
               </BarChart>
             </ResponsiveContainer>
-            
+
             <TableContainer component={Paper} variant="outlined" sx={{ mt: 2 }}>
               <Table>
                 <TableHead>
@@ -440,7 +456,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
             <Typography variant="h6" gutterBottom>
               Financial Summary & Recommendations
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <Card variant="outlined">
@@ -475,7 +491,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
                   </CardContent>
                 </Card>
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Card variant="outlined">
                   <CardContent>
@@ -510,14 +526,14 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
                 </Card>
               </Grid>
             </Grid>
-            
+
             {/* Recommendations */}
             <Box sx={{ mt: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Financial Recommendations
               </Typography>
               {analysis.recommendations && analysis.recommendations.length > 0 ? (
-                analysis.recommendations.map((recommendation, index) => (
+                analysis.recommendations.map((recommendation: string, index: number) => (
                   <Alert key={index} severity="info" sx={{ mb: 1 }}>
                     {recommendation}
                   </Alert>

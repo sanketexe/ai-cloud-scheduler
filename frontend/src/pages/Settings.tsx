@@ -54,20 +54,16 @@ function TabPanel(props: TabPanelProps) {
 const Settings: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [settings, setSettings] = useState({
-    // Cloud Provider Settings
+    // AWS Provider Settings
     awsEnabled: true,
-    gcpEnabled: true,
-    azureEnabled: false,
     awsRegion: 'us-west-2',
-    gcpRegion: 'us-central1',
-    azureRegion: 'eastus',
-    
+
     // Performance Settings
     metricsInterval: 5,
     anomalyThreshold: 0.8,
     autoScaling: true,
     maxInstances: 10,
-    
+
     // Notification Settings
     emailNotifications: true,
     slackNotifications: false,
@@ -77,7 +73,7 @@ const Settings: React.FC = () => {
       memory: 90,
       storage: 95,
     },
-    
+
     // Security Settings
     apiRateLimit: 1000,
     sessionTimeout: 30,
@@ -123,7 +119,7 @@ const Settings: React.FC = () => {
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="settings tabs">
-            <Tab icon={<CloudIcon />} label="Cloud Providers" />
+            <Tab icon={<CloudIcon />} label="AWS Configuration" />
             <Tab icon={<PerformanceIcon />} label="Performance" />
             <Tab icon={<NotificationsIcon />} label="Notifications" />
             <Tab icon={<SecurityIcon />} label="Security" />
@@ -138,11 +134,11 @@ const Settings: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             <Typography variant="h6" sx={{ mb: 3 }}>
-              Cloud Provider Configuration
+              AWS Configuration
             </Typography>
-            
+
             <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Card sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h6">AWS</Typography>
@@ -171,77 +167,12 @@ const Settings: React.FC = () => {
                     >
                       <MenuItem value="us-west-2">US West (Oregon)</MenuItem>
                       <MenuItem value="us-east-1">US East (N. Virginia)</MenuItem>
+                      <MenuItem value="us-east-2">US East (Ohio)</MenuItem>
                       <MenuItem value="eu-west-1">Europe (Ireland)</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Card sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6">Google Cloud</Typography>
-                    <Chip
-                      label={settings.gcpEnabled ? 'Connected' : 'Disabled'}
-                      color={settings.gcpEnabled ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.gcpEnabled}
-                        onChange={(e) => handleSettingChange('gcpEnabled', e.target.checked)}
-                      />
-                    }
-                    label="Enable GCP"
-                  />
-                  <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel>Region</InputLabel>
-                    <Select
-                      value={settings.gcpRegion}
-                      label="Region"
-                      onChange={(e) => handleSettingChange('gcpRegion', e.target.value)}
-                      disabled={!settings.gcpEnabled}
-                    >
-                      <MenuItem value="us-central1">US Central</MenuItem>
-                      <MenuItem value="us-west1">US West</MenuItem>
-                      <MenuItem value="europe-west1">Europe West</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Card sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6">Azure</Typography>
-                    <Chip
-                      label={settings.azureEnabled ? 'Connected' : 'Disabled'}
-                      color={settings.azureEnabled ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={settings.azureEnabled}
-                        onChange={(e) => handleSettingChange('azureEnabled', e.target.checked)}
-                      />
-                    }
-                    label="Enable Azure"
-                  />
-                  <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel>Region</InputLabel>
-                    <Select
-                      value={settings.azureRegion}
-                      label="Region"
-                      onChange={(e) => handleSettingChange('azureRegion', e.target.value)}
-                      disabled={!settings.azureEnabled}
-                    >
-                      <MenuItem value="eastus">East US</MenuItem>
-                      <MenuItem value="westus2">West US 2</MenuItem>
-                      <MenuItem value="westeurope">West Europe</MenuItem>
+                      <MenuItem value="eu-central-1">Europe (Frankfurt)</MenuItem>
+                      <MenuItem value="ap-southeast-1">Asia (Singapore)</MenuItem>
+                      <MenuItem value="ap-southeast-2">Asia (Sydney)</MenuItem>
+                      <MenuItem value="ap-northeast-1">Asia (Tokyo)</MenuItem>
                     </Select>
                   </FormControl>
                 </Card>
@@ -260,7 +191,7 @@ const Settings: React.FC = () => {
             <Typography variant="h6" sx={{ mb: 3 }}>
               Performance & Monitoring Settings
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <Typography variant="subtitle1" sx={{ mb: 2 }}>
@@ -336,7 +267,7 @@ const Settings: React.FC = () => {
             <Typography variant="h6" sx={{ mb: 3 }}>
               Notification Settings
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <FormControlLabel
@@ -420,7 +351,7 @@ const Settings: React.FC = () => {
             <Typography variant="h6" sx={{ mb: 3 }}>
               Security Settings
             </Typography>
-            
+
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <TextField
@@ -487,7 +418,7 @@ const Settings: React.FC = () => {
           </Button>
         </Box>
       </Card>
-    </Box>
+    </Box >
   );
 };
 

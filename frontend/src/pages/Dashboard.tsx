@@ -108,11 +108,11 @@ const Dashboard: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>
-          FinOps Dashboard
+          CloudPilot Dashboard
         </Typography>
         <LinearProgress />
         <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-          Loading FinOps data from AWS...
+          Loading data from AWS...
         </Typography>
       </Box>
     );
@@ -143,7 +143,7 @@ const Dashboard: React.FC = () => {
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>
-        FinOps Platform Dashboard
+        CloudPilot Dashboard
       </Typography>
 
       {/* FinOps Status Alert */}

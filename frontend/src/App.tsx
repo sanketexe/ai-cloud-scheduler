@@ -18,6 +18,9 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Alerts from './pages/Alerts';
 import Compliance from './pages/Compliance';
+import SchedulerDashboard from './pages/SchedulerDashboard';
+import MigrationPlanner from './pages/MigrationPlanner';
+import Home from './pages/Home';
 import MigrationWizard from './pages/MigrationWizard';
 import MigrationResults from './pages/MigrationResults';
 import MigrationDashboard from './pages/MigrationDashboard';
@@ -25,14 +28,7 @@ import ProviderRecommendations from './pages/ProviderRecommendations';
 import ResourceOrganization from './pages/ResourceOrganization';
 import DimensionalFiltering from './pages/DimensionalFiltering';
 import MigrationReport from './pages/MigrationReport';
-import AWSCostAnalysis from './pages/AWSCostAnalysis';
-import AWSCostAlerts from './pages/AWSCostAlerts';
-import AutomationDashboard from './pages/AutomationDashboard';
-import AutomationSettings from './pages/AutomationSettings';
-import AnomalyDashboard from './pages/AnomalyDashboard';
-import MultiCloudDashboard from './pages/MultiCloudDashboard';
-import MigrationPlanner from './pages/MigrationPlanner';
-import AIDashboard from './pages/AIDashboard';
+import PlatformFloatingChat from './components/AI/PlatformFloatingChat';
 
 // Theme
 const theme = createTheme({
@@ -101,6 +97,19 @@ const queryClient = new QueryClient({
   },
 });
 
+// Reusable layout wrapper
+const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Sidebar />
+    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Header />
+      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+        {children}
+      </Box>
+    </Box>
+  </Box>
+);
+
 function App() {
   return (
     <HelmetProvider>
@@ -109,8 +118,9 @@ function App() {
           <CssBaseline />
           <Router>
             <Routes>
-              {/* Root - Go directly to AWS Login */}
-              <Route path="/" element={<OnboardingQuickStart />} />
+              {/* Main Entry Points */}
+              <Route path="/" element={<Home />} />
+              <Route path="/onboarding" element={<OnboardingQuickStart />} />
 
               {/* Migration Wizard - No Sidebar/Header */}
               <Route path="/migration-wizard" element={<MigrationWizard />} />
@@ -122,199 +132,19 @@ function App() {
               <Route path="/migration/:projectId/filtering" element={<DimensionalFiltering />} />
               <Route path="/migration/:projectId/report" element={<MigrationReport />} />
 
-              {/* FinOps Dashboard Routes - With Sidebar/Header */}
-              <Route path="/dashboard" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <Dashboard />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/cost-analysis" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <CostAnalysis />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/aws-cost-analysis" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <AWSCostAnalysis />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/aws-cost-alerts" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <AWSCostAlerts />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/budgets" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <BudgetManagement />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/optimization" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <Optimization />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/automation" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <AutomationDashboard />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/automation/settings" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <AutomationSettings />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/anomaly-detection" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <AnomalyDashboard />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/multi-cloud" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <MultiCloudDashboard />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/migration-planner" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <MigrationPlanner />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/ai-dashboard" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <AIDashboard />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/reports" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <Reports />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/alerts" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <Alerts />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/compliance" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <Compliance />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
-
-              <Route path="/settings" element={
-                <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-                  <Sidebar />
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Header />
-                    <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-                      <Settings />
-                    </Box>
-                  </Box>
-                </Box>
-              } />
+              {/* Dashboard Routes */}
+              <Route path="/dashboard" element={<PageLayout><Dashboard /></PageLayout>} />
+              <Route path="/scheduler" element={<PageLayout><SchedulerDashboard /></PageLayout>} />
+              <Route path="/cost-analysis" element={<PageLayout><CostAnalysis /></PageLayout>} />
+              <Route path="/budgets" element={<PageLayout><BudgetManagement /></PageLayout>} />
+              <Route path="/optimization" element={<PageLayout><Optimization /></PageLayout>} />
+              <Route path="/reports" element={<PageLayout><Reports /></PageLayout>} />
+              <Route path="/alerts" element={<PageLayout><Alerts /></PageLayout>} />
+              <Route path="/compliance" element={<PageLayout><Compliance /></PageLayout>} />
+              <Route path="/settings" element={<PageLayout><Settings /></PageLayout>} />
+              <Route path="/migration-planner" element={<PageLayout><MigrationPlanner /></PageLayout>} />
             </Routes>
+            <PlatformFloatingChat />
           </Router>
           <Toaster
             position="top-right"

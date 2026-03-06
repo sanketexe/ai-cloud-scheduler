@@ -41,24 +41,6 @@ const Header: React.FC = () => {
               border: '1px solid rgba(255, 152, 0, 0.3)',
             }}
           />
-          <Chip
-            label="GCP Connected"
-            size="small"
-            sx={{
-              background: 'rgba(76, 175, 80, 0.2)',
-              color: '#4caf50',
-              border: '1px solid rgba(76, 175, 80, 0.3)',
-            }}
-          />
-          <Chip
-            label="Azure Connected"
-            size="small"
-            sx={{
-              background: 'rgba(33, 150, 243, 0.2)',
-              color: '#2196f3',
-              border: '1px solid rgba(33, 150, 243, 0.3)',
-            }}
-          />
         </Box>
 
         {/* Right side - User actions */}
@@ -68,7 +50,7 @@ const Header: React.FC = () => {
               <NotificationsIcon />
             </Badge>
           </IconButton>
-          
+
           <IconButton color="inherit">
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
               <AccountIcon />

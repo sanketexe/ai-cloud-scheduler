@@ -7,14 +7,14 @@ from typing import Optional
 import structlog
 
 from .ai_assistant import (
-    migration_assistant,
+    platform_assistant,
     ChatRequest,
     ChatResponse
 )
 
 logger = structlog.get_logger(__name__)
 
-router = APIRouter(prefix="/migration/assistant", tags=["AI Assistant"])
+router = APIRouter(prefix="/ai/assistant", tags=["AI Assistant"])
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -29,7 +29,7 @@ async def chat_with_assistant(request: ChatRequest):
     - Best practices and recommendations
     """
     try:
-        response = await migration_assistant.chat(request)
+        response = await platform_assistant.chat(request)
         return response
     
     except Exception as e:
@@ -46,7 +46,7 @@ async def get_field_help(field_name: str, current_value: Optional[str] = None):
     Get contextual help for a specific form field
     """
     try:
-        help_text = migration_assistant.get_contextual_help(field_name, current_value)
+        help_text = platform_assistant.get_contextual_help(field_name, current_value)
         return {
             "field_name": field_name,
             "help_text": help_text
@@ -66,8 +66,8 @@ async def get_suggestions(context: Optional[str] = None):
     Get suggested questions based on current context
     """
     try:
-        context_dict = {"current_step": context} if context else None
-        suggestions = migration_assistant._generate_suggestions(context_dict)
+        context_dict = {"page": context} if context else None
+        suggestions = platform_assistant._generate_suggestions(context_dict)
         return {
             "suggestions": suggestions
         }
@@ -86,7 +86,7 @@ async def get_assistant_status():
     Check if AI assistant is enabled and working
     """
     return {
-        "enabled": migration_assistant.enabled,
-        "model": migration_assistant.model if migration_assistant.enabled else None,
-        "status": "ready" if migration_assistant.enabled else "fallback_mode"
+        "enabled": platform_assistant.enabled,
+        "model": platform_assistant.model if platform_assistant.enabled else None,
+        "status": "ready" if platform_assistant.enabled else "fallback_mode"
     }
