@@ -30,16 +30,16 @@ security = HTTPBearer()
 class SendMessageRequest(BaseModel):
     """Request model for sending messages"""
     content: str = Field(..., min_length=1, max_length=5000)
-    message_type: str = Field("text", regex="^(text|system|notification|mention|thread_reply)$")
-    thread_id: Optional[str] = Field(None, regex="^[0-9a-f-]{36}$")
-    reply_to_id: Optional[str] = Field(None, regex="^[0-9a-f-]{36}$")
+    message_type: str = Field("text", pattern="^(text|system|notification|mention|thread_reply)$")
+    thread_id: Optional[str] = Field(None, pattern="^[0-9a-f-]{36}$")
+    reply_to_id: Optional[str] = Field(None, pattern="^[0-9a-f-]{36}$")
     mentions: Optional[List[str]] = Field(default_factory=list)
     attachments: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
 class CreateThreadRequest(BaseModel):
     """Request model for creating message threads"""
     initial_message: str = Field(..., min_length=1, max_length=5000)
-    parent_message_id: str = Field(..., regex="^[0-9a-f-]{36}$")
+    parent_message_id: str = Field(..., pattern="^[0-9a-f-]{36}$")
 
 class MessageSearchRequest(BaseModel):
     """Request model for message search"""
@@ -52,13 +52,13 @@ class TypingIndicatorRequest(BaseModel):
 
 class CreateAnnotationRequest(BaseModel):
     """Request model for creating annotations"""
-    annotation_type: str = Field("comment", regex="^(comment|highlight|arrow|sticky_note|drawing)$")
+    annotation_type: str = Field("comment", pattern="^(comment|highlight|arrow|sticky_note|drawing)$")
     content: str = Field(..., min_length=1, max_length=2000)
     target_element: Dict[str, Any] = Field(..., description="Target element information")
     position: Dict[str, Any] = Field(..., description="Position coordinates")
     styling: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    thread_id: Optional[str] = Field(None, regex="^[0-9a-f-]{36}$")
-    parent_annotation_id: Optional[str] = Field(None, regex="^[0-9a-f-]{36}$")
+    thread_id: Optional[str] = Field(None, pattern="^[0-9a-f-]{36}$")
+    parent_annotation_id: Optional[str] = Field(None, pattern="^[0-9a-f-]{36}$")
     contextual_links: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
     mentions: Optional[List[str]] = Field(default_factory=list)
 
@@ -85,7 +85,7 @@ class CreateAnnotationReplyRequest(BaseModel):
 
 class AddContextualLinkRequest(BaseModel):
     """Request model for adding contextual links"""
-    link_type: str = Field(..., regex="^(dashboard|report|resource|documentation)$")
+    link_type: str = Field(..., pattern="^(dashboard|report|resource|documentation)$")
     link_url: str = Field(..., min_length=1, max_length=500)
     link_title: str = Field(..., min_length=1, max_length=200)
 

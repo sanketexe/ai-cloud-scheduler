@@ -48,6 +48,7 @@ import {
 import numeral from 'numeral';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonLoader } from '../components/Loading';
 
 const CostAnalysis: React.FC = () => {
   const [timeRange, setTimeRange] = useState('30');
@@ -137,8 +138,7 @@ const CostAnalysis: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>Cost Analysis</Typography>
-        <LinearProgress />
-        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>Loading cost data from AWS...</Typography>
+        <SkeletonLoader variant="dashboard" />
       </Box>
     );
   }

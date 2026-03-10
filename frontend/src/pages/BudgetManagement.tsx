@@ -52,6 +52,7 @@ import {
 } from 'recharts';
 import numeral from 'numeral';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonLoader } from '../components/Loading';
 
 const BudgetManagement: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -130,8 +131,7 @@ const BudgetManagement: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>Budget Management</Typography>
-        <LinearProgress />
-        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>Loading budgets from AWS...</Typography>
+        <SkeletonLoader variant="table" count={5} />
       </Box>
     );
   }

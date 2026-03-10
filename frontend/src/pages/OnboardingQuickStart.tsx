@@ -13,13 +13,19 @@ import {
     CircularProgress,
     useTheme,
     Grid,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    ListSubheader
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { CheckCircle, RocketLaunch } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useMutation } from 'react-query';
 import toast from 'react-hot-toast';
+import { AWS_REGIONS, getRegionsByLocation } from '../utils/awsRegions';
+import { useMutation } from 'react-query';
 
 const steps = ['Connect AWS Account', 'Analyzing Costs', 'Results Ready'];
 
@@ -194,12 +200,64 @@ const OnboardingQuickStart: React.FC = () => {
                                         />
                                     </Grid>
                                     <Grid item xs={12}>
-                                        <TextField
-                                            fullWidth
-                                            label="Region"
-                                            value={credentials.region}
-                                            onChange={(e) => setCredentials({ ...credentials, region: e.target.value })}
-                                        />
+                                        <FormControl fullWidth>
+                                            <InputLabel>Region</InputLabel>
+                                            <Select
+                                                value={credentials.region}
+                                                label="Region"
+                                                onChange={(e) => setCredentials({ ...credentials, region: e.target.value })}
+                                            >
+                                                <ListSubheader>Popular Regions</ListSubheader>
+                                                <MenuItem value="us-east-1">US East (N. Virginia)</MenuItem>
+                                                <MenuItem value="us-west-2">US West (Oregon)</MenuItem>
+                                                <MenuItem value="eu-west-1">Europe (Ireland)</MenuItem>
+                                                <MenuItem value="ap-southeast-1">Asia Pacific (Singapore)</MenuItem>
+                                                <MenuItem value="ap-southeast-2">Asia Pacific (Sydney)</MenuItem>
+
+                                                <ListSubheader>United States</ListSubheader>
+                                                {getRegionsByLocation('United States').map((region) => (
+                                                    <MenuItem key={region.code} value={region.code}>
+                                                        {region.name}
+                                                    </MenuItem>
+                                                ))}
+
+                                                <ListSubheader>Europe</ListSubheader>
+                                                {getRegionsByLocation('Europe').map((region) => (
+                                                    <MenuItem key={region.code} value={region.code}>
+                                                        {region.name}
+                                                    </MenuItem>
+                                                ))}
+
+                                                <ListSubheader>Asia Pacific</ListSubheader>
+                                                {getRegionsByLocation('Asia Pacific').map((region) => (
+                                                    <MenuItem key={region.code} value={region.code}>
+                                                        {region.name}
+                                                    </MenuItem>
+                                                ))}
+
+                                                <ListSubheader>Other Regions</ListSubheader>
+                                                {getRegionsByLocation('Canada').map((region) => (
+                                                    <MenuItem key={region.code} value={region.code}>
+                                                        {region.name}
+                                                    </MenuItem>
+                                                ))}
+                                                {getRegionsByLocation('Middle East').map((region) => (
+                                                    <MenuItem key={region.code} value={region.code}>
+                                                        {region.name}
+                                                    </MenuItem>
+                                                ))}
+                                                {getRegionsByLocation('Africa').map((region) => (
+                                                    <MenuItem key={region.code} value={region.code}>
+                                                        {region.name}
+                                                    </MenuItem>
+                                                ))}
+                                                {getRegionsByLocation('South America').map((region) => (
+                                                    <MenuItem key={region.code} value={region.code}>
+                                                        {region.name}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
                                     </Grid>
                                 </Grid>
 

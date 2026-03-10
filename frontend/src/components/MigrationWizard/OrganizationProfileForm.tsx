@@ -74,10 +74,10 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Organization Profile
+        Tell Us About Your Organization
       </Typography>
       <Typography variant="body2" color="text.secondary" paragraph>
-        Tell us about your organization to help us understand your migration needs.
+        This information helps us understand your company's size, industry, and cloud readiness.
       </Typography>
 
       <Grid container spacing={3} sx={{ mt: 1 }}>
@@ -91,11 +91,14 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
                 select
                 fullWidth
                 label="Company Size"
-                helperText="Select your organization size"
+                helperText="How many employees work at your organization?"
               >
                 {companySizes.map((size) => (
                   <MenuItem key={size} value={size}>
-                    {size.replace('_', ' ')}
+                    {size === 'SMALL' && '1-50 employees'}
+                    {size === 'MEDIUM' && '51-500 employees'}
+                    {size === 'LARGE' && '501-5,000 employees'}
+                    {size === 'ENTERPRISE' && '5,000+ employees'}
                   </MenuItem>
                 ))}
               </TextField>
@@ -113,7 +116,7 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
                 select
                 fullWidth
                 label="Industry"
-                helperText="Select your industry"
+                helperText="What industry does your organization operate in?"
               >
                 {industries.map((industry) => (
                   <MenuItem key={industry} value={industry}>
@@ -139,7 +142,7 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
               >
                 {infrastructureTypes.map((type) => (
                   <MenuItem key={type} value={type}>
-                    {type.replace('_', ' ')}
+                    {type === 'ON_PREMISES' && 'On-Premises (Physical Servers)'}
                   </MenuItem>
                 ))}
               </TextField>
@@ -157,7 +160,7 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
                 type="number"
                 fullWidth
                 label="IT Team Size"
-                helperText="Number of IT staff members"
+                helperText="How many IT/DevOps staff do you have?"
                 inputProps={{ min: 1 }}
               />
             )}
@@ -174,11 +177,13 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
                 select
                 fullWidth
                 label="Cloud Experience Level"
-                helperText="Your team's cloud expertise"
+                helperText="What's your team's experience with cloud platforms?"
               >
                 {experienceLevels.map((level) => (
                   <MenuItem key={level} value={level}>
-                    {level}
+                    {level === 'BEGINNER' && 'Beginner - New to cloud'}
+                    {level === 'INTERMEDIATE' && 'Intermediate - Some cloud experience'}
+                    {level === 'ADVANCED' && 'Advanced - Extensive cloud experience'}
                   </MenuItem>
                 ))}
               </TextField>
@@ -211,6 +216,9 @@ const OrganizationProfileForm: React.FC<OrganizationProfileFormProps> = ({
                     </MenuItem>
                   ))}
                 </Select>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.5 }}>
+                  Where do your users and operations exist?
+                </Typography>
               </FormControl>
             )}
           />

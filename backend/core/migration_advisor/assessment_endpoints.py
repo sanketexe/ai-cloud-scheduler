@@ -116,8 +116,8 @@ class MigrationProjectResponse(BaseModel):
     project_uuid: str
     organization_name: str
     status: str
-    current_phase: Optional[str]
-    estimated_completion: Optional[str]
+    current_phase: Optional[str] = None
+    estimated_completion: Optional[str] = None
     created_at: str
     
     class Config:
@@ -531,3 +531,397 @@ async def delete_migration_project(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete project: {str(e)}"
         )
+
+
+
+# Enhanced Scoring Endpoints
+
+@router.get("/projects/{project_id}/score-preview")
+async def get_score_preview(
+    project_id: str,
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get real-time score preview based on current answers
+    
+    This endpoint calculates provider scores using the enhanced scoring engine
+    and returns them for real-time preview during the assessment.
+    """
+    from .enhanced_scoring_engine import EnhancedScoringEngine
+    
+    # Get the assessment engine
+    engine = MigrationAssessmentEngine(db)
+    
+    # Get project
+    project = engine.get_project(project_id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project {project_id} not found"
+        )
+    
+    # Build answers dictionary from project data
+    answers = {}
+    
+    # Add organization data if available
+    if hasattr(project, 'organization_profile') and project.organization_profile:
+        org_profile = project.organization_profile
+        answers['organization'] = {
+            'company_size': org_profile.company_size,
+            'industry': org_profile.industry,
+            'current_infrastructure': org_profile.current_infrastructure,
+            'it_team_size': org_profile.it_team_size,
+            'cloud_experience_level': org_profile.cloud_experience_level,
+            'geographic_presence': org_profile.geographic_presence or []
+        }
+    
+    # Add workload data if available
+    if hasattr(project, 'workload_profile') and project.workload_profile:
+        workload = project.workload_profile
+        answers['workload'] = {
+            'total_compute_cores': workload.total_compute_cores,
+            'total_memory_gb': workload.total_memory_gb,
+            'total_storage_tb': workload.total_storage_tb,
+            'database_types': workload.database_types or [],
+            'data_volume_tb': workload.data_volume_tb
+        }
+    
+    # Add requirements data if available
+    if hasattr(project, 'requirements') and project.requirements:
+        reqs = project.requirements
+        answers['performance'] = reqs.performance or {}
+        answers['compliance'] = reqs.compliance or {}
+        answers['budget'] = reqs.budget or {}
+        answers['technical'] = reqs.technical or {}
+    
+    # Calculate scores using enhanced engine
+    scoring_engine = EnhancedScoringEngine()
+    
+    try:
+        scores = scoring_engine.calculate_scores(answers)
+        
+        # Filter eligible providers and sort
+        eligible_scores = {p.value: round(s, 1) for p, s in scores.items() if s >= 0}
+        sorted_scores = dict(sorted(eligible_scores.items(), key=lambda x: x[1], reverse=True))
+        
+        # Calculate completion percentage
+        sections_complete = 0
+        total_sections = 3
+        
+        if 'organization' in answers:
+            sections_complete += 1
+        if 'workload' in answers:
+            sections_complete += 1
+        if 'performance' in answers and 'compliance' in answers:
+            sections_complete += 1
+        
+        completion_percentage = (sections_complete / total_sections) * 100
+        
+        return {
+            'scores': sorted_scores,
+            'top_provider': list(sorted_scores.keys())[0] if sorted_scores else None,
+            'sections_completed': sections_complete,
+            'total_sections': total_sections,
+            'completion_percentage': round(completion_percentage, 1),
+            'eligible_providers': list(sorted_scores.keys())
+        }
+    
+    except Exception as e:
+        # Return empty scores if calculation fails
+        return {
+            'scores': {},
+            'top_provider': None,
+            'sections_completed': 0,
+            'total_sections': 3,
+            'completion_percentage': 0.0,
+            'eligible_providers': [],
+            'error': str(e)
+        }
+
+
+@router.get("/projects/{project_id}/enhanced-recommendation")
+async def get_enhanced_recommendation(
+    project_id: str,
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get enhanced recommendation with evidence and explanation
+    
+    This endpoint uses the enhanced scoring engine to generate a comprehensive
+    recommendation with evidence, comparison matrix, and trade-offs.
+    """
+    from .enhanced_scoring_engine import EnhancedScoringEngine, Provider
+    
+    # Get the assessment engine
+    engine = MigrationAssessmentEngine(db)
+    
+    # Get project
+    project = engine.get_project(project_id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project {project_id} not found"
+        )
+    
+    # Build answers dictionary (same as score preview)
+    answers = {}
+    
+    if hasattr(project, 'organization_profile') and project.organization_profile:
+        org_profile = project.organization_profile
+        answers['organization'] = {
+            'company_size': org_profile.company_size,
+            'industry': org_profile.industry,
+            'current_infrastructure': org_profile.current_infrastructure,
+            'it_team_size': org_profile.it_team_size,
+            'cloud_experience_level': org_profile.cloud_experience_level,
+            'geographic_presence': org_profile.geographic_presence or []
+        }
+    
+    if hasattr(project, 'workload_profile') and project.workload_profile:
+        workload = project.workload_profile
+        answers['workload'] = {
+            'total_compute_cores': workload.total_compute_cores,
+            'total_memory_gb': workload.total_memory_gb,
+            'total_storage_tb': workload.total_storage_tb,
+            'database_types': workload.database_types or [],
+            'data_volume_tb': workload.data_volume_tb
+        }
+    
+    if hasattr(project, 'requirements') and project.requirements:
+        reqs = project.requirements
+        answers['performance'] = reqs.performance or {}
+        answers['compliance'] = reqs.compliance or {}
+        answers['budget'] = reqs.budget or {}
+        answers['technical'] = reqs.technical or {}
+    
+    # Generate recommendation
+    scoring_engine = EnhancedScoringEngine()
+    
+    try:
+        provider, score, evidence = scoring_engine.get_recommendation(answers)
+        all_scores_sorted = scoring_engine.get_all_scores_sorted(answers)
+        
+        # Get provider details
+        provider_details = get_provider_details(provider.value)
+        
+        # Build alternatives list
+        alternatives = []
+        for alt_provider, alt_score in all_scores_sorted[1:3]:  # Top 2 alternatives
+            alt_details = get_provider_details(alt_provider.value)
+            alternatives.append({
+                'provider': alt_provider.value,
+                'score': round(alt_score, 1),
+                'key_strength': alt_details.get('key_strength', ''),
+                'icon': alt_details.get('icon', '☁️')
+            })
+        
+        # Calculate migration complexity
+        from .migration_complexity_calculator import MigrationComplexityCalculator
+        complexity_calc = MigrationComplexityCalculator()
+        
+        data_volume = answers.get('workload', {}).get('total_storage_tb', 0)
+        hybrid_required = answers.get('organization', {}).get('current_infrastructure') in ['ON_PREMISES', 'HYBRID']
+        compliance_count = len(answers.get('compliance', {}).get('regulatory_frameworks', []))
+        team_experience = answers.get('organization', {}).get('cloud_experience_level', 'BEGINNER')
+        
+        complexity_level, timeline = complexity_calc.calculate_complexity(
+            data_volume_tb=data_volume,
+            hybrid_required=hybrid_required,
+            compliance_frameworks=answers.get('compliance', {}).get('regulatory_frameworks', []),
+            vendor_lock_in=False,  # Could be determined from answers
+            team_experience=team_experience
+        )
+        
+        return {
+            'recommended_provider': provider.value,
+            'confidence_score': round(score, 1),
+            'evidence': evidence,
+            'provider_details': provider_details,
+            'all_scores': {p.value: round(s, 1) for p, s in all_scores_sorted},
+            'alternatives': alternatives,
+            'complexity': {
+                'level': complexity_level.value,
+                'timeline': timeline,
+                'description': get_complexity_description(complexity_level)
+            },
+            'trade_offs': get_provider_trade_offs(provider.value)
+        }
+    
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate recommendation: {str(e)}"
+        )
+
+
+def get_provider_details(provider: str) -> Dict:
+    """Get detailed information about a provider"""
+    details = {
+        'AWS': {
+            'name': 'Amazon Web Services',
+            'icon': '☁️',
+            'key_strength': 'Largest service catalog and global reach',
+            'strengths': [
+                'Most mature cloud platform with 200+ services',
+                'Extensive global infrastructure (30+ regions)',
+                'Strong serverless and container support',
+                'Best migration tooling (AWS Migration Hub, DMS)',
+                'Largest partner ecosystem'
+            ],
+            'best_for': [
+                'Startups needing rapid scaling',
+                'E-commerce and retail applications',
+                'Microservices architectures',
+                'Organizations requiring service variety'
+            ],
+            'watch_for': [
+                'Complex pricing structure',
+                'Egress fees can be significant',
+                'Steeper learning curve'
+            ]
+        },
+        'Azure': {
+            'name': 'Microsoft Azure',
+            'icon': '🔷',
+            'key_strength': 'Best for Microsoft ecosystem and hybrid cloud',
+            'strengths': [
+                'Seamless Microsoft product integration',
+                'Leading hybrid cloud capabilities (Azure Arc)',
+                'Strong enterprise and government focus',
+                'Excellent compliance certifications',
+                'Best for .NET and Windows workloads'
+            ],
+            'best_for': [
+                'Organizations using Microsoft stack',
+                'Enterprise and government sectors',
+                'Hybrid cloud deployments',
+                'Finance and healthcare industries'
+            ],
+            'watch_for': [
+                'Portal complexity',
+                'Premium support can be expensive',
+                'Some services lag behind AWS'
+            ]
+        },
+        'GCP': {
+            'name': 'Google Cloud Platform',
+            'icon': '🌐',
+            'key_strength': 'Best for AI/ML and cost optimization',
+            'strengths': [
+                'Industry-leading AI/ML services (Vertex AI)',
+                'Superior data analytics (BigQuery)',
+                'Competitive pricing with sustained use discounts',
+                'Excellent Kubernetes support (GKE)',
+                'Strong open source focus'
+            ],
+            'best_for': [
+                'Data analytics and ML projects',
+                'Cost-conscious organizations',
+                'Container-based applications',
+                'Small to medium businesses'
+            ],
+            'watch_for': [
+                'Smaller partner network',
+                'Fewer regions than AWS/Azure',
+                'Less enterprise tooling'
+            ]
+        },
+        'IBM': {
+            'name': 'IBM Cloud',
+            'icon': '🔷',
+            'key_strength': 'Best for IBM software and hybrid enterprise',
+            'strengths': [
+                'Excellent IBM software integration',
+                'Strong regulated-industry compliance',
+                'Advanced hybrid cloud with LinuxONE',
+                'Watson AI services',
+                'Bare metal server options'
+            ],
+            'best_for': [
+                'Organizations with IBM investments',
+                'Financial services and banking',
+                'Hybrid cloud deployments',
+                'AIX and IBM i workloads'
+            ],
+            'watch_for': [
+                'Narrower service catalog',
+                'Smaller developer community',
+                'Limited third-party integrations'
+            ]
+        },
+        'Oracle': {
+            'name': 'Oracle Cloud Infrastructure',
+            'icon': '🔴',
+            'key_strength': 'Best for Oracle Database and ERP',
+            'strengths': [
+                'Optimized for Oracle Database',
+                'BYOL program saves costs',
+                'Autonomous Database capabilities',
+                'Strong security features',
+                'Excellent for Oracle applications'
+            ],
+            'best_for': [
+                'Organizations running Oracle DB',
+                'Oracle ERP users',
+                'Workloads with Oracle licenses',
+                'Cost-conscious Oracle customers'
+            ],
+            'watch_for': [
+                'Limited appeal outside Oracle ecosystem',
+                'Smaller ISV partner network',
+                'Fewer managed services'
+            ]
+        }
+    }
+    return details.get(provider, {})
+
+
+def get_provider_trade_offs(provider: str) -> List[str]:
+    """Get trade-offs for a provider"""
+    trade_offs = {
+        'AWS': [
+            'Pricing complexity requires careful monitoring',
+            'Egress fees can surprise cost-sensitive teams',
+            'Vast service catalog can be overwhelming'
+        ],
+        'Azure': [
+            'Portal can be complex for beginners',
+            'Premium support tiers can be expensive',
+            'Some services less mature than AWS equivalents'
+        ],
+        'GCP': [
+            'Smaller partner ecosystem than AWS/Azure',
+            'Fewer global regions in some geographies',
+            'Less enterprise tooling and support'
+        ],
+        'IBM': [
+            'Narrower general-purpose service catalog',
+            'Smaller developer community',
+            'Higher costs outside IBM ecosystem'
+        ],
+        'Oracle': [
+            'Limited appeal outside Oracle workloads',
+            'Smaller ISV partner network',
+            'Fewer managed services vs competitors'
+        ]
+    }
+    return trade_offs.get(provider, [])
+
+
+def get_complexity_description(complexity_level) -> str:
+    """Get description for complexity level"""
+    from .migration_complexity_calculator import ComplexityLevel
+    
+    descriptions = {
+        ComplexityLevel.LOW: 'Straightforward migration with minimal risk',
+        ComplexityLevel.MEDIUM: 'Moderate complexity requiring careful planning',
+        ComplexityLevel.HIGH: 'Complex migration requiring extensive planning and expertise'
+    }
+    return descriptions.get(complexity_level, '')

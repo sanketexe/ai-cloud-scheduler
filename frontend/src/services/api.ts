@@ -1,5 +1,7 @@
 // API service for FinOps Platform
-import axios from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { ErrorMessageFormatter, APICallLogger } from '../utils/errorHandler';
+import { retryWithBackoff, retryWithRateLimit, DEFAULT_RETRY_CONFIG } from '../utils/retryLogic';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -7,6 +9,163 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
 });
+
+// Cache for storing API responses
+const apiCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+// Cache TTL in milliseconds (5 minutes)
+const DEFAULT_CACHE_TTL = 5 * 60 * 1000;
+
+/**
+ * Generate cache key from request config
+ */
+function getCacheKey(url: string, params?: any): string {
+  const paramString = params ? JSON.stringify(params) : '';
+  return `${url}:${paramString}`;
+}
+
+/**
+ * Get data from cache if valid
+ */
+function getFromCache(key: string): any | null {
+  const cached = apiCache.get(key);
+  if (!cached) return null;
+
+  const now = Date.now();
+  if (now - cached.timestamp > cached.ttl) {
+    apiCache.delete(key);
+    return null;
+  }
+
+  console.log(`[Cache] Hit for ${key}`);
+  return cached.data;
+}
+
+/**
+ * Store data in cache
+ */
+function setCache(key: string, data: any, ttl: number = DEFAULT_CACHE_TTL) {
+  apiCache.set(key, {
+    data,
+    timestamp: Date.now(),
+    ttl,
+  });
+  console.log(`[Cache] Stored ${key} with TTL ${ttl}ms`);
+}
+
+/**
+ * Clear cache entries matching pattern
+ */
+function clearCachePattern(pattern: string) {
+  const keys = Array.from(apiCache.keys());
+  keys.forEach(key => {
+    if (key.includes(pattern)) {
+      apiCache.delete(key);
+    }
+  });
+}
+
+// Request interceptor for logging
+api.interceptors.request.use(
+  (config) => {
+    const startTime = Date.now();
+    (config as any).startTime = startTime;
+    
+    APICallLogger.logRequest(
+      config.method?.toUpperCase() || 'GET',
+      config.url || ''
+    );
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for logging and error handling
+api.interceptors.response.use(
+  (response) => {
+    const config = response.config as any;
+    const duration = Date.now() - (config.startTime || 0);
+    
+    APICallLogger.logResponse(
+      config.method?.toUpperCase() || 'GET',
+      config.url || '',
+      response.status,
+      config.startTime || Date.now()
+    );
+    
+    return response;
+  },
+  (error: AxiosError) => {
+    const config = error.config as any;
+    
+    if (config) {
+      APICallLogger.logError(
+        config.method?.toUpperCase() || 'GET',
+        config.url || '',
+        error.message,
+        config.startTime || Date.now()
+      );
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+/**
+ * Make API request with retry logic and cache fallback
+ * Validates: Requirements 4.1, 4.2, 4.4
+ */
+async function makeRequest<T>(
+  requestFn: () => Promise<T>,
+  cacheKey?: string,
+  cacheTTL: number = DEFAULT_CACHE_TTL
+): Promise<T> {
+  try {
+    // Try to get from cache first
+    if (cacheKey) {
+      const cached = getFromCache(cacheKey);
+      if (cached !== null) {
+        return cached;
+      }
+    }
+
+    // Make request with retry logic
+    const response = await retryWithBackoff(
+      requestFn,
+      DEFAULT_RETRY_CONFIG,
+      (attempt, error) => {
+        console.log(`Retrying request (attempt ${attempt}):`, error.message);
+      }
+    );
+
+    // Cache successful response
+    if (cacheKey) {
+      setCache(cacheKey, response, cacheTTL);
+    }
+
+    return response;
+  } catch (error: any) {
+    // Format error for user display
+    const formattedError = ErrorMessageFormatter.formatError(error);
+    
+    console.error('API request failed:', formattedError);
+
+    // Try to use cached data as fallback
+    if (cacheKey && formattedError.fallbackAvailable) {
+      const cached = apiCache.get(cacheKey);
+      if (cached) {
+        console.warn('Using stale cached data as fallback');
+        return cached.data;
+      }
+    }
+
+    // Throw formatted error
+    throw formattedError;
+  }
+}
 
 // FinOps Types
 export interface CostData {
@@ -93,8 +252,15 @@ export const apiService = {
     groupBy?: string[];
     filters?: any;
   }): Promise<{ data: CostData[]; total: number }> {
-    const response = await api.get('/api/v1/costs', { params });
-    return response.data;
+    const cacheKey = getCacheKey('/api/v1/costs', params);
+    return makeRequest(
+      async () => {
+        const response = await api.get('/api/v1/costs', { params });
+        return response.data;
+      },
+      cacheKey,
+      DEFAULT_CACHE_TTL
+    );
   },
 
   async getCostAttribution(params: {
@@ -102,8 +268,15 @@ export const apiService = {
     endDate: string;
     dimension: string;
   }) {
-    const response = await api.get('/api/v1/costs/attribution', { params });
-    return response.data;
+    const cacheKey = getCacheKey('/api/v1/costs/attribution', params);
+    return makeRequest(
+      async () => {
+        const response = await api.get('/api/v1/costs/attribution', { params });
+        return response.data;
+      },
+      cacheKey,
+      DEFAULT_CACHE_TTL
+    );
   },
 
   async getCostAnomalies(params?: {
@@ -111,28 +284,45 @@ export const apiService = {
     endDate?: string;
     confidenceThreshold?: number;
   }) {
-    const response = await api.get('/api/v1/costs/anomalies', { params });
-    return response.data;
+    const cacheKey = getCacheKey('/api/v1/costs/anomalies', params);
+    return makeRequest(
+      async () => {
+        const response = await api.get('/api/v1/costs/anomalies', { params });
+        return response.data;
+      },
+      cacheKey,
+      DEFAULT_CACHE_TTL
+    );
   },
 
   // Budget Management
   async getBudgets(params?: { status?: string; team?: string }): Promise<Budget[]> {
-    const response = await api.get('/api/v1/budgets', { params });
-    return response.data.budgets;
+    const cacheKey = getCacheKey('/api/v1/budgets', params);
+    return makeRequest(
+      async () => {
+        const response = await api.get('/api/v1/budgets', { params });
+        return response.data.budgets;
+      },
+      cacheKey,
+      DEFAULT_CACHE_TTL
+    );
   },
 
   async createBudget(budget: Omit<Budget, 'id'>): Promise<Budget> {
     const response = await api.post('/api/v1/budgets', budget);
+    clearCachePattern('/api/v1/budgets');
     return response.data;
   },
 
   async updateBudget(id: string, budget: Partial<Budget>): Promise<Budget> {
     const response = await api.patch(`/api/v1/budgets/${id}`, budget);
+    clearCachePattern('/api/v1/budgets');
     return response.data;
   },
 
   async deleteBudget(id: string): Promise<void> {
     await api.delete(`/api/v1/budgets/${id}`);
+    clearCachePattern('/api/v1/budgets');
   },
 
   // Optimization
@@ -141,8 +331,15 @@ export const apiService = {
     minSavings?: number;
     confidence?: string;
   }): Promise<OptimizationRecommendation[]> {
-    const response = await api.get('/api/v1/optimization/recommendations', { params });
-    return response.data.recommendations;
+    const cacheKey = getCacheKey('/api/v1/optimization/recommendations', params);
+    return makeRequest(
+      async () => {
+        const response = await api.get('/api/v1/optimization/recommendations', { params });
+        return response.data.recommendations;
+      },
+      cacheKey,
+      DEFAULT_CACHE_TTL
+    );
   },
 
   async implementRecommendation(id: string, params: {
@@ -212,8 +409,15 @@ export const apiService = {
 
   // Compliance
   async getComplianceOverview(): Promise<ComplianceData> {
-    const response = await api.get('/api/v1/compliance/overview');
-    return response.data;
+    const cacheKey = getCacheKey('/api/v1/compliance/overview');
+    return makeRequest(
+      async () => {
+        const response = await api.get('/api/v1/compliance/overview');
+        return response.data;
+      },
+      cacheKey,
+      DEFAULT_CACHE_TTL
+    );
   },
 
   async getTaggingCompliance() {

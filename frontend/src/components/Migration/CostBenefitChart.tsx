@@ -47,10 +47,22 @@ import {
   Cell,
   Area,
   AreaChart,
-  ReferenceLine
+  ReferenceLine,
+  Legend,
 } from 'recharts';
 
 import { MigrationAnalysis, multiCloudApi } from '../../services/multiCloudApi';
+import {
+  TOOLTIP_STYLE,
+  AXIS_STYLE,
+  GRID_STYLE,
+  formatCurrency,
+  formatCurrencyCompact,
+  CurrencyTooltip,
+  LEGEND_CONFIG,
+  CustomPieLabel,
+  CHART_COLOR_ARRAY,
+} from '../../utils/chartConfig';
 
 interface CostBenefitChartProps {
   analysis: MigrationAnalysis;
@@ -170,7 +182,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
 
   const breakEvenPoint = getBreakEvenPoint();
 
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
+  const COLORS = CHART_COLOR_ARRAY;
 
   return (
     <Box>
@@ -286,14 +298,20 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
 
             <ResponsiveContainer width="100%" height={400}>
               <AreaChart data={costProjectionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`} />
-                <RechartsTooltip
-                  formatter={(value, name) => [formatCurrency(Number(value)), name]}
-                  labelFormatter={(label) => `Month ${label}`}
+                <CartesianGrid {...GRID_STYLE} />
+                <XAxis 
+                  dataKey="month" 
+                  {...AXIS_STYLE}
+                  label={{ value: 'Months', position: 'insideBottom', offset: -5, style: { fill: '#b0bec5' } }}
                 />
-                <ReferenceLine y={0} stroke="#666" strokeDasharray="2 2" />
+                <YAxis 
+                  {...AXIS_STYLE}
+                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
+                  label={{ value: 'Amount ($)', angle: -90, position: 'insideLeft', style: { fill: '#b0bec5' } }}
+                />
+                <RechartsTooltip content={<CurrencyTooltip />} />
+                <Legend {...LEGEND_CONFIG} />
+                <ReferenceLine y={0} stroke="#666" strokeDasharray="2 2" label="Break-even" />
                 <Area
                   type="monotone"
                   dataKey="netBenefit"
@@ -339,6 +357,7 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
                       ))}
                     </Pie>
                     <RechartsTooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Legend {...LEGEND_CONFIG} />
                   </PieChart>
                 </ResponsiveContainer>
               </Grid>
@@ -395,15 +414,25 @@ const CostBenefitChart: React.FC<CostBenefitChartProps> = ({ analysis }) => {
 
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={roiTimelineData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis tickFormatter={(value) => `${value}%`} />
+                <CartesianGrid {...GRID_STYLE} />
+                <XAxis 
+                  dataKey="year" 
+                  {...AXIS_STYLE}
+                  label={{ value: 'Year', position: 'insideBottom', offset: -5, style: { fill: '#b0bec5' } }}
+                />
+                <YAxis 
+                  {...AXIS_STYLE}
+                  tickFormatter={(value) => `${value}%`}
+                  label={{ value: 'ROI (%)', angle: -90, position: 'insideLeft', style: { fill: '#b0bec5' } }}
+                />
                 <RechartsTooltip
+                  contentStyle={TOOLTIP_STYLE}
                   formatter={(value, name) => {
-                    if (name === 'roi') return [`${value}%`, 'ROI'];
+                    if (name === 'ROI %') return [`${value}%`, name];
                     return [formatCurrency(Number(value)), name];
                   }}
                 />
+                <Legend {...LEGEND_CONFIG} />
                 <Bar dataKey="roi" fill="#8884d8" name="ROI %" />
               </BarChart>
             </ResponsiveContainer>

@@ -19,6 +19,7 @@ import {
   Slider,
   Tab,
   Tabs,
+  ListSubheader,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import {
@@ -28,6 +29,7 @@ import {
   Speed as PerformanceIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
+import { AWS_REGIONS, getRegionsByLocation } from '../utils/awsRegions';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -165,14 +167,33 @@ const Settings: React.FC = () => {
                       onChange={(e) => handleSettingChange('awsRegion', e.target.value)}
                       disabled={!settings.awsEnabled}
                     >
-                      <MenuItem value="us-west-2">US West (Oregon)</MenuItem>
+                      <ListSubheader>Popular Regions</ListSubheader>
                       <MenuItem value="us-east-1">US East (N. Virginia)</MenuItem>
-                      <MenuItem value="us-east-2">US East (Ohio)</MenuItem>
+                      <MenuItem value="us-west-2">US West (Oregon)</MenuItem>
                       <MenuItem value="eu-west-1">Europe (Ireland)</MenuItem>
-                      <MenuItem value="eu-central-1">Europe (Frankfurt)</MenuItem>
-                      <MenuItem value="ap-southeast-1">Asia (Singapore)</MenuItem>
-                      <MenuItem value="ap-southeast-2">Asia (Sydney)</MenuItem>
-                      <MenuItem value="ap-northeast-1">Asia (Tokyo)</MenuItem>
+                      <MenuItem value="ap-southeast-1">Asia Pacific (Singapore)</MenuItem>
+                      <MenuItem value="ap-southeast-2">Asia Pacific (Sydney)</MenuItem>
+
+                      <ListSubheader>United States</ListSubheader>
+                      {getRegionsByLocation('United States').map((region) => (
+                        <MenuItem key={region.code} value={region.code}>
+                          {region.name}
+                        </MenuItem>
+                      ))}
+
+                      <ListSubheader>Europe</ListSubheader>
+                      {getRegionsByLocation('Europe').map((region) => (
+                        <MenuItem key={region.code} value={region.code}>
+                          {region.name}
+                        </MenuItem>
+                      ))}
+
+                      <ListSubheader>Asia Pacific</ListSubheader>
+                      {getRegionsByLocation('Asia Pacific').map((region) => (
+                        <MenuItem key={region.code} value={region.code}>
+                          {region.name}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Card>

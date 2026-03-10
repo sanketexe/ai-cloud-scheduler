@@ -112,7 +112,7 @@ class FilterChangeRequest(BaseModel):
 
 class InvitationSendRequest(BaseModel):
     """Request model for sending invitations"""
-    email: str = Field(..., regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    email: str = Field(..., pattern=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
     role: ParticipantRole = ParticipantRole.VIEWER
     permission_level: PermissionLevel = PermissionLevel.READ_ONLY
     message: Optional[str] = Field(None, max_length=500)

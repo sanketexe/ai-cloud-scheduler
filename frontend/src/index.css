@@ -34,3 +34,111 @@ code {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+
+/* Loading animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.loading-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Smooth transitions for all interactive elements */
+button,
+a,
+.MuiCard-root,
+.MuiChip-root {
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* Consistent spacing */
+.page-container {
+  padding: 24px;
+}
+
+.section-spacing {
+  margin-bottom: 24px;
+}
+
+/* Consistent card styling */
+.MuiCard-root {
+  border-radius: 12px !important;
+}
+
+/* Loading state styling */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 14, 39, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+/* Skeleton loader styling */
+.MuiSkeleton-root {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.MuiSkeleton-wave::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.12),
+    transparent
+  ) !important;
+}
+
+/* Progress indicator styling */
+.MuiLinearProgress-root {
+  border-radius: 4px !important;
+}
+
+/* Ensure consistent button hover states */
+.MuiButton-root:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+/* Consistent chip styling */
+.MuiChip-root {
+  font-weight: 500;
+  border-radius: 8px !important;
+}
+
+/* Table styling consistency */
+.MuiTableCell-root {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Alert styling consistency */
+.MuiAlert-root {
+  border-radius: 8px !important;
+}

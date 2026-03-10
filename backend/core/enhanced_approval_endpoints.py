@@ -38,7 +38,7 @@ class OptimizationActionRequest(BaseModel):
     resource_id: str
     resource_type: str
     cost_impact: float = Field(..., ge=0)
-    risk_level: str = Field(..., regex="^(low|medium|high|critical)$")
+    risk_level: str = Field(..., pattern="^(low|medium|high|critical)$")
     description: str
     proposed_changes: Dict[str, Any] = {}
     estimated_savings: float = Field(..., ge=0)

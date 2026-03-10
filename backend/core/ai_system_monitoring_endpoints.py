@@ -578,7 +578,7 @@ async def update_alert_thresholds(
 
 @router.get("/metrics/export")
 async def export_metrics(
-    format: str = Query("prometheus", regex="^(prometheus|json)$"),
+    format: str = Query("prometheus", pattern="^(prometheus|json)$"),
     monitor: AISystemMonitor = Depends(get_monitor)
 ):
     """Export metrics in various formats"""

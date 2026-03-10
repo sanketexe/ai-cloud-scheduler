@@ -49,13 +49,13 @@ class MultiCloudRepository:
         self.performance_metrics = performance_metrics
         
         # Initialize individual repositories
-        self.workload_repo = WorkloadSpecificationRepository(session, performance_metrics)
-        self.cost_comparison_repo = CostComparisonRepository(session, performance_metrics)
-        self.tco_repo = TCOAnalysisRepository(session, performance_metrics)
-        self.migration_repo = MigrationAnalysisRepository(session, performance_metrics)
-        self.pricing_repo = ProviderPricingRepository(session, performance_metrics)
-        self.equivalency_repo = ServiceEquivalencyRepository(session, performance_metrics)
-        self.parity_repo = FeatureParityRepository(session, performance_metrics)
+        self.workload_repo = WorkloadSpecificationRepository(session)
+        self.cost_comparison_repo = CostComparisonRepository(session)
+        self.tco_repo = TCOAnalysisRepository(session)
+        self.migration_repo = MigrationAnalysisRepository(session)
+        self.pricing_repo = ProviderPricingRepository(session)
+        self.equivalency_repo = ServiceEquivalencyRepository(session)
+        self.parity_repo = FeatureParityRepository(session)
         
         # Performance optimization settings
         self.batch_size = 1000

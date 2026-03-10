@@ -7,7 +7,7 @@ import asyncio
 
 from backend.core.auth import get_current_user
 from backend.core.models import User
-from backend.core.database import get_db
+from backend.core.database import get_db_session as get_db
 
 logger = structlog.get_logger(__name__)
 

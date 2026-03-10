@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
+import { LoadingSpinner, ProgressIndicator } from '../components/Loading';
 
 // Types
 interface AWSCredentials {
@@ -249,7 +250,7 @@ const AWSCostAnalysis: React.FC = () => {
             variant="contained"
             onClick={runCostAnalysis}
             disabled={loading || !connectionTested}
-            startIcon={loading ? <LinearProgress /> : <TrendingUpIcon />}
+            startIcon={loading ? undefined : <TrendingUpIcon />}
           >
             {loading ? 'Analyzing...' : 'Run Cost Analysis'}
           </Button>
@@ -260,6 +261,13 @@ const AWSCostAnalysis: React.FC = () => {
           <Alert severity="success" sx={{ mb: 3 }}>
             AWS connection verified. Ready to analyze costs.
           </Alert>
+        )}
+
+        {/* Loading Indicator */}
+        {loading && (
+          <Box sx={{ mb: 3 }}>
+            <ProgressIndicator message="Analyzing AWS costs and generating recommendations..." />
+          </Box>
         )}
 
         {/* Analysis Results */}

@@ -21,7 +21,7 @@ import uuid
 import requests
 import structlog
 from sqlalchemy import Column, String, DateTime, Boolean, Text, Integer, JSON
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.types import JSON as JSONB, Uuid as UUID
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 

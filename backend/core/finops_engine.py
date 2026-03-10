@@ -23,8 +23,6 @@ except ImportError:
 
 class CloudProvider(Enum):
     AWS = "aws"
-    GCP = "gcp"
-    AZURE = "azure"
     OTHER = "other"
 
 
@@ -226,60 +224,174 @@ class AWSBillingAPI(CloudBillingAPI):
     
     async def get_cost_data(self, start_date: datetime, end_date: datetime,
                            filters: Optional[Dict[str, Any]] = None) -> List[CostData]:
-        """Retrieve AWS cost data"""
-        # Simulate AWS Cost Explorer API call
+        """Retrieve AWS cost data from Cost Explorer API"""
         self.logger.info(f"Fetching AWS cost data from {start_date} to {end_date}")
         
-        # Mock data for demonstration
-        mock_data = [
-            {
-                "service": "Amazon EC2-Instance",
-                "cost": 150.75,
-                "usage_quantity": 744,  # hours
-                "resource_id": "i-1234567890abcdef0",
-                "region": "us-east-1",
-                "tags": {"Team": "backend", "Project": "web-app"}
-            },
-            {
-                "service": "Amazon S3",
-                "cost": 25.30,
-                "usage_quantity": 100,  # GB
-                "resource_id": "bucket-web-assets",
-                "region": "us-east-1",
-                "tags": {"Team": "frontend", "Project": "web-app"}
+        try:
+            import boto3
+            from botocore.exceptions import ClientError, NoCredentialsError
+            
+            # Create Cost Explorer client
+            session = boto3.Session(
+                aws_access_key_id=self.access_key,
+                aws_secret_access_key=self.secret_key,
+                region_name=self.region
+            )
+            ce_client = session.client('ce')
+            
+            # Format dates for Cost Explorer API
+            start_str = start_date.strftime('%Y-%m-%d')
+            end_str = end_date.strftime('%Y-%m-%d')
+            
+            # Build Cost Explorer query
+            query_params = {
+                'TimePeriod': {
+                    'Start': start_str,
+                    'End': end_str
+                },
+                'Granularity': 'DAILY',
+                'Metrics': ['UnblendedCost', 'UsageQuantity'],
+                'GroupBy': [
+                    {'Type': 'DIMENSION', 'Key': 'SERVICE'},
+                    {'Type': 'DIMENSION', 'Key': 'REGION'}
+                ]
             }
-        ]
-        
-        cost_data = []
-        for item in mock_data:
-            cost_data.append(CostData(
-                provider=CloudProvider.AWS,
-                service=item["service"],
-                resource_id=item["resource_id"],
-                cost_amount=item["cost"],
-                currency="USD",
-                billing_period_start=start_date,
-                billing_period_end=end_date,
-                cost_category=self._categorize_aws_service(item["service"]),
-                tags=item["tags"],
-                region=item["region"]
-            ))
-        
-        return cost_data
+            
+            # Add filters if provided
+            if filters:
+                query_params['Filter'] = filters
+            
+            # Call Cost Explorer API
+            response = ce_client.get_cost_and_usage(**query_params)
+            
+            # Parse response and convert to CostData objects
+            cost_data = []
+            for result in response.get('ResultsByTime', []):
+                time_period_start = datetime.strptime(result['TimePeriod']['Start'], '%Y-%m-%d')
+                time_period_end = datetime.strptime(result['TimePeriod']['End'], '%Y-%m-%d')
+                
+                for group in result.get('Groups', []):
+                    # Extract service and region from group keys
+                    keys = group.get('Keys', [])
+                    service = keys[0] if len(keys) > 0 else 'Unknown'
+                    region = keys[1] if len(keys) > 1 else 'global'
+                    
+                    # Extract cost metrics
+                    metrics = group.get('Metrics', {})
+                    cost_amount = float(metrics.get('UnblendedCost', {}).get('Amount', 0))
+                    usage_quantity = float(metrics.get('UsageQuantity', {}).get('Amount', 0))
+                    
+                    # Skip zero-cost items
+                    if cost_amount == 0:
+                        continue
+                    
+                    # Create resource ID from service and region
+                    resource_id = f"{service.lower().replace(' ', '-')}-{region}"
+                    
+                    cost_data.append(CostData(
+                        provider=CloudProvider.AWS,
+                        service=service,
+                        resource_id=resource_id,
+                        cost_amount=cost_amount,
+                        currency='USD',
+                        billing_period_start=time_period_start,
+                        billing_period_end=time_period_end,
+                        cost_category=self._categorize_aws_service(service),
+                        tags={},  # Tags require separate API call
+                        region=region
+                    ))
+            
+            self.logger.info(f"Retrieved {len(cost_data)} cost data points from AWS Cost Explorer")
+            return cost_data
+            
+        except NoCredentialsError:
+            self.logger.error("AWS credentials not found or invalid")
+            raise ValueError("AWS credentials not configured properly")
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            error_msg = e.response['Error']['Message']
+            self.logger.error(f"AWS API error: {error_code} - {error_msg}")
+            raise ValueError(f"Failed to fetch AWS cost data: {error_msg}")
+        except Exception as e:
+            self.logger.error(f"Unexpected error fetching AWS cost data: {str(e)}")
+            raise
     
     async def get_usage_data(self, start_date: datetime, end_date: datetime,
                             resource_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-        """Retrieve AWS usage data"""
-        # Mock usage data
-        return [
-            {
-                "resource_id": "i-1234567890abcdef0",
-                "resource_type": "EC2Instance",
-                "usage_hours": 744,
-                "cpu_utilization": 65.5,
-                "memory_utilization": 70.2
-            }
-        ]
+        """Retrieve AWS usage data from CloudWatch and EC2"""
+        self.logger.info(f"Fetching AWS usage data from {start_date} to {end_date}")
+        
+        try:
+            import boto3
+            from botocore.exceptions import ClientError
+            
+            # Create AWS clients
+            session = boto3.Session(
+                aws_access_key_id=self.access_key,
+                aws_secret_access_key=self.secret_key,
+                region_name=self.region
+            )
+            ec2_client = session.client('ec2')
+            cloudwatch_client = session.client('cloudwatch')
+            
+            usage_data = []
+            
+            # Get EC2 instance usage if requested
+            if not resource_types or 'EC2Instance' in resource_types:
+                try:
+                    # Get all EC2 instances
+                    instances_response = ec2_client.describe_instances()
+                    
+                    for reservation in instances_response.get('Reservations', []):
+                        for instance in reservation.get('Instances', []):
+                            instance_id = instance['InstanceId']
+                            instance_type = instance.get('InstanceType', 'unknown')
+                            state = instance['State']['Name']
+                            
+                            # Get CloudWatch metrics for running instances
+                            cpu_utilization = 0.0
+                            if state == 'running':
+                                try:
+                                    cpu_response = cloudwatch_client.get_metric_statistics(
+                                        Namespace='AWS/EC2',
+                                        MetricName='CPUUtilization',
+                                        Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
+                                        StartTime=start_date,
+                                        EndTime=end_date,
+                                        Period=3600,  # 1 hour
+                                        Statistics=['Average']
+                                    )
+                                    
+                                    datapoints = cpu_response.get('Datapoints', [])
+                                    if datapoints:
+                                        cpu_utilization = sum(dp['Average'] for dp in datapoints) / len(datapoints)
+                                except Exception as e:
+                                    self.logger.warning(f"Could not fetch CloudWatch metrics for {instance_id}: {e}")
+                            
+                            # Calculate usage hours
+                            time_diff = end_date - start_date
+                            usage_hours = time_diff.total_seconds() / 3600
+                            
+                            usage_data.append({
+                                'resource_id': instance_id,
+                                'resource_type': 'EC2Instance',
+                                'instance_type': instance_type,
+                                'state': state,
+                                'usage_hours': usage_hours,
+                                'cpu_utilization': round(cpu_utilization, 2),
+                                'region': self.region
+                            })
+                    
+                    self.logger.info(f"Retrieved usage data for {len(usage_data)} EC2 instances")
+                    
+                except ClientError as e:
+                    self.logger.error(f"Error fetching EC2 usage data: {e}")
+            
+            return usage_data
+            
+        except Exception as e:
+            self.logger.error(f"Error fetching AWS usage data: {str(e)}")
+            return []
     
     def normalize_cost_data(self, raw_data: List[Dict[str, Any]]) -> List[NormalizedCostData]:
         """Normalize AWS cost data"""
@@ -316,98 +428,8 @@ class AWSBillingAPI(CloudBillingAPI):
             return CostCategory.OTHER
 
 
-class GCPBillingAPI(CloudBillingAPI):
-    """Google Cloud Billing API integration"""
-    
-    def __init__(self, project_id: str, credentials_path: str):
-        self.project_id = project_id
-        self.credentials_path = credentials_path
-        self.logger = logging.getLogger(f"{__name__}.GCPBillingAPI")
-    
-    async def get_cost_data(self, start_date: datetime, end_date: datetime,
-                           filters: Optional[Dict[str, Any]] = None) -> List[CostData]:
-        """Retrieve GCP cost data"""
-        self.logger.info(f"Fetching GCP cost data from {start_date} to {end_date}")
-        
-        # Mock GCP data
-        mock_data = [
-            {
-                "service": "Compute Engine",
-                "cost": 120.45,
-                "resource_id": "instance-1",
-                "region": "us-central1",
-                "tags": {"team": "ml", "project": "analytics"}
-            }
-        ]
-        
-        cost_data = []
-        for item in mock_data:
-            cost_data.append(CostData(
-                provider=CloudProvider.GCP,
-                service=item["service"],
-                resource_id=item["resource_id"],
-                cost_amount=item["cost"],
-                currency="USD",
-                billing_period_start=start_date,
-                billing_period_end=end_date,
-                cost_category=self._categorize_gcp_service(item["service"]),
-                tags=item["tags"],
-                region=item["region"]
-            ))
-        
-        return cost_data
-    
-    async def get_usage_data(self, start_date: datetime, end_date: datetime,
-                            resource_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-        """Retrieve GCP usage data"""
-        return []
-    
-    def normalize_cost_data(self, raw_data: List[Dict[str, Any]]) -> List[NormalizedCostData]:
-        """Normalize GCP cost data"""
-        # Similar to AWS normalization
-        return []
-    
-    def _categorize_gcp_service(self, service_name: str) -> CostCategory:
-        """Categorize GCP service into cost category"""
-        service_lower = service_name.lower()
-        if "compute" in service_lower:
-            return CostCategory.COMPUTE
-        elif "storage" in service_lower:
-            return CostCategory.STORAGE
-        elif "sql" in service_lower:
-            return CostCategory.DATABASE
-        else:
-            return CostCategory.OTHER
-
-
-class AzureBillingAPI(CloudBillingAPI):
-    """Azure Cost Management API integration"""
-    
-    def __init__(self, subscription_id: str, tenant_id: str, client_id: str, client_secret: str):
-        self.subscription_id = subscription_id
-        self.tenant_id = tenant_id
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.logger = logging.getLogger(f"{__name__}.AzureBillingAPI")
-    
-    async def get_cost_data(self, start_date: datetime, end_date: datetime,
-                           filters: Optional[Dict[str, Any]] = None) -> List[CostData]:
-        """Retrieve Azure cost data"""
-        self.logger.info(f"Fetching Azure cost data from {start_date} to {end_date}")
-        return []  # Mock implementation
-    
-    async def get_usage_data(self, start_date: datetime, end_date: datetime,
-                            resource_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-        """Retrieve Azure usage data"""
-        return []
-    
-    def normalize_cost_data(self, raw_data: List[Dict[str, Any]]) -> List[NormalizedCostData]:
-        """Normalize Azure cost data"""
-        return []
-
-
 class CostCollector:
-    """Centralized cost data collection from multiple cloud providers"""
+    """Centralized cost data collection from AWS"""
     
     def __init__(self):
         self.billing_apis: Dict[CloudProvider, CloudBillingAPI] = {}

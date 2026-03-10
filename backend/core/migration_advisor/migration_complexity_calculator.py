@@ -8,6 +8,7 @@ Requirements: 3.1
 """
 
 from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
 from typing import Dict, List, Optional
 from enum import Enum
 from decimal import Decimal
@@ -616,3 +617,115 @@ class MigrationComplexityCalculator:
             assessments[provider_name] = assessment
         
         return assessments
+
+
+
+# Enhanced Complexity Calculation (PRD Section 6.4)
+
+class ComplexityLevel(str, Enum):
+    """Simplified complexity levels for PRD implementation"""
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+def calculate_complexity(
+    data_volume_tb: float,
+    hybrid_required: bool,
+    compliance_frameworks: List[str],
+    vendor_lock_in: bool,
+    team_experience: str
+) -> Tuple[ComplexityLevel, str]:
+    """
+    Calculate migration complexity based on PRD Section 6.4
+    
+    Args:
+        data_volume_tb: Total data volume in terabytes
+        hybrid_required: Whether hybrid connectivity is required
+        compliance_frameworks: List of compliance frameworks
+        vendor_lock_in: Whether there's vendor lock-in
+        team_experience: Team experience level (BEGINNER, INTERMEDIATE, EXPERT)
+    
+    Returns:
+        Tuple of (complexity_level, timeline_estimate)
+    """
+    complexity_score = 0
+    
+    # Data volume scoring
+    if data_volume_tb < 1:
+        complexity_score += 1
+    elif data_volume_tb <= 100:
+        complexity_score += 3
+    else:
+        complexity_score += 5
+    
+    # Hybrid requirement
+    if hybrid_required:
+        complexity_score += 3
+    
+    # Compliance requirements
+    compliance_count = len(compliance_frameworks)
+    if compliance_count == 0:
+        complexity_score += 0
+    elif compliance_count <= 2:
+        complexity_score += 2
+    else:
+        complexity_score += 4
+    
+    # Vendor lock-in
+    if vendor_lock_in:
+        complexity_score += 3
+    
+    # Team experience
+    if team_experience.upper() in ['EXPERT', 'ADVANCED']:
+        complexity_score -= 2
+    elif team_experience.upper() in ['BEGINNER', 'NONE']:
+        complexity_score += 2
+    
+    # Determine level and timeline
+    if complexity_score <= 5:
+        return ComplexityLevel.LOW, "1-2 weeks"
+    elif complexity_score <= 12:
+        return ComplexityLevel.MEDIUM, "2-8 weeks"
+    else:
+        return ComplexityLevel.HIGH, "2-6 months"
+
+
+def get_complexity_details(level: ComplexityLevel) -> Dict:
+    """Get detailed information about complexity level"""
+    details = {
+        ComplexityLevel.LOW: {
+            "description": "Straightforward migration with minimal risk",
+            "criteria": [
+                "Less than 1 TB of data",
+                "No compliance requirements",
+                "Stateless applications",
+                "Experienced cloud team"
+            ],
+            "timeline": "1-2 weeks",
+            "risk_level": "Low"
+        },
+        ComplexityLevel.MEDIUM: {
+            "description": "Moderate complexity requiring careful planning",
+            "criteria": [
+                "1-100 TB of data",
+                "Basic compliance requirements",
+                "Some stateful services",
+                "Mixed team experience"
+            ],
+            "timeline": "2-8 weeks",
+            "risk_level": "Medium"
+        },
+        ComplexityLevel.HIGH: {
+            "description": "Complex migration requiring extensive planning",
+            "criteria": [
+                "Over 100 TB of data",
+                "Regulated industry requirements",
+                "Hybrid connectivity needed",
+                "Legacy systems integration"
+            ],
+            "timeline": "2-6 months",
+            "risk_level": "High"
+        }
+    }
+    return details[level]

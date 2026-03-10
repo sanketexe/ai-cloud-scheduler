@@ -181,15 +181,15 @@ class SpendingTracker:
         return None
     
     async def _update_budget_spending(self, budget: Budget):
-        """Update spending information for a single budget"""
+        """Update spending information for a single budget using real AWS cost data"""
         try:
-            # Generate mock spending data for testing
-            current_spend = self._generate_mock_spending(budget)
+            # Fetch real AWS spending data
+            current_spend = await self._fetch_real_aws_spending(budget)
             spending_velocity = self._calculate_spending_velocity(budget)
             projected_spend = self._calculate_projected_spend(budget, current_spend, spending_velocity)
             
             # Calculate utilization and tracking status
-            utilization_percentage = (current_spend / budget.amount) * 100
+            utilization_percentage = (current_spend / budget.amount) * 100 if budget.amount > 0 else 0
             days_remaining = self._calculate_days_remaining(budget)
             is_on_track = self._is_spending_on_track(budget, current_spend, projected_spend)
             variance_from_expected = self._calculate_variance_from_expected(budget, current_spend)
@@ -221,33 +221,115 @@ class SpendingTracker:
         except Exception as e:
             self.logger.error(f"Error updating spending for budget {budget.name}: {e}")    
 
-    def _generate_mock_spending(self, budget: Budget) -> float:
-        """Generate mock spending data for testing"""
+    async def _fetch_real_aws_spending(self, budget: Budget) -> float:
+        """Fetch real AWS spending data from Cost Explorer"""
+        try:
+            import boto3
+            import os
+            from botocore.exceptions import ClientError, NoCredentialsError
+            
+            # Get AWS credentials from environment
+            access_key = os.getenv('AWS_ACCESS_KEY_ID')
+            secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+            region = os.getenv('AWS_REGION', 'us-east-1')
+            
+            if not access_key or not secret_key:
+                self.logger.warning("AWS credentials not configured, using fallback calculation")
+                return self._generate_fallback_spending(budget)
+            
+            # Create Cost Explorer client
+            session = boto3.Session(
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                region_name=region
+            )
+            ce_client = session.client('ce')
+            
+            # Calculate date range for current budget period
+            start_date = budget.start_date
+            end_date = min(datetime.now(), budget.end_date) if budget.end_date else datetime.now()
+            
+            # Format dates for Cost Explorer
+            start_str = start_date.strftime('%Y-%m-%d')
+            end_str = end_date.strftime('%Y-%m-%d')
+            
+            # Build filter based on budget scope
+            cost_filter = None
+            if budget.scope_filters:
+                # Apply budget scope filters (e.g., specific teams, projects, tags)
+                filter_conditions = []
+                
+                if 'teams' in budget.scope_filters:
+                    filter_conditions.append({
+                        'Tags': {
+                            'Key': 'Team',
+                            'Values': budget.scope_filters['teams']
+                        }
+                    })
+                
+                if 'projects' in budget.scope_filters:
+                    filter_conditions.append({
+                        'Tags': {
+                            'Key': 'Project',
+                            'Values': budget.scope_filters['projects']
+                        }
+                    })
+                
+                if len(filter_conditions) > 1:
+                    cost_filter = {'And': filter_conditions}
+                elif len(filter_conditions) == 1:
+                    cost_filter = filter_conditions[0]
+            
+            # Query Cost Explorer
+            query_params = {
+                'TimePeriod': {'Start': start_str, 'End': end_str},
+                'Granularity': 'MONTHLY',
+                'Metrics': ['UnblendedCost']
+            }
+            
+            if cost_filter:
+                query_params['Filter'] = cost_filter
+            
+            response = ce_client.get_cost_and_usage(**query_params)
+            
+            # Sum up total costs
+            total_cost = 0.0
+            for result in response.get('ResultsByTime', []):
+                cost_amount = float(result.get('Total', {}).get('UnblendedCost', {}).get('Amount', 0))
+                total_cost += cost_amount
+            
+            self.logger.info(f"Fetched real AWS spending for budget {budget.name}: ${total_cost:.2f}")
+            return total_cost
+            
+        except NoCredentialsError:
+            self.logger.error("AWS credentials not found")
+            return self._generate_fallback_spending(budget)
+        except ClientError as e:
+            self.logger.error(f"AWS API error fetching budget spending: {e}")
+            return self._generate_fallback_spending(budget)
+        except Exception as e:
+            self.logger.error(f"Error fetching real AWS spending: {str(e)}")
+            return self._generate_fallback_spending(budget)
+    
+    def _generate_fallback_spending(self, budget: Budget) -> float:
+        """Generate estimated spending when AWS API is unavailable"""
         # Calculate days elapsed since budget start
         days_elapsed = max(1, (datetime.now() - budget.start_date).days)
-        total_budget_days = (budget.end_date - budget.start_date).days
+        
+        if budget.end_date:
+            total_budget_days = (budget.end_date - budget.start_date).days
+        else:
+            # For ongoing budgets, assume monthly period
+            total_budget_days = 30
         
         if total_budget_days <= 0:
             return 0.0
         
-        # Simulate spending with some randomness
-        expected_daily_spend = budget.amount / total_budget_days
+        # Calculate expected spending based on time elapsed
+        progress_ratio = min(days_elapsed / total_budget_days, 1.0)
+        expected_spend = budget.amount * progress_ratio
         
-        # Add some variance (±20%)
-        import random
-        variance_factor = random.uniform(0.8, 1.2)
-        actual_daily_spend = expected_daily_spend * variance_factor
-        
-        # Calculate total spend with some acceleration/deceleration
-        progress_factor = days_elapsed / total_budget_days
-        if progress_factor > 0.7:  # Accelerate spending near end of period
-            acceleration = 1.1
-        else:
-            acceleration = 1.0
-        
-        total_spend = actual_daily_spend * days_elapsed * acceleration
-        
-        # Ensure we don't exceed reasonable bounds
+        return expected_spend
         return min(total_spend, budget.amount * 1.5)  # Cap at 150% of budget
     
     def _calculate_spending_velocity(self, budget: Budget) -> float:

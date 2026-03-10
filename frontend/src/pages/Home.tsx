@@ -37,7 +37,7 @@ const Home: React.FC = () => {
             title: 'Global Migration Planner',
             description: 'Plan your journey from local storage to the cloud. Analyze TCO, risks, and timelines without an AWS account.',
             icon: <Moving sx={{ fontSize: 48 }} />,
-            path: '/migration-planner',
+            path: '/migration-wizard',
             color: theme.palette.warning.main,
             features: ['On-Prem to AWS', 'TCO Analysis', 'Risk Assessment']
         }

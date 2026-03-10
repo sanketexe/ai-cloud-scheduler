@@ -6,6 +6,10 @@ import os
 import logging
 from contextlib import asynccontextmanager
 from typing import Dict, Any
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -188,6 +192,7 @@ async def log_requests(request: Request, call_next):
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler"""
+    import traceback
     correlation_id = getattr(request.state, 'correlation_id', 'unknown')
     
     logger.error(
@@ -204,7 +209,9 @@ async def global_exception_handler(request: Request, exc: Exception):
             "error": {
                 "message": "Internal server error",
                 "correlation_id": correlation_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
+                "detail": str(exc),
+                "traceback": traceback.format_exc()
             }
         }
     )
@@ -242,7 +249,7 @@ from backend.core.cloud_endpoints import cloud_router
 from backend.core.cache_health_endpoints import router as cache_health_router
 from backend.core.health_endpoints import router as health_router
 from backend.core.ai_assistant_endpoints import router as ai_assistant_router
-from backend.core.natural_language_endpoints import router as nlp_router
+# from backend.core.natural_language_endpoints import router as nlp_router  # Temporarily disabled due to TensorFlow dependency
 from backend.core.migration_advisor.assessment_endpoints import router as assessment_router
 from backend.core.migration_advisor.requirements_endpoints import router as requirements_router
 from backend.core.migration_advisor.recommendation_endpoints import router as recommendation_router
@@ -258,17 +265,19 @@ from backend.core.automation_endpoints import router as automation_router
 from backend.api.anomaly_detection import router as anomaly_detection_router
 from backend.api.multi_cloud import router as multi_cloud_router
 from backend.core.graph_neural_network_endpoints import router as gnn_router
-from backend.core.ml_model_management_endpoints import router as ml_model_router
-from backend.core.ai_orchestrator_endpoints import router as ai_orchestrator_router
-from backend.core.ai_ml_services_endpoints import router as ai_ml_services_router
-from backend.core.rl_optimization_endpoints import router as rl_optimization_router
-from backend.core.smart_contract_optimizer_endpoints import router as smart_contract_router
+# from backend.core.ml_model_management_endpoints import router as ml_model_router  # Temporarily disabled - missing mlflow
+# from backend.core.ai_orchestrator_endpoints import router as ai_orchestrator_router  # Temporarily disabled - TensorFlow dependency
+# from backend.core.ai_ml_services_endpoints import router as ai_ml_services_router  # Temporarily disabled - TensorFlow dependency
+# from backend.core.rl_optimization_endpoints import router as rl_optimization_router  # Temporarily disabled - import error
+# from backend.core.smart_contract_optimizer_endpoints import router as smart_contract_router  # Temporarily disabled - import error
 from backend.core.ai_services_documentation import router as ai_services_docs_router
 from backend.core.ai_system_monitoring_endpoints import router as ai_monitoring_router
 from backend.core.collaboration_endpoints import router as collaboration_router
 from backend.core.communication_endpoints import router as communication_router
 from backend.core.video_endpoints import router as video_router
 from backend.api.onboarding import router as onboarding_router
+from backend.core.api_logging_endpoints import router as api_logging_router
+from backend.core.scheduler_endpoints import router as scheduler_router
 
 # Include routers
 app.include_router(auth_router, prefix="/api/v1")
@@ -277,7 +286,7 @@ app.include_router(cloud_router, prefix="/api/v1")
 app.include_router(cache_health_router, prefix="/api/v1")
 app.include_router(health_router)
 app.include_router(ai_assistant_router, prefix="/api/v1")
-app.include_router(nlp_router)
+# app.include_router(nlp_router)  # Temporarily disabled due to TensorFlow dependency
 app.include_router(assessment_router, prefix="/api/v1")
 app.include_router(requirements_router, prefix="/api/v1")
 app.include_router(recommendation_router, prefix="/api/v1")
@@ -293,17 +302,19 @@ app.include_router(automation_router)
 app.include_router(anomaly_detection_router)
 app.include_router(multi_cloud_router, prefix="/api/v1")
 app.include_router(gnn_router)
-app.include_router(ml_model_router)
-app.include_router(ai_orchestrator_router)
-app.include_router(ai_ml_services_router)
-app.include_router(rl_optimization_router)
-app.include_router(smart_contract_router)
+# app.include_router(ml_model_router)  # Temporarily disabled - missing mlflow
+# app.include_router(ai_orchestrator_router)  # Temporarily disabled - TensorFlow dependency
+# app.include_router(ai_ml_services_router)  # Temporarily disabled - TensorFlow dependency
+# app.include_router(rl_optimization_router)  # Temporarily disabled - import error
+# app.include_router(smart_contract_router)  # Temporarily disabled - import error
 app.include_router(ai_services_docs_router)
 app.include_router(ai_monitoring_router, prefix="/api/v1")
 app.include_router(collaboration_router, prefix="/api/v1")
 app.include_router(communication_router, prefix="/api/v1")
 app.include_router(video_router, prefix="/api/v1")
 app.include_router(onboarding_router, prefix="/api/v1")
+app.include_router(api_logging_router)
+app.include_router(scheduler_router, prefix="/api")
 
 # Root endpoints
 @app.get("/")

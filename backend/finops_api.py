@@ -93,7 +93,7 @@ class CostDataRequest(BaseModel):
     time_range: TimeRange
     dimensions: List[CostDimension] = Field(default=[CostDimension.TEAM])
     filters: Optional[Dict[str, Any]] = None
-    granularity: str = Field(default="daily", regex="^(hourly|daily|weekly|monthly)$")
+    granularity: str = Field(default="daily", pattern="^(hourly|daily|weekly|monthly)$")
 
 class CostDataResponse(BaseModel):
     """Cost data response"""
@@ -231,8 +231,8 @@ class CommitmentType(str, Enum):
 class RIRecommendationRequest(BaseModel):
     """Request for RI recommendations"""
     analysis_period_days: int = Field(default=30, ge=30, le=365)
-    commitment_term_months: int = Field(default=12, regex="^(12|36)$")
-    payment_option: str = Field(default="no_upfront", regex="^(no_upfront|partial_upfront|all_upfront)$")
+    commitment_term_months: int = Field(default=12, pattern="^(12|36)$")
+    payment_option: str = Field(default="no_upfront", pattern="^(no_upfront|partial_upfront|all_upfront)$")
     minimum_savings_threshold: float = Field(default=0.1, ge=0, le=1)
 
 class RIRecommendation(BaseModel):
@@ -273,7 +273,7 @@ class TagPolicy(BaseModel):
     optional_tags: List[str] = []
     tag_value_patterns: Optional[Dict[str, str]] = None
     resource_types: List[str] = []
-    enforcement_level: str = Field(default="warning", regex="^(warning|blocking|audit_only)$")
+    enforcement_level: str = Field(default="warning", pattern="^(warning|blocking|audit_only)$")
     auto_remediation: bool = False
 
 class TagViolation(BaseModel):
@@ -1182,8 +1182,8 @@ async def get_dashboard_summary(
 
 @finops_app.get("/finops/reports/executive")
 async def generate_executive_report(
-    report_period: str = Query("monthly", regex="^(weekly|monthly|quarterly)$"),
-    format: str = Query("json", regex="^(json|pdf)$"),
+    report_period: str = Query("monthly", pattern="^(weekly|monthly|quarterly)$"),
+    format: str = Query("json", pattern="^(json|pdf)$"),
     token: str = Depends(verify_token)
 ):
     """

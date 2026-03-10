@@ -48,6 +48,7 @@ import {
 } from 'recharts';
 import numeral from 'numeral';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonLoader } from '../components/Loading';
 
 const Compliance: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -119,8 +120,7 @@ const Compliance: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>Compliance & Governance</Typography>
-        <LinearProgress />
-        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>Scanning AWS resources for compliance...</Typography>
+        <SkeletonLoader variant="table" count={6} />
       </Box>
     );
   }

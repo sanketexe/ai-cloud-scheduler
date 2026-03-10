@@ -318,70 +318,150 @@ class CostCollector:
                                         start_date: datetime,
                                         end_date: datetime,
                                         granularity: str) -> List[CostDataPoint]:
-        """Collect cost data from a specific provider"""
-        provider_type = provider_config.get('type', 'unknown')
-        self.logger.info(f"Collecting data from {provider_type}")
-        
-        # Simulate provider-specific data collection
-        # In production, this would call actual cloud provider APIs
-        mock_data = await self._generate_mock_cost_data(provider_config, start_date, end_date)
-        
-        return mock_data
-    
-    async def _generate_mock_cost_data(self, 
-                                     provider_config: Dict[str, Any],
-                                     start_date: datetime,
-                                     end_date: datetime) -> List[CostDataPoint]:
-        """Generate mock cost data for testing"""
-        cost_data = []
+        """Collect cost data from AWS Cost Explorer API"""
         provider_type = provider_config.get('type', 'aws')
+        self.logger.info(f"Collecting real cost data from {provider_type}")
         
-        # Generate daily cost data points
-        current_date = start_date
-        while current_date <= end_date:
-            # Mock EC2 instance
-            cost_data.append(CostDataPoint(
-                resource_id=f"i-{provider_type}-{current_date.strftime('%Y%m%d')}",
-                resource_type="compute_instance",
-                service_name=f"{provider_type.upper()} EC2" if provider_type == 'aws' else f"{provider_type.upper()} Compute",
-                cost_amount=24.50 + (current_date.day % 10),  # Varying cost
-                currency="USD",
-                usage_quantity=24.0,
-                usage_unit="hours",
-                timestamp=current_date,
-                provider=provider_type,
-                region="us-east-1",
-                availability_zone="us-east-1a",
-                tags={
-                    "Team": "backend" if current_date.day % 2 == 0 else "frontend",
-                    "Project": "web-app",
-                    "Environment": "production",
-                    "Owner": "john.doe@company.com"
-                }
-            ))
+        try:
+            import boto3
+            from botocore.exceptions import ClientError, NoCredentialsError
             
-            # Mock storage costs
-            cost_data.append(CostDataPoint(
-                resource_id=f"bucket-{provider_type}-{current_date.strftime('%Y%m%d')}",
-                resource_type="storage",
-                service_name=f"{provider_type.upper()} S3" if provider_type == 'aws' else f"{provider_type.upper()} Storage",
-                cost_amount=5.75 + (current_date.day % 3),
-                currency="USD",
-                usage_quantity=100.0,
-                usage_unit="GB",
-                timestamp=current_date,
-                provider=provider_type,
-                region="us-east-1",
-                tags={
-                    "Team": "data",
-                    "Project": "analytics",
-                    "Environment": "production"
-                }
-            ))
+            # Get AWS credentials from provider config
+            access_key = provider_config.get('access_key_id')
+            secret_key = provider_config.get('secret_access_key')
+            region = provider_config.get('region', 'us-east-1')
             
-            current_date += timedelta(days=1)
-        
-        return cost_data
+            if not access_key or not secret_key:
+                self.logger.error("AWS credentials not provided in provider config")
+                return []
+            
+            # Create Cost Explorer client
+            session = boto3.Session(
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                region_name=region
+            )
+            ce_client = session.client('ce')
+            ec2_client = session.client('ec2')
+            
+            # Format dates for Cost Explorer API
+            start_str = start_date.strftime('%Y-%m-%d')
+            end_str = end_date.strftime('%Y-%m-%d')
+            
+            # Determine granularity for Cost Explorer
+            ce_granularity = 'DAILY'
+            if granularity == 'hourly':
+                ce_granularity = 'HOURLY'
+            elif granularity in ['weekly', 'monthly']:
+                ce_granularity = 'MONTHLY'
+            
+            # Query Cost Explorer
+            response = ce_client.get_cost_and_usage(
+                TimePeriod={'Start': start_str, 'End': end_str},
+                Granularity=ce_granularity,
+                Metrics=['UnblendedCost', 'UsageQuantity'],
+                GroupBy=[
+                    {'Type': 'DIMENSION', 'Key': 'SERVICE'},
+                    {'Type': 'DIMENSION', 'Key': 'REGION'}
+                ]
+            )
+            
+            # Get resource tags from EC2 (for tagging attribution)
+            resource_tags = {}
+            try:
+                instances = ec2_client.describe_instances()
+                for reservation in instances.get('Reservations', []):
+                    for instance in reservation.get('Instances', []):
+                        instance_id = instance['InstanceId']
+                        tags = {tag['Key']: tag['Value'] for tag in instance.get('Tags', [])}
+                        resource_tags[instance_id] = tags
+            except Exception as e:
+                self.logger.warning(f"Could not fetch EC2 tags: {e}")
+            
+            # Parse Cost Explorer response
+            cost_data = []
+            for result in response.get('ResultsByTime', []):
+                timestamp = datetime.strptime(result['TimePeriod']['Start'], '%Y-%m-%d')
+                
+                for group in result.get('Groups', []):
+                    keys = group.get('Keys', [])
+                    service = keys[0] if len(keys) > 0 else 'Unknown'
+                    region = keys[1] if len(keys) > 1 else 'global'
+                    
+                    metrics = group.get('Metrics', {})
+                    cost_amount = float(metrics.get('UnblendedCost', {}).get('Amount', 0))
+                    usage_quantity = float(metrics.get('UsageQuantity', {}).get('Amount', 0))
+                    
+                    if cost_amount == 0:
+                        continue
+                    
+                    # Determine resource type and usage unit
+                    resource_type = self._map_service_to_resource_type(service)
+                    usage_unit = self._get_usage_unit(service)
+                    
+                    # Create resource ID
+                    resource_id = f"{service.lower().replace(' ', '-')}-{region}-{timestamp.strftime('%Y%m%d')}"
+                    
+                    # Try to get tags for this resource
+                    tags = resource_tags.get(resource_id, {})
+                    
+                    cost_data.append(CostDataPoint(
+                        resource_id=resource_id,
+                        resource_type=resource_type,
+                        service_name=service,
+                        cost_amount=cost_amount,
+                        currency='USD',
+                        usage_quantity=usage_quantity,
+                        usage_unit=usage_unit,
+                        timestamp=timestamp,
+                        provider=provider_type,
+                        region=region,
+                        availability_zone=f"{region}a",  # Default AZ
+                        tags=tags
+                    ))
+            
+            self.logger.info(f"Collected {len(cost_data)} real cost data points from AWS")
+            return cost_data
+            
+        except NoCredentialsError:
+            self.logger.error("AWS credentials not found or invalid")
+            return []
+        except ClientError as e:
+            self.logger.error(f"AWS API error: {e}")
+            return []
+        except Exception as e:
+            self.logger.error(f"Error collecting AWS cost data: {str(e)}")
+            return []
+    
+    def _map_service_to_resource_type(self, service: str) -> str:
+        """Map AWS service name to resource type"""
+        service_lower = service.lower()
+        if 'ec2' in service_lower or 'compute' in service_lower:
+            return 'compute_instance'
+        elif 's3' in service_lower or 'storage' in service_lower:
+            return 'storage'
+        elif 'rds' in service_lower or 'database' in service_lower:
+            return 'database'
+        elif 'lambda' in service_lower:
+            return 'serverless'
+        elif 'vpc' in service_lower or 'network' in service_lower:
+            return 'network'
+        else:
+            return 'other'
+    
+    def _get_usage_unit(self, service: str) -> str:
+        """Get usage unit for AWS service"""
+        service_lower = service.lower()
+        if 'ec2' in service_lower:
+            return 'hours'
+        elif 's3' in service_lower:
+            return 'GB'
+        elif 'lambda' in service_lower:
+            return 'requests'
+        elif 'rds' in service_lower:
+            return 'hours'
+        else:
+            return 'units'
     
     def get_collection_metrics(self) -> Dict[str, Any]:
         """Get cost collection metrics"""

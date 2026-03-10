@@ -30,7 +30,7 @@ security = HTTPBearer()
 class InitiateCallRequest(BaseModel):
     """Request model for initiating calls"""
     participants: List[str] = Field(..., min_items=1, max_items=50)
-    call_type: str = Field("video", regex="^(audio_only|video|screen_share|co_browse)$")
+    call_type: str = Field("video", pattern="^(audio_only|video|screen_share|co_browse)$")
 
     @validator('participants')
     def validate_participants(cls, v):
@@ -44,8 +44,8 @@ class InitiateCallRequest(BaseModel):
 
 class WebRTCSignalingRequest(BaseModel):
     """Request model for WebRTC signaling"""
-    to_user_id: str = Field(..., regex="^[0-9a-f-]{36}$")
-    offer_type: str = Field(..., regex="^(offer|answer|ice_candidate)$")
+    to_user_id: str = Field(..., pattern="^[0-9a-f-]{36}$")
+    offer_type: str = Field(..., pattern="^(offer|answer|ice_candidate)$")
     sdp_data: Optional[str] = None
     ice_candidate: Optional[Dict[str, Any]] = None
 
@@ -71,17 +71,17 @@ class StartCoBrowsingRequest(BaseModel):
 
 class CoBrowseActionRequest(BaseModel):
     """Request model for co-browsing actions"""
-    action_type: str = Field(..., regex="^(navigate|scroll|click|filter|zoom|select)$")
+    action_type: str = Field(..., pattern="^(navigate|scroll|click|filter|zoom|select)$")
     action_data: Dict[str, Any] = Field(..., description="Action-specific data")
 
 class UpdateCallQualityRequest(BaseModel):
     """Request model for updating call quality"""
-    quality: str = Field(..., regex="^(high|medium|low|poor)$")
+    quality: str = Field(..., pattern="^(high|medium|low|poor)$")
 
 class HandleConnectionIssueRequest(BaseModel):
     """Request model for handling connection issues"""
-    issue_type: str = Field(..., regex="^(network|audio|video|signaling)$")
-    severity: str = Field(..., regex="^(low|medium|high|critical)$")
+    issue_type: str = Field(..., pattern="^(network|audio|video|signaling)$")
+    severity: str = Field(..., pattern="^(low|medium|high|critical)$")
 
 class CallStatusResponse(BaseModel):
     """Response model for call status"""

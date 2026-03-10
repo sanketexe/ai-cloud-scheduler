@@ -15,7 +15,7 @@ from sqlalchemy import (
     Column, String, DateTime, Boolean, Text, Date, Numeric, 
     ForeignKey, Index, JSON, Enum, Integer, Float
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.types import JSON as JSONB, Uuid as UUID
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
 

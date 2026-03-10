@@ -3,7 +3,7 @@ Database Models for Startup Migration Module
 """
 
 from sqlalchemy import Column, String, Integer, Numeric, Boolean, DateTime, ForeignKey, Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.types import JSON as JSONB, Uuid as UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime

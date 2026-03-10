@@ -93,19 +93,22 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Requirements
+        Define Your Goals & Requirements
       </Typography>
       <Typography variant="body2" color="text.secondary" paragraph>
-        Define your performance, compliance, budget, and technical requirements.
+        Help us understand what's important to you: performance, compliance, budget, and technical needs.
       </Typography>
 
       <Box sx={{ mt: 2 }}>
         {/* Performance Requirements */}
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">Performance Requirements</Typography>
+            <Typography variant="subtitle1">⚡ Performance & Availability</Typography>
           </AccordionSummary>
           <AccordionDetails>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Define your uptime and performance targets
+            </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <Controller
@@ -116,8 +119,8 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       {...field}
                       type="number"
                       fullWidth
-                      label="Latency Target (ms)"
-                      helperText="Maximum acceptable latency"
+                      label="Response Time Target (ms)"
+                      helperText="How fast should your application respond? (e.g., 100ms)"
                       inputProps={{ min: 0 }}
                     />
                   )}
@@ -133,8 +136,8 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       {...field}
                       type="number"
                       fullWidth
-                      label="Availability Target (%)"
-                      helperText="e.g., 99.9, 99.99"
+                      label="Uptime Target (%)"
+                      helperText="99.9% = ~8 hours downtime/year, 99.99% = ~52 minutes/year"
                       inputProps={{ min: 90, max: 100, step: 0.1 }}
                     />
                   )}
@@ -150,8 +153,8 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       {...field}
                       type="number"
                       fullWidth
-                      label="RTO (minutes)"
-                      helperText="Recovery Time Objective"
+                      label="Recovery Time (RTO in minutes)"
+                      helperText="How quickly must systems be restored after failure?"
                       inputProps={{ min: 0 }}
                     />
                   )}
@@ -167,8 +170,8 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       {...field}
                       type="number"
                       fullWidth
-                      label="RPO (minutes)"
-                      helperText="Recovery Point Objective"
+                      label="Data Loss Tolerance (RPO in minutes)"
+                      helperText="How much data can you afford to lose?"
                       inputProps={{ min: 0 }}
                     />
                   )}
@@ -181,9 +184,12 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
         {/* Compliance Requirements */}
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">Compliance Requirements</Typography>
+            <Typography variant="subtitle1">🔒 Compliance & Security</Typography>
           </AccordionSummary>
           <AccordionDetails>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Select any regulatory or security requirements you must meet
+            </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Controller
@@ -191,11 +197,11 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel>Regulatory Frameworks</InputLabel>
+                      <InputLabel>Regulatory Frameworks (if any)</InputLabel>
                       <Select
                         {...field}
                         multiple
-                        input={<OutlinedInput label="Regulatory Frameworks" />}
+                        input={<OutlinedInput label="Regulatory Frameworks (if any)" />}
                         renderValue={(selected) => (
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                             {(selected as string[]).map((value) => (
@@ -221,11 +227,11 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel>Security Standards</InputLabel>
+                      <InputLabel>Security Standards (if any)</InputLabel>
                       <Select
                         {...field}
                         multiple
-                        input={<OutlinedInput label="Security Standards" />}
+                        input={<OutlinedInput label="Security Standards (if any)" />}
                         renderValue={(selected) => (
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                             {(selected as string[]).map((value) => (
@@ -249,11 +255,14 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
         </Accordion>
 
         {/* Budget Constraints */}
-        <Accordion>
+        <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">Budget Constraints</Typography>
+            <Typography variant="subtitle1">💰 Budget & Costs</Typography>
           </AccordionSummary>
           <AccordionDetails>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Help us understand your budget constraints and cost priorities
+            </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
                 <Controller
@@ -265,6 +274,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       type="number"
                       fullWidth
                       label="Current Monthly Cost ($)"
+                      helperText="What do you spend now?"
                       inputProps={{ min: 0 }}
                     />
                   )}
@@ -280,7 +290,8 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       {...field}
                       type="number"
                       fullWidth
-                      label="Migration Budget ($)"
+                      label="One-Time Migration Budget ($)"
+                      helperText="Budget for the migration project"
                       inputProps={{ min: 0 }}
                     />
                   )}
@@ -297,6 +308,7 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       type="number"
                       fullWidth
                       label="Target Monthly Cost ($)"
+                      helperText="What do you want to spend?"
                       inputProps={{ min: 0 }}
                     />
                   )}
@@ -313,10 +325,13 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                       select
                       fullWidth
                       label="Cost Optimization Priority"
+                      helperText="How important is minimizing costs?"
                     >
                       {costPriorities.map((priority) => (
                         <MenuItem key={priority} value={priority}>
-                          {priority}
+                          {priority === 'LOW' && 'Low - Performance over cost'}
+                          {priority === 'MEDIUM' && 'Medium - Balance cost and performance'}
+                          {priority === 'HIGH' && 'High - Minimize costs'}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -328,11 +343,14 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
         </Accordion>
 
         {/* Technical Requirements */}
-        <Accordion>
+        <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">Technical Requirements</Typography>
+            <Typography variant="subtitle1">🔧 Technical Needs</Typography>
           </AccordionSummary>
           <AccordionDetails>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              What cloud services and technologies do you need?
+            </Typography>
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Controller
@@ -340,11 +358,11 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel>Required Services</InputLabel>
+                      <InputLabel>Required Cloud Services</InputLabel>
                       <Select
                         {...field}
                         multiple
-                        input={<OutlinedInput label="Required Services" />}
+                        input={<OutlinedInput label="Required Cloud Services" />}
                         renderValue={(selected) => (
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                             {(selected as string[]).map((value) => (
@@ -364,33 +382,39 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name="technical.ml_ai_required"
                   control={control}
                   render={({ field }) => (
                     <FormControlLabel
                       control={<Checkbox {...field} checked={field.value} />}
-                      label="Machine Learning / AI Required"
+                      label="Machine Learning / AI Services"
                     />
                   )}
                 />
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
+                  For AI models, predictions, or data science workloads
+                </Typography>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name="technical.analytics_required"
                   control={control}
                   render={({ field }) => (
                     <FormControlLabel
                       control={<Checkbox {...field} checked={field.value} />}
-                      label="Analytics Required"
+                      label="Data Analytics & Big Data"
                     />
                   )}
                 />
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
+                  For data warehousing, business intelligence, or analytics
+                </Typography>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name="technical.container_orchestration"
                   control={control}
@@ -401,9 +425,12 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                     />
                   )}
                 />
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
+                  For containerized applications and microservices
+                </Typography>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name="technical.serverless_required"
                   control={control}
@@ -414,6 +441,9 @@ const RequirementsForm: React.FC<RequirementsFormProps> = ({
                     />
                   )}
                 />
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 4 }}>
+                  For event-driven, auto-scaling applications
+                </Typography>
               </Grid>
             </Grid>
           </AccordionDetails>

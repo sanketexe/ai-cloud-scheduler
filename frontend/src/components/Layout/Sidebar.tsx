@@ -69,12 +69,6 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    label: 'Cloud Strategy',
-    items: [
-      { text: 'Migration Planner', icon: <MigrationIcon />, path: '/migration-planner' },
-    ],
-  },
-  {
     items: [
       { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
     ],

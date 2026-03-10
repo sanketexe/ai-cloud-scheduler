@@ -63,6 +63,17 @@ import { alpha } from '@mui/material/styles';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { reportApi, ComprehensiveReport } from '../services/reportApi';
+import {
+  TOOLTIP_STYLE,
+  AXIS_STYLE,
+  GRID_STYLE,
+  formatCurrency,
+  formatCurrencyCompact,
+  CurrencyTooltip,
+  LEGEND_CONFIG,
+  CustomPieLabel,
+  CHART_COLOR_ARRAY,
+} from '../utils/chartConfig';
 
 interface CloudProvider {
   name: string;
@@ -324,7 +335,7 @@ const MigrationResults: React.FC = () => {
     { name: 'Other', value: provider.breakdown.other },
   ];
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  const COLORS = CHART_COLOR_ARRAY;
 
   const getProviderByTab = (tab: number): CloudProvider => {
     switch (tab) {
@@ -416,7 +427,8 @@ const MigrationResults: React.FC = () => {
                 formatter={(value: number) => `$${value.toLocaleString()}`}
                 contentStyle={{ backgroundColor: '#1a1d3a', border: '1px solid rgba(255,255,255,0.1)' }}
               />
-              <Bar dataKey="cost" radius={[8, 8, 0, 0]}>
+              <Legend {...LEGEND_CONFIG} />
+              <Bar dataKey="cost" name="Monthly Cost" radius={[8, 8, 0, 0]}>
                 {costComparisonData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
@@ -464,6 +476,7 @@ const MigrationResults: React.FC = () => {
                       formatter={(value: number) => `$${value.toLocaleString()}`}
                       contentStyle={{ backgroundColor: '#1a1d3a', border: '1px solid rgba(255,255,255,0.1)' }}
                     />
+                    <Legend {...LEGEND_CONFIG} />
                   </PieChart>
                 </ResponsiveContainer>
 

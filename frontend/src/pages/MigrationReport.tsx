@@ -38,6 +38,16 @@ import {
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { migrationApi } from '../services/migrationApi';
 import toast from 'react-hot-toast';
+import {
+  TOOLTIP_STYLE,
+  AXIS_STYLE,
+  GRID_STYLE,
+  formatCurrency,
+  formatCurrencyCompact,
+  CurrencyTooltip,
+  LEGEND_CONFIG,
+  CHART_COLOR_ARRAY,
+} from '../utils/chartConfig';
 
 interface MigrationReport {
   report_id: string;
@@ -97,7 +107,7 @@ interface OptimizationOpportunity {
   implementation_effort: string;
 }
 
-const COLORS = ['#2196f3', '#f50057', '#4caf50', '#ff9800', '#9c27b0'];
+const COLORS = CHART_COLOR_ARRAY;
 
 const MigrationReport: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -358,13 +368,21 @@ const MigrationReport: React.FC = () => {
               </Typography>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={costChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Estimated" fill="#2196f3" />
-                  <Bar dataKey="Actual" fill="#f50057" />
+                  <CartesianGrid {...GRID_STYLE} />
+                  <XAxis 
+                    dataKey="name" 
+                    {...AXIS_STYLE}
+                    label={{ value: 'Cost Category', position: 'insideBottom', offset: -5, style: { fill: '#b0bec5' } }}
+                  />
+                  <YAxis 
+                    {...AXIS_STYLE}
+                    tickFormatter={formatCurrencyCompact}
+                    label={{ value: 'Cost', angle: -90, position: 'insideLeft', style: { fill: '#b0bec5' } }}
+                  />
+                  <Tooltip content={<CurrencyTooltip />} />
+                  <Legend {...LEGEND_CONFIG} />
+                  <Bar dataKey="Estimated" fill="#2196f3" name="Estimated Cost" />
+                  <Bar dataKey="Actual" fill="#f50057" name="Actual Cost" />
                 </BarChart>
               </ResponsiveContainer>
             </Grid>
@@ -426,13 +444,23 @@ const MigrationReport: React.FC = () => {
               </Typography>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={timelineChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Estimated" fill="#2196f3" />
-                  <Bar dataKey="Actual" fill="#4caf50" />
+                  <CartesianGrid {...GRID_STYLE} />
+                  <XAxis 
+                    dataKey="name" 
+                    {...AXIS_STYLE}
+                    label={{ value: 'Migration Phase', position: 'insideBottom', offset: -5, style: { fill: '#b0bec5' } }}
+                  />
+                  <YAxis 
+                    {...AXIS_STYLE}
+                    label={{ value: 'Days', angle: -90, position: 'insideLeft', style: { fill: '#b0bec5' } }}
+                  />
+                  <Tooltip 
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(value: number, name: string) => [`${value} days`, name]}
+                  />
+                  <Legend {...LEGEND_CONFIG} />
+                  <Bar dataKey="Estimated" fill="#2196f3" name="Estimated Duration" />
+                  <Bar dataKey="Actual" fill="#4caf50" name="Actual Duration" />
                 </BarChart>
               </ResponsiveContainer>
             </Grid>

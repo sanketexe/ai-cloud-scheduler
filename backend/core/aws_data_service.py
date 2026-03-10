@@ -2,13 +2,14 @@
 AWS Data Service - Centralized service for fetching real data from connected AWS accounts.
 
 This module provides a single service class that wraps boto3 calls and provides
-all the data that API endpoints need. Results are cached in-memory with a TTL
+all the data that API endpoints need. Results are cached in Redis with a TTL
 to avoid excessive AWS API calls.
 """
 
 import boto3
 import time
 import logging
+import json
 from datetime import datetime, date, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from decimal import Decimal
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class CacheEntry:
-    """Simple TTL cache entry."""
+    """Simple TTL cache entry for fallback in-memory cache."""
     def __init__(self, data: Any, ttl_seconds: int = 300):
         self.data = data
         self.expires_at = time.time() + ttl_seconds
@@ -31,18 +32,20 @@ class AWSDataService:
     """
     Centralized AWS data service that fetches real data from a connected AWS account.
     
-    All methods return real data via boto3. Results are cached in-memory for 5 minutes
-    to avoid excessive API calls to AWS.
+    All methods return real data via boto3. Results are cached in Redis for 5 minutes
+    to avoid excessive AWS API calls to AWS. Falls back to in-memory cache if Redis unavailable.
     """
 
     def __init__(self, access_key_id: str, secret_access_key: str, region: str = "us-east-1",
-                 session_token: Optional[str] = None):
+                 session_token: Optional[str] = None, redis_client=None):
         self.access_key_id = access_key_id
         self.secret_access_key = secret_access_key
         self.region = region
         self.session_token = session_token
-        self._cache: Dict[str, CacheEntry] = {}
+        self._memory_cache: Dict[str, CacheEntry] = {}  # Fallback cache
+        self._redis_client = redis_client
         self._account_id: Optional[str] = None
+        self._cache_ttl = 300  # 5 minutes default TTL
 
         # Create boto3 session
         session_kwargs = {
@@ -54,18 +57,88 @@ class AWSDataService:
             session_kwargs["aws_session_token"] = session_token
 
         self.session = boto3.Session(**session_kwargs)
-        logger.info(f"AWSDataService initialized for region {region}")
+        logger.info(f"AWSDataService initialized for region {region} with Redis caching")
 
-    def _get_cached(self, key: str) -> Optional[Any]:
-        """Get cached data if not expired."""
-        entry = self._cache.get(key)
+    async def _get_cached(self, key: str) -> Optional[Any]:
+        """Get cached data from Redis, fallback to memory cache if Redis unavailable."""
+        # Try Redis first
+        if self._redis_client:
+            try:
+                cache_key = f"aws_data:{self.access_key_id}:{key}"
+                cached_data = await self._redis_client.get(cache_key)
+                if cached_data:
+                    logger.debug(f"Redis cache hit for key: {key}")
+                    return json.loads(cached_data)
+            except Exception as e:
+                logger.warning(f"Redis cache get failed for key {key}: {e}, falling back to memory cache")
+        
+        # Fallback to memory cache
+        entry = self._memory_cache.get(key)
         if entry and not entry.is_expired:
+            logger.debug(f"Memory cache hit for key: {key}")
             return entry.data
+        
         return None
 
-    def _set_cached(self, key: str, data: Any, ttl: int = 300):
-        """Cache data with TTL (default 5 minutes)."""
-        self._cache[key] = CacheEntry(data, ttl)
+    async def _set_cached(self, key: str, data: Any, ttl: int = None):
+        """Cache data in Redis with TTL, fallback to memory cache if Redis unavailable."""
+        if ttl is None:
+            ttl = self._cache_ttl
+        
+        # Try Redis first
+        if self._redis_client:
+            try:
+                cache_key = f"aws_data:{self.access_key_id}:{key}"
+                serialized_data = json.dumps(data, default=str)
+                await self._redis_client.setex(cache_key, ttl, serialized_data)
+                logger.debug(f"Cached data in Redis for key: {key} with TTL: {ttl}s")
+            except Exception as e:
+                logger.warning(f"Redis cache set failed for key {key}: {e}, using memory cache")
+        
+        # Always set in memory cache as fallback
+        self._memory_cache[key] = CacheEntry(data, ttl)
+
+    async def invalidate_cache(self, pattern: str = None):
+        """
+        Invalidate cache entries matching pattern.
+        If pattern is None, invalidates all cache for this AWS account.
+        """
+        if pattern is None:
+            pattern = "*"
+        
+        # Invalidate Redis cache
+        if self._redis_client:
+            try:
+                cache_pattern = f"aws_data:{self.access_key_id}:{pattern}"
+                keys = await self._redis_client.keys(cache_pattern)
+                if keys:
+                    await self._redis_client.delete(*keys)
+                    logger.info(f"Invalidated {len(keys)} Redis cache entries matching pattern: {pattern}")
+            except Exception as e:
+                logger.error(f"Failed to invalidate Redis cache: {e}")
+        
+        # Invalidate memory cache
+        if pattern == "*":
+            self._memory_cache.clear()
+            logger.info("Cleared all memory cache entries")
+        else:
+            keys_to_delete = [k for k in self._memory_cache.keys() if self._matches_pattern(k, pattern)]
+            for key in keys_to_delete:
+                del self._memory_cache[key]
+            logger.info(f"Invalidated {len(keys_to_delete)} memory cache entries matching pattern: {pattern}")
+
+    def _matches_pattern(self, key: str, pattern: str) -> bool:
+        """Simple pattern matching for cache invalidation."""
+        if '*' not in pattern:
+            return key == pattern
+        
+        pattern_parts = pattern.split('*')
+        if not key.startswith(pattern_parts[0]):
+            return False
+        if len(pattern_parts) > 1 and pattern_parts[-1]:
+            if not key.endswith(pattern_parts[-1]):
+                return False
+        return True
 
     # ---------------------------------------------------------------
     # Connection & Account Info
@@ -106,11 +179,11 @@ class AWSDataService:
                 self._account_id = result.get("account_id", "unknown")
         return self._account_id
 
-    def get_accounts(self) -> List[Dict[str, Any]]:
+    async def get_accounts(self) -> List[Dict[str, Any]]:
         """
         Get AWS accounts. Tries Organizations first, falls back to single account from STS.
         """
-        cached = self._get_cached("accounts")
+        cached = await self._get_cached("accounts")
         if cached is not None:
             return cached
 
@@ -139,20 +212,20 @@ class AWSDataService:
             }]
 
         # Enrich with cost data
-        cost_by_account = self._get_cost_by_account(30)
+        cost_by_account = await self._get_cost_by_account(30)
         for account in accounts:
             acct_cost = cost_by_account.get(account["id"], {})
             account["monthly_cost"] = acct_cost.get("cost", 0)
             account["potential_savings"] = round(acct_cost.get("cost", 0) * 0.08, 2)  # estimate 8% potential savings
 
-        self._set_cached("accounts", accounts)
+        await self._set_cached("accounts", accounts)
         return accounts
 
     # ---------------------------------------------------------------
     # Cost Data
     # ---------------------------------------------------------------
 
-    def _get_cost_by_account(self, days: int) -> Dict[str, Dict[str, float]]:
+    async def _get_cost_by_account(self, days: int) -> Dict[str, Dict[str, float]]:
         """Get cost breakdown by linked account."""
         try:
             ce = self.session.client("ce")
@@ -183,10 +256,10 @@ class AWSDataService:
             logger.error(f"Error getting cost by account: {e}")
             return {}
 
-    def get_cost_trend(self, days: int = 30) -> List[Dict[str, Any]]:
-        """Get daily cost trend data from Cost Explorer."""
+    async def get_cost_trend(self, days: int = 30) -> List[Dict[str, Any]]:
+        """Get daily cost trend data from Cost Explorer with Redis caching."""
         cache_key = f"cost_trend_{days}"
-        cached = self._get_cached(cache_key)
+        cached = await self._get_cached(cache_key)
         if cached is not None:
             return cached
 
@@ -213,16 +286,16 @@ class AWSDataService:
                     "savings": round(cost * 0.05, 2),  # estimated savings based on cost
                 })
 
-            self._set_cached(cache_key, trend)
+            await self._set_cached(cache_key, trend)
             return trend
         except Exception as e:
             logger.error(f"Error getting cost trend: {e}")
             return []
 
-    def get_service_breakdown(self, days: int = 30) -> List[Dict[str, Any]]:
-        """Get cost breakdown by AWS service."""
+    async def get_service_breakdown(self, days: int = 30) -> List[Dict[str, Any]]:
+        """Get cost breakdown by AWS service with Redis caching."""
         cache_key = f"service_breakdown_{days}"
-        cached = self._get_cached(cache_key)
+        cached = await self._get_cached(cache_key)
         if cached is not None:
             return cached
 
@@ -266,24 +339,24 @@ class AWSDataService:
                     "color": colors[i % len(colors)],
                 })
 
-            self._set_cached(cache_key, breakdown)
+            await self._set_cached(cache_key, breakdown)
             return breakdown
         except Exception as e:
             logger.error(f"Error getting service breakdown: {e}")
             return []
 
-    def get_total_monthly_cost(self) -> float:
+    async def get_total_monthly_cost(self) -> float:
         """Get total cost for the current month."""
-        trend = self.get_cost_trend(30)
+        trend = await self.get_cost_trend(30)
         return round(sum(d["cost"] for d in trend), 2)
 
     # ---------------------------------------------------------------
     # Budgets
     # ---------------------------------------------------------------
 
-    def get_budgets(self) -> List[Dict[str, Any]]:
-        """Get AWS Budgets data."""
-        cached = self._get_cached("budgets")
+    async def get_budgets(self) -> List[Dict[str, Any]]:
+        """Get AWS Budgets data with Redis caching."""
+        cached = await self._get_cached("budgets")
         if cached is not None:
             return cached
 
@@ -334,7 +407,7 @@ class AWSDataService:
                 except Exception:
                     pass
 
-            self._set_cached("budgets", budgets)
+            await self._set_cached("budgets", budgets)
             return budgets
         except Exception as e:
             logger.error(f"Error getting budgets: {e}")
@@ -344,9 +417,9 @@ class AWSDataService:
     # Optimization Recommendations
     # ---------------------------------------------------------------
 
-    def get_optimization_recommendations(self) -> List[Dict[str, Any]]:
-        """Get rightsizing and cost optimization recommendations."""
-        cached = self._get_cached("optimization")
+    async def get_optimization_recommendations(self) -> List[Dict[str, Any]]:
+        """Get rightsizing and cost optimization recommendations with Redis caching."""
+        cached = await self._get_cached("optimization")
         if cached is not None:
             return cached
 
@@ -468,12 +541,12 @@ class AWSDataService:
         except Exception as e:
             logger.error(f"Error checking elastic IPs: {e}")
 
-        self._set_cached("optimization", recommendations)
+        await self._set_cached("optimization", recommendations)
         return recommendations
 
-    def get_automation_stats(self) -> Dict[str, Any]:
+    async def get_automation_stats(self) -> Dict[str, Any]:
         """Calculate automation stats from real recommendations."""
-        recommendations = self.get_optimization_recommendations()
+        recommendations = await self.get_optimization_recommendations()
         total_savings = sum(r["potential_savings"] for r in recommendations)
 
         return {
@@ -492,9 +565,9 @@ class AWSDataService:
     # Cost Anomalies / Alerts
     # ---------------------------------------------------------------
 
-    def get_cost_anomalies(self) -> List[Dict[str, Any]]:
-        """Get cost anomalies from AWS Cost Anomaly Detection."""
-        cached = self._get_cached("anomalies")
+    async def get_cost_anomalies(self) -> List[Dict[str, Any]]:
+        """Get cost anomalies from AWS Cost Anomaly Detection with Redis caching."""
+        cached = await self._get_cached("anomalies")
         if cached is not None:
             return cached
 
@@ -525,7 +598,7 @@ class AWSDataService:
             logger.info(f"Cost Anomaly Detection not available: {e}")
 
         # Also check budget alerts
-        budgets = self.get_budgets()
+        budgets = await self.get_budgets()
         for budget in budgets:
             if budget["utilization"] > 80:
                 severity = "high" if budget["utilization"] > 95 else "warning"
@@ -537,16 +610,16 @@ class AWSDataService:
                     "timestamp": datetime.utcnow().isoformat(),
                 })
 
-        self._set_cached("anomalies", alerts)
+        await self._set_cached("anomalies", alerts)
         return alerts
 
     # ---------------------------------------------------------------
     # EC2 Instances (for workloads / multi-cloud)
     # ---------------------------------------------------------------
 
-    def get_ec2_instances(self) -> List[Dict[str, Any]]:
-        """Get EC2 instances as workloads."""
-        cached = self._get_cached("ec2_instances")
+    async def get_ec2_instances(self) -> List[Dict[str, Any]]:
+        """Get EC2 instances as workloads with Redis caching."""
+        cached = await self._get_cached("ec2_instances")
         if cached is not None:
             return cached
 
@@ -578,16 +651,16 @@ class AWSDataService:
         except Exception as e:
             logger.error(f"Error getting EC2 instances: {e}")
 
-        self._set_cached("ec2_instances", instances)
+        await self._set_cached("ec2_instances", instances)
         return instances
 
     # ---------------------------------------------------------------
     # Compliance & Governance
     # ---------------------------------------------------------------
 
-    def get_compliance_data(self) -> Dict[str, Any]:
-        """Scan AWS resources for tagging compliance and security violations."""
-        cached = self._get_cached("compliance")
+    async def get_compliance_data(self) -> Dict[str, Any]:
+        """Scan AWS resources for tagging compliance and security violations with Redis caching."""
+        cached = await self._get_cached("compliance")
         if cached is not None:
             return cached
 
@@ -773,31 +846,32 @@ class AWSDataService:
             "policyViolations": violations[:50],  # cap at 50
             "complianceByService": compliance_by_service,
         }
-        self._set_cached("compliance", result, ttl=600)  # cache 10 min — compliance scans are expensive
+        await self._set_cached("compliance", result, ttl=600)  # cache 10 min — compliance scans are expensive
         return result
 
     # ---------------------------------------------------------------
     # Dashboard Summary
     # ---------------------------------------------------------------
 
-    def get_dashboard_summary(self) -> Dict[str, Any]:
-        """Get complete dashboard summary data."""
-        cost_trend = self.get_cost_trend(30)
-        service_breakdown = self.get_service_breakdown(30)
-        recommendations = self.get_optimization_recommendations()
-        anomalies = self.get_cost_anomalies()
-        accounts = self.get_accounts()
+    async def get_dashboard_summary(self) -> Dict[str, Any]:
+        """Get complete dashboard summary data with Redis caching."""
+        cost_trend = await self.get_cost_trend(30)
+        service_breakdown = await self.get_service_breakdown(30)
+        recommendations = await self.get_optimization_recommendations()
+        anomalies = await self.get_cost_anomalies()
+        accounts = await self.get_accounts()
 
         total_cost = sum(d["cost"] for d in cost_trend)
         total_savings = sum(r["potential_savings"] for r in recommendations)
 
         # Calculate budget utilization from actual budgets
-        budgets = self.get_budgets()
+        budgets = await self.get_budgets()
         total_budget = sum(b["amount"] for b in budgets) if budgets else total_cost * 1.2  # estimate 120% as budget
         budget_utilization = round((total_cost / total_budget) * 100, 1) if total_budget > 0 else 0
         waste_pct = round((total_savings / total_cost) * 100, 1) if total_cost > 0 else 0
 
         return {
+            "account_id": self.get_account_id(),
             "overview": {
                 "total_monthly_cost": round(total_cost, 2),
                 "potential_savings": round(total_savings, 2),
@@ -823,8 +897,8 @@ class AWSDataService:
         }
 
     def clear_cache(self):
-        """Clear all cached data."""
-        self._cache.clear()
+        """Clear all cached data (synchronous for backward compatibility)."""
+        self._memory_cache.clear()
 
 
 def _categorize_recommendations(recommendations: List[Dict]) -> List[tuple]:

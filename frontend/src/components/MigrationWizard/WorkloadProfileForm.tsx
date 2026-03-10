@@ -40,11 +40,10 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
     database_types: [],
     data_volume_tb: 0.5,
     peak_transaction_rate: 100,
-    // Physical Infrastructure Fields
     physical_servers: 2,
     power_consumption_watts: 500,
     hardware_age_years: 3,
-    storage_type: 'HDD', // HDD, SSD, Hybrid
+    storage_type: 'HDD',
   };
 
   const { control, watch, reset } = useForm({
@@ -67,13 +66,36 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Workload Profile
+        Your Current Infrastructure
       </Typography>
       <Typography variant="body2" color="text.secondary" paragraph>
-        Provide details about your current workload and resource requirements.
+        Tell us about your servers, storage, and databases. This helps us estimate migration complexity and costs.
       </Typography>
 
       <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+            💻 Compute Resources
+          </Typography>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="physical_servers"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Number of Physical Servers"
+                helperText="How many physical machines do you have?"
+                inputProps={{ min: 1 }}
+              />
+            )}
+          />
+        </Grid>
+
         <Grid item xs={12} md={6}>
           <Controller
             name="total_compute_cores"
@@ -83,8 +105,8 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
                 {...field}
                 type="number"
                 fullWidth
-                label="Total Compute Cores"
-                helperText="Total CPU cores across all systems"
+                label="Total CPU Cores"
+                helperText="Total CPU cores across all servers"
                 inputProps={{ min: 0 }}
               />
             )}
@@ -101,98 +123,7 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
                 type="number"
                 fullWidth
                 label="Total Memory (GB)"
-                helperText="Total RAM across all systems"
-                inputProps={{ min: 0 }}
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="total_storage_tb"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                type="number"
-                fullWidth
-                label="Total Storage (TB)"
-                helperText="Total storage capacity"
-                inputProps={{ min: 0, step: 0.1 }}
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="data_volume_tb"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                type="number"
-                fullWidth
-                label="Data Volume (TB)"
-                helperText="Total data to be migrated"
-                inputProps={{ min: 0, step: 0.1 }}
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="peak_transaction_rate"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                type="number"
-                fullWidth
-                label="Peak Transaction Rate"
-                helperText="Transactions per second at peak"
-                inputProps={{ min: 0 }}
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-            Physical Infrastructure Details (For TCO Calculation)
-          </Typography>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="physical_servers"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                type="number"
-                fullWidth
-                label="Number of Physical Servers"
-                helperText="Total count of physical machines"
-                inputProps={{ min: 1 }}
-              />
-            )}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Controller
-            name="power_consumption_watts"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                type="number"
-                fullWidth
-                label="Avg. Power per Server (Watts)"
-                helperText="Average power consumption per server"
+                helperText="Total RAM across all servers"
                 inputProps={{ min: 0 }}
               />
             )}
@@ -209,8 +140,48 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
                 type="number"
                 fullWidth
                 label="Hardware Age (Years)"
-                helperText="Average age of current hardware"
+                helperText="Average age of your servers"
                 inputProps={{ min: 0 }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
+            💾 Storage & Data
+          </Typography>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="total_storage_tb"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Total Storage Capacity (TB)"
+                helperText="Total storage space available"
+                inputProps={{ min: 0, step: 0.1 }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="data_volume_tb"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Actual Data Volume (TB)"
+                helperText="How much data needs to be migrated?"
+                inputProps={{ min: 0, step: 0.1 }}
               />
             )}
           />
@@ -225,13 +196,13 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
                 {...field}
                 select
                 fullWidth
-                label="Current Storage Type"
-                helperText="Primary storage technology used"
+                label="Primary Storage Type"
+                helperText="What type of storage do you use?"
               >
                 <MenuItem value="HDD">HDD (Hard Disk Drive)</MenuItem>
                 <MenuItem value="SSD">SSD (Solid State Drive)</MenuItem>
                 <MenuItem value="SAS">SAS (Serial Attached SCSI)</MenuItem>
-                <MenuItem value="Hybrid">Hybrid / Tiered</MenuItem>
+                <MenuItem value="Hybrid">Hybrid / Tiered Storage</MenuItem>
               </TextField>
             )}
           />
@@ -243,11 +214,11 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
             control={control}
             render={({ field }) => (
               <FormControl fullWidth>
-                <InputLabel>Database Types</InputLabel>
+                <InputLabel>Database Types (if any)</InputLabel>
                 <Select
                   {...field}
                   multiple
-                  input={<OutlinedInput label="Database Types" />}
+                  input={<OutlinedInput label="Database Types (if any)" />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {(selected as string[]).map((value) => (
@@ -263,6 +234,46 @@ const WorkloadProfileForm: React.FC<WorkloadProfileFormProps> = ({
                   ))}
                 </Select>
               </FormControl>
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
+            ⚡ Performance & Operations
+          </Typography>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="peak_transaction_rate"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Peak Transaction Rate (per second)"
+                helperText="Maximum transactions/requests per second"
+                inputProps={{ min: 0 }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Controller
+            name="power_consumption_watts"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label="Power per Server (Watts)"
+                helperText="Average power consumption per server"
+                inputProps={{ min: 0 }}
+              />
             )}
           />
         </Grid>

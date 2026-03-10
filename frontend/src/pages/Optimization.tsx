@@ -51,9 +51,20 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from 'recharts';
 import numeral from 'numeral';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonLoader } from '../components/Loading';
+import {
+  TOOLTIP_STYLE,
+  AXIS_STYLE,
+  GRID_STYLE,
+  formatCurrency,
+  PieChartCurrencyTooltip,
+  LEGEND_CONFIG,
+  CustomPieLabel,
+} from '../utils/chartConfig';
 
 const Optimization: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -186,8 +197,7 @@ const Optimization: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 700 }}>Cost Optimization</Typography>
-        <LinearProgress />
-        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>Loading optimization data from AWS...</Typography>
+        <SkeletonLoader variant="table" count={8} />
       </Box>
     );
   }
@@ -276,18 +286,42 @@ const Optimization: React.FC = () => {
                 <Typography variant="h6" sx={{ mb: 3 }}>Optimization Types</Typography>
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
-                    <Pie data={optimizationTypes} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="savings">
+                    <Pie 
+                      data={optimizationTypes} 
+                      cx="50%" 
+                      cy="50%" 
+                      innerRadius={50} 
+                      outerRadius={80} 
+                      paddingAngle={5} 
+                      dataKey="savings"
+                      label={CustomPieLabel}
+                    >
                       {optimizationTypes.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <RechartsTooltip
-                      contentStyle={{ backgroundColor: '#1a1d3a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                      formatter={(value: any, name: any, props: any) => [
-                        `${numeral(value).format('$0,0')} (${props.payload.count} items)`,
-                        props.payload.name
-                      ]}
+                      content={({ active, payload }: any) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0];
+                          return (
+                            <div style={TOOLTIP_STYLE}>
+                              <p style={{ margin: 0, marginBottom: 4, fontWeight: 600, color: '#fff', textTransform: 'capitalize' }}>
+                                {data.payload.name}
+                              </p>
+                              <p style={{ margin: 0, color: data.payload.fill, fontSize: 14 }}>
+                                <span style={{ fontWeight: 600 }}>Savings:</span> {formatCurrency(data.value)}
+                              </p>
+                              <p style={{ margin: 0, color: '#b0bec5', fontSize: 12 }}>
+                                {data.payload.count} opportunities
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
+                    <Legend {...LEGEND_CONFIG} formatter={(value, entry: any) => entry.payload.name} />
                   </PieChart>
                 </ResponsiveContainer>
                 <Box sx={{ mt: 2 }}>

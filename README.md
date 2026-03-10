@@ -1,6 +1,6 @@
-# ☁️ AI Cloud Scheduler — FinOps Platform
+# ☁️ AWS FinOps Platform — Cost Intelligence & Cloud Migration Advisor
 
-**An intelligent cloud financial operations (FinOps) platform that helps startups and SMBs optimize cloud costs, plan on-premises to cloud migrations, and automate infrastructure management using AI/ML.**
+**An intelligent platform for AWS cost optimization and cloud migration planning with support for 5 major cloud providers (AWS, Azure, GCP, IBM Cloud, Oracle Cloud).**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB?logo=react)](frontend/)
@@ -11,80 +11,44 @@
 
 ## 📌 What is this?
 
-AI Cloud Scheduler is a **full-stack FinOps platform** designed for startups migrating from on-premises infrastructure to cloud providers (AWS, GCP, Azure). It provides:
+A comprehensive platform that combines:
 
-- **Cost Analysis & Optimization** — Real-time AWS cost monitoring with anomaly detection
-- **On-Prem → Cloud Migration Planner** — TCO comparison, risk assessment, and phased migration plans
-- **Multi-Cloud Cost Comparison** — Side-by-side pricing across AWS, GCP, and Azure
-- **AI-Powered Recommendations** — ML-based cost forecasting, anomaly alerts, and savings suggestions
-- **Budget & Compliance Management** — Automated budget tracking with alert thresholds
-- **Automation Engine** — Policy-based auto-scaling, scheduling, and remediation
+### 1. AWS FinOps & Cost Intelligence
+- **Real-Time Cost Analysis** — Live AWS cost monitoring with Cost Explorer API
+- **AI-Powered Optimization** — ML-based cost forecasting and anomaly detection
+- **Budget Management** — Automated budget tracking with alerts
+- **Resource Optimization** — EC2 rightsizing and idle resource detection
+- **Automation Engine** — Policy-based auto-remediation
+
+### 2. Cloud Migration Advisor
+- **5 Cloud Providers** — AWS, Azure, GCP, IBM Cloud, Oracle Cloud
+- **Intelligent Scoring** — Weighted algorithm across 12 dimensions
+- **Real-Time Preview** — Live scoring as you complete assessment
+- **Evidence-Based** — Transparent recommendations with detailed breakdowns
+- **Complexity Assessment** — Automatic migration timeline estimation
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (React 18)                      │
-│                        localhost:3000                            │
-│                                                                 │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────────┐  │
-│  │Dashboard │ │Migration │ │MultiCloud│ │  Cost Analysis     │  │
-│  │          │ │ Planner  │ │Dashboard │ │  & Optimization    │  │
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────────┬───────────┘  │
-│       │             │            │                 │              │
-│  ┌────┴─────────────┴────────────┴─────────────────┴───────────┐ │
-│  │              API Service Layer (Axios)                       │ │
-│  │  api.ts | multiCloudApi.ts | migrationApi.ts | anomalyApi   │ │
-│  └─────────────────────────┬───────────────────────────────────┘ │
-└────────────────────────────┼─────────────────────────────────────┘
-                             │  HTTP (REST API)
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     BACKEND (FastAPI + Python)                   │
-│                        localhost:8000                            │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    API Layer (api/)                        │   │
-│  │  onboarding.py | multi_cloud.py | anomaly_detection.py    │   │
-│  └──────────────────────────┬───────────────────────────────┘   │
-│                              │                                   │
-│  ┌──────────────────────────┴───────────────────────────────┐   │
-│  │                 Core Services (core/)                      │   │
-│  │                                                           │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐  │   │
-│  │  │ Cost Engine  │  │  Migration  │  │   AI / ML        │  │   │
-│  │  │ & Optimizer  │  │   Advisor   │  │   Services       │  │   │
-│  │  └─────────────┘  └─────────────┘  └──────────────────┘  │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐  │   │
-│  │  │ Compliance  │  │ Automation  │  │   Budget &       │  │   │
-│  │  │ Framework   │  │   Engine    │  │   Alerts         │  │   │
-│  │  └─────────────┘  └─────────────┘  └──────────────────┘  │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              │                                   │
-│  ┌──────────────────────────┴───────────────────────────────┐   │
-│  │              ML Pipeline (ml/)                             │   │
-│  │  anomaly_detector | forecast_engine | cost_data_collector  │   │
-│  │  lstm_detector | prophet_forecaster | feature_store        │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+Frontend (React 18) → Backend (FastAPI) → AWS APIs / ML Models
+     ↓                      ↓
+  Dashboard          Cost Analysis
+  Migration Wizard   Optimization
+  Budget Mgmt        Automation
 ```
 
 ---
 
 ## 🔧 Tech Stack
 
-| Layer         | Technology                                                  |
-|---------------|-------------------------------------------------------------|
-| **Frontend**  | React 18, TypeScript, Material UI (MUI), React Query, Axios |
-| **Backend**   | Python 3.10+, FastAPI, Uvicorn, Pydantic                    |
-| **ML/AI**     | Scikit-learn, Prophet, LSTM (PyTorch), Isolation Forest      |
-| **Database**  | PostgreSQL (prod), SQLite (dev), SQLAlchemy ORM              |
-| **Caching**   | Redis                                                        |
-| **Task Queue**| Celery + Redis                                               |
-| **DevOps**    | Docker, Docker Compose, Kubernetes (k8s manifests)           |
-| **Monitoring**| Prometheus, Grafana, InfluxDB (time-series)                  |
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18, TypeScript, Material-UI |
+| **Backend** | Python 3.10+, FastAPI |
+| **ML/AI** | Scikit-learn, Prophet, PyTorch |
+| **Database** | SQLite (dev), PostgreSQL (prod) |
 
 ---
 
@@ -92,70 +56,25 @@ AI Cloud Scheduler is a **full-stack FinOps platform** designed for startups mig
 
 ```
 TS_AI_CLOUD_SCHEDULER/
-├── frontend/                    # React SPA
+├── frontend/                    # React application
 │   ├── src/
-│   │   ├── pages/               # 26 page components
-│   │   │   ├── Dashboard.tsx           # Main FinOps dashboard
-│   │   │   ├── MigrationPlanner.tsx    # On-Prem → Cloud migration planner
-│   │   │   ├── MigrationWizard.tsx     # Step-by-step migration wizard
-│   │   │   ├── MultiCloudDashboard.tsx # AWS vs GCP vs Azure comparison
-│   │   │   ├── CostAnalysis.tsx        # Detailed cost breakdown
-│   │   │   ├── AWSCostAnalysis.tsx     # AWS-specific cost analysis
-│   │   │   ├── AnomalyDashboard.tsx    # Cost anomaly detection
-│   │   │   ├── AutomationDashboard.tsx # Automation rules & policies
-│   │   │   ├── BudgetManagement.tsx    # Budget tracking & alerts
-│   │   │   ├── Compliance.tsx          # Compliance monitoring
-│   │   │   ├── Optimization.tsx        # Cost optimization suggestions
-│   │   │   └── ...                     # Reports, Settings, Alerts, etc.
-│   │   ├── components/          # Reusable UI components
-│   │   │   ├── Layout/                 # Sidebar, Header
-│   │   │   ├── Migration/              # Timeline, CostBenefit, RiskAssessment
-│   │   │   ├── MigrationWizard/        # Multi-step wizard forms
-│   │   │   ├── MultiCloud/             # CostMatrix, TCO, ProviderOverview
-│   │   │   └── AI/                     # AI dashboard components
-│   │   └── services/            # API service layer
-│   │       ├── api.ts                  # Core API client
-│   │       ├── multiCloudApi.ts        # Multi-cloud endpoints
-│   │       ├── migrationApi.ts         # Migration endpoints
-│   │       └── anomalyApi.ts           # Anomaly detection endpoints
+│   │   ├── pages/              # Dashboard, MigrationWizard, etc.
+│   │   ├── components/         # Reusable UI components
+│   │   └── services/           # API clients
 │   └── package.json
 │
 ├── backend/                     # FastAPI backend
-│   ├── main.py                  # App entry point & route registration
-│   ├── api/                     # REST API endpoints
-│   │   ├── onboarding.py               # AWS credential setup & demo mode
-│   │   ├── multi_cloud.py              # Multi-cloud comparison API
-│   │   ├── anomaly_detection.py        # Anomaly detection API
-│   │   └── multi_cloud_models.py       # Pydantic models
-│   ├── core/                    # Business logic (146 modules)
-│   │   ├── finops_engine.py            # Core FinOps cost engine
-│   │   ├── aws_cost_analyzer.py        # AWS cost analysis
-│   │   ├── cost_anomaly_detector.py    # Cost anomaly detection
-│   │   ├── migration_advisor/          # Migration planning (69 files)
-│   │   ├── tco_calculator.py           # Total Cost of Ownership
-│   │   ├── multi_cloud_cost_engine.py  # Multi-cloud pricing
-│   │   ├── automation_endpoints.py     # Automation rules
-│   │   ├── compliance_manager.py       # Compliance framework
-│   │   ├── budget_management_system.py # Budget tracking
-│   │   ├── ai_orchestrator.py          # AI service orchestration
-│   │   ├── policy_manager.py           # Policy engine
-│   │   └── ...                         # 130+ more modules
-│   ├── ml/                      # Machine Learning pipeline
-│   │   ├── anomaly_detector.py         # Anomaly detection models
-│   │   ├── forecast_engine.py          # Cost forecasting
-│   │   ├── prophet_forecaster.py       # Facebook Prophet integration
-│   │   ├── lstm_anomaly_detector.py    # LSTM neural network
-│   │   ├── training_pipeline.py        # Model training
-│   │   ├── feature_store.py            # ML feature engineering
-│   │   └── ...                         # 20+ ML modules
+│   ├── main.py                 # App entry point
+│   ├── api/                    # REST API endpoints
+│   ├── core/                   # Business logic
+│   │   ├── migration_advisor/  # Migration advisor engine
+│   │   ├── finops_engine.py   # Cost analysis
+│   │   └── ...
+│   ├── ml/                     # ML models
 │   └── requirements.txt
 │
-├── start_backend.py             # Simplified dev server (mock data)
-├── docker-compose.yml           # Full-stack Docker setup
-├── k8s/                         # Kubernetes deployment manifests
-├── monitoring/                  # Prometheus & Grafana configs
-├── docs/                        # Documentation
-└── scripts/                     # Utility scripts
+├── .env                        # Environment variables
+└── README.md                   # This file
 ```
 
 ---
@@ -166,6 +85,7 @@ TS_AI_CLOUD_SCHEDULER/
 
 - **Node.js** 16+ and **npm**
 - **Python** 3.10+
+- **AWS Account** with appropriate IAM permissions (see [IAM Setup](#iam-permissions-required))
 - **pip** (Python package manager)
 
 ### 1. Clone the Repository
@@ -175,11 +95,28 @@ git clone https://github.com/sanketexe/ai-cloud-scheduler.git
 cd ai-cloud-scheduler
 ```
 
-### 2. Install Dependencies
+### 2. Configure AWS Credentials
+
+Create a `.env` file in the root directory:
+
+```bash
+# AWS Configuration
+AWS_ACCESS_KEY_ID=your_access_key_here
+AWS_SECRET_ACCESS_KEY=your_secret_key_here
+AWS_REGION=us-east-1
+AWS_ACCOUNT_ID=your_account_id
+
+# Optional: Demo Mode (uses sample data)
+DEMO_MODE=false
+```
+
+**Important**: See [IAM Permissions Required](#iam-permissions-required) for the minimum IAM policy needed.
+
+### 3. Install Dependencies
 
 ```bash
 # Backend
-pip install fastapi uvicorn pydantic
+pip install -r requirements.txt
 
 # Frontend
 cd frontend
@@ -187,7 +124,7 @@ npm install
 cd ..
 ```
 
-### 3. Start the Application
+### 4. Start the Application
 
 **Terminal 1 — Backend API:**
 ```bash
@@ -203,106 +140,283 @@ npm start
 ```
 > Frontend runs at **http://localhost:3000**
 
-### 4. Login
+### 5. Access the Application
 
-Open **http://localhost:3000** and click **"Try Demo Mode"** to explore the platform with sample data — no AWS credentials needed.
+- **Dashboard**: http://localhost:3000
+- **Migration Wizard**: http://localhost:3000/migration-wizard
+- **API Docs**: http://localhost:8000/docs
+
+**Note**: Cost Explorer data has a 24-hour delay.
 
 ---
 
 ## 📋 Key Features
 
-### 1. On-Premises → Cloud Migration Planner
-Plan your migration from physical servers to AWS/cloud:
-- Select on-prem workloads (e.g., Dell PowerEdge, HP ProLiant servers)
-- Choose target cloud provider (AWS, GCP, Azure)
-- Get migration cost breakdown, timeline (in days), and ROI analysis
-- Risk assessment with mitigation strategies
-- Phased migration process: Infrastructure Audit → TCO Comparison → Risk Assessment → Timeline → Training → Go-Live
+### AWS FinOps
+- Real-time cost analysis with Cost Explorer API
+- ML-powered anomaly detection
+- Budget management with alerts
+- EC2 rightsizing recommendations
+- Automated cost optimization
 
-### 2. Multi-Cloud Cost Comparison
-- Compare pricing across **AWS**, **GCP**, and **Azure** for identical workloads
-- Cost breakdown by category: compute, storage, network, database
-- TCO analysis over 1-5 year time horizons
-- Savings recommendations with provider-specific tips
-
-### 3. Cost Analysis & Anomaly Detection
-- Real-time AWS cost monitoring and trending
-- ML-powered anomaly detection (LSTM, Isolation Forest)
-- Cost forecasting with Facebook Prophet
-- Automated alerts for cost spikes
-
-### 4. Budget Management
-- Set monthly/quarterly budget limits per team or project
-- Track budget utilization in real-time
-- Customizable alert thresholds (50%, 80%, 100%)
-- Budget forecasting and trend analysis
-
-### 5. Automation & Optimization
-- Policy-based cost optimization rules
-- Auto-scaling recommendations for EC2, RDS, EKS
-- Scheduled resource start/stop for dev environments
-- Waste detection for idle/underutilized resources
-
-### 6. Compliance & Governance
-- Built-in compliance frameworks (SOC2, HIPAA, PCI-DSS, GDPR)
-- Tagging policy enforcement
-- Resource organization and taxonomy management
-- Audit logging and reporting
-
----
-
-## 🐳 Docker Deployment
-
-For a full production-like deployment with all services:
-
-```bash
-docker-compose up -d
-```
-
-This starts:
-- FastAPI backend with PostgreSQL
-- React frontend (Nginx)
-- Redis (caching & task queue)
-- Celery workers (background jobs)
-- Prometheus + Grafana (monitoring)
+### Cloud Migration Advisor
+- **5 Providers**: AWS ☁️, Azure 🔷, GCP 🌐, IBM 🔷, Oracle 🔴
+- **Intelligent Scoring**: 12 weighted dimensions
+- **Hard Eliminators**: FedRAMP, HIPAA, budget, data residency
+- **Real-Time Preview**: Live scoring as you answer
+- **Evidence-Based**: Transparent recommendation breakdown
+- **Complexity Assessment**: Automatic timeline estimation
 
 ---
 
 ## 🧪 API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/onboarding/quick-setup` | Connect AWS credentials or start demo mode |
-| `GET`  | `/api/v1/multi-cloud/providers` | List supported cloud providers |
-| `GET`  | `/api/v1/multi-cloud/workloads` | Get on-premises workload inventory |
-| `POST` | `/api/v1/multi-cloud/migration` | Analyze on-prem → cloud migration |
-| `POST` | `/api/v1/multi-cloud/compare` | Compare workload costs across providers |
-| `POST` | `/api/v1/multi-cloud/tco` | Calculate Total Cost of Ownership |
-| `GET`  | `/api/cost-analysis` | AWS cost analysis data |
-| `GET`  | `/api/dashboard` | Dashboard overview metrics |
-| `GET`  | `/api/budgets` | Budget tracking data |
-| `GET`  | `/api/alerts` | Cost alerts and notifications |
-| `GET`  | `/health` | Health check |
+### FinOps
+- `GET /api/cost-analysis` - AWS cost breakdown
+- `GET /api/dashboard` - Dashboard metrics
+- `GET /api/budgets` - Budget tracking
+- `GET /api/optimization/recommendations` - Cost savings
 
-Full API documentation: **http://localhost:8000/docs** (Swagger UI)
+### Migration Advisor
+- `POST /api/migration-advisor/projects` - Create assessment
+- `GET /api/migration-advisor/projects/{id}/score-preview` - Real-time scores
+- `GET /api/migration-advisor/projects/{id}/enhanced-recommendation` - Full recommendation
+
+Full API docs: **http://localhost:8000/docs**
 
 ---
 
-## 🤖 AI/ML Capabilities
+## 🔐 IAM Permissions Required
 
-The platform includes a comprehensive ML pipeline for intelligent cost management:
+The AWS user/role needs the following permissions to use all platform features:
 
-| Model | Purpose | Module |
-|-------|---------|--------|
-| **LSTM Neural Network** | Time-series anomaly detection | `ml/lstm_anomaly_detector.py` |
-| **Isolation Forest** | Statistical anomaly detection | `ml/isolation_forest_detector.py` |
-| **Facebook Prophet** | Cost forecasting & seasonality | `ml/prophet_forecaster.py` |
-| **Ensemble Scorer** | Combined anomaly confidence scoring | `ml/ensemble_scorer.py` |
-| **Feature Store** | Automated feature engineering | `ml/feature_store.py` |
-| **Training Pipeline** | Automated model retraining | `ml/training_pipeline.py` |
+### Minimum Required Policy
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CostExplorerAccess",
+      "Effect": "Allow",
+      "Action": [
+        "ce:GetCostAndUsage",
+        "ce:GetCostForecast",
+        "ce:GetDimensionValues",
+        "ce:GetTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2ReadAccess",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeRegions"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchReadAccess",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BudgetsAccess",
+      "Effect": "Allow",
+      "Action": [
+        "budgets:ViewBudget",
+        "budgets:DescribeBudgets"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "STSAccess",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+### Optional: Automation Features
+
+For automated remediation and optimization actions, add:
+
+```json
+{
+  "Sid": "EC2ManagementAccess",
+  "Effect": "Allow",
+  "Action": [
+    "ec2:StopInstances",
+    "ec2:StartInstances",
+    "ec2:ModifyInstanceAttribute"
+  ],
+  "Resource": "*",
+  "Condition": {
+    "StringEquals": {
+      "ec2:ResourceTag/Environment": ["Development", "Staging"]
+    }
+  }
+}
+```
+
+**Security Note**: The automation policy includes a condition to only affect non-production resources. Adjust the condition based on your tagging strategy.
+
+---
+
+## 🔧 Troubleshooting Guide
+
+### Issue: "AWS credentials not found"
+
+**Symptoms**: Backend fails to start or dashboard shows credential errors
+
+**Solutions**:
+1. Verify `.env` file exists in the root directory
+2. Check that `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set
+3. Ensure no extra spaces or quotes around the values
+4. Test credentials with: `python test_aws_integration.py`
+
+### Issue: "No cost data available"
+
+**Symptoms**: Dashboard loads but shows no cost information
+
+**Solutions**:
+1. **Cost Explorer Delay**: AWS Cost Explorer has a 24-hour data delay. Recent costs won't appear immediately.
+2. **Enable Cost Explorer**: Go to AWS Console → Billing → Cost Explorer and enable it (takes 24 hours to activate)
+3. **Check Date Range**: Ensure you're looking at dates with actual AWS usage
+4. **Verify Permissions**: Run `python test_aws_integration.py` to check IAM permissions
+
+### Issue: "AccessDeniedException" errors
+
+**Symptoms**: API calls fail with permission denied errors
+
+**Solutions**:
+1. Review the [IAM Permissions Required](#iam-permissions-required) section
+2. Attach the minimum required policy to your IAM user/role
+3. Wait 5-10 minutes for IAM changes to propagate
+4. Test with: `aws ce get-cost-and-usage --time-period Start=2024-01-01,End=2024-01-02 --granularity DAILY --metrics BlendedCost`
+
+### Issue: "ThrottlingException" errors
+
+**Symptoms**: API calls fail with rate limit errors
+
+**Solutions**:
+1. The platform implements automatic retry with exponential backoff
+2. Reduce the frequency of dashboard refreshes
+3. Consider implementing Redis caching (see `CACHING_IMPLEMENTATION.md`)
+4. For high-volume usage, request AWS API limit increases
+
+### Issue: Frontend won't start
+
+**Symptoms**: `npm start` fails with errors
+
+**Solutions**:
+1. Delete `node_modules` and `package-lock.json`: `rm -rf node_modules package-lock.json`
+2. Reinstall dependencies: `npm install`
+3. Check Node.js version: `node --version` (requires 16+)
+4. Clear npm cache: `npm cache clean --force`
+
+### Issue: Backend won't start
+
+**Symptoms**: `python start_backend.py` fails
+
+**Solutions**:
+1. Check Python version: `python --version` (requires 3.10+)
+2. Install dependencies: `pip install -r requirements.txt`
+3. Check for port conflicts: `lsof -i :8000` (kill conflicting processes)
+4. Review error logs for specific issues
+
+### Issue: "Connection refused" when frontend calls backend
+
+**Symptoms**: Frontend loads but API calls fail
+
+**Solutions**:
+1. Verify backend is running: `curl http://localhost:8000/health`
+2. Check CORS configuration in `backend/main.py`
+3. Ensure frontend is configured to call `http://localhost:8000`
+4. Check browser console for specific error messages
+
+### Issue: Slow dashboard loading
+
+**Symptoms**: Dashboard takes >10 seconds to load
+
+**Solutions**:
+1. Implement caching (see `CACHING_IMPLEMENTATION.md`)
+2. Reduce date range for cost queries
+3. Enable Redis for response caching
+4. Check AWS API response times with `test_aws_integration.py`
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. Check the logs: Backend logs appear in the terminal running `start_backend.py`
+2. Run the integration test: `python test_aws_integration.py` for detailed diagnostics
+3. Review AWS CloudTrail for API call failures
+4. Check the [GitHub Issues](https://github.com/sanketexe/ai-cloud-scheduler/issues) for similar problems
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**"AWS credentials not found"**
+- Verify `.env` file exists with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- Run: `python test_aws_integration.py`
+
+**"No cost data available"**
+- Cost Explorer has 24-hour delay
+- Enable Cost Explorer in AWS Console → Billing
+- Check IAM permissions
+
+**"AccessDeniedException"**
+- Review IAM permissions (see above)
+- Wait 5-10 minutes for IAM changes to propagate
+
+**Frontend/Backend won't start**
+- Check port conflicts (8000, 3000)
+- Reinstall dependencies
+- Check Node.js (16+) and Python (3.10+) versions
+
+---
+
+## 📚 Additional Resources
+
+- **API Documentation**: http://localhost:8000/docs (when running)
+- **AWS Setup**: See IAM Permissions section above
+- **Troubleshooting**: See section above
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+---
+
+## 📧 Support
+
+- **GitHub Issues**: https://github.com/sanketexe/ai-cloud-scheduler/issues
+- **Email**: support@example.com
 
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file.
+MIT License - see [LICENSE](LICENSE) file

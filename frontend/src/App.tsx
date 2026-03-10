@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
@@ -6,29 +6,32 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 
-// Components
+// Components (always loaded)
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
-import OnboardingQuickStart from './pages/OnboardingQuickStart';
-import Dashboard from './pages/Dashboard';
-import CostAnalysis from './pages/CostAnalysis';
-import BudgetManagement from './pages/BudgetManagement';
-import Optimization from './pages/Optimization';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
-import Alerts from './pages/Alerts';
-import Compliance from './pages/Compliance';
-import SchedulerDashboard from './pages/SchedulerDashboard';
-import MigrationPlanner from './pages/MigrationPlanner';
-import Home from './pages/Home';
-import MigrationWizard from './pages/MigrationWizard';
-import MigrationResults from './pages/MigrationResults';
-import MigrationDashboard from './pages/MigrationDashboard';
-import ProviderRecommendations from './pages/ProviderRecommendations';
-import ResourceOrganization from './pages/ResourceOrganization';
-import DimensionalFiltering from './pages/DimensionalFiltering';
-import MigrationReport from './pages/MigrationReport';
-import PlatformFloatingChat from './components/AI/PlatformFloatingChat';
+import ErrorBoundary from './components/ErrorBoundary';
+import { LoadingSpinner } from './components/Loading';
+
+// Lazy-loaded pages for code splitting
+const OnboardingQuickStart = lazy(() => import('./pages/OnboardingQuickStart'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const CostAnalysis = lazy(() => import('./pages/CostAnalysis'));
+const BudgetManagement = lazy(() => import('./pages/BudgetManagement'));
+const Optimization = lazy(() => import('./pages/Optimization'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Alerts = lazy(() => import('./pages/Alerts'));
+const Compliance = lazy(() => import('./pages/Compliance'));
+const SchedulerDashboard = lazy(() => import('./pages/SchedulerDashboard'));
+const Home = lazy(() => import('./pages/Home'));
+const MigrationWizard = lazy(() => import('./pages/MigrationWizard'));
+const MigrationResults = lazy(() => import('./pages/MigrationResults'));
+const MigrationDashboard = lazy(() => import('./pages/MigrationDashboard'));
+const ProviderRecommendations = lazy(() => import('./pages/ProviderRecommendations'));
+const ResourceOrganization = lazy(() => import('./pages/ResourceOrganization'));
+const DimensionalFiltering = lazy(() => import('./pages/DimensionalFiltering'));
+const MigrationReport = lazy(() => import('./pages/MigrationReport'));
+const PlatformFloatingChat = lazy(() => import('./components/AI/PlatformFloatingChat'));
 
 // Theme
 const theme = createTheme({
@@ -97,14 +100,16 @@ const queryClient = new QueryClient({
   },
 });
 
-// Reusable layout wrapper
+// Reusable layout wrapper with Suspense
 const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Box sx={{ display: 'flex', minHeight: '100vh' }}>
     <Sidebar />
     <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
       <Header />
       <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
-        {children}
+        <Suspense fallback={<LoadingSpinner />}>
+          {children}
+        </Suspense>
       </Box>
     </Box>
   </Box>
@@ -112,54 +117,57 @@ const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 function App() {
   return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <Router>
-            <Routes>
-              {/* Main Entry Points */}
-              <Route path="/" element={<Home />} />
-              <Route path="/onboarding" element={<OnboardingQuickStart />} />
+    <ErrorBoundary>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Router>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                  {/* Main Entry Points */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/onboarding" element={<OnboardingQuickStart />} />
 
-              {/* Migration Wizard - No Sidebar/Header */}
-              <Route path="/migration-wizard" element={<MigrationWizard />} />
-              <Route path="/migration-wizard/:projectId" element={<MigrationWizard />} />
-              <Route path="/migration/:projectId/recommendations" element={<ProviderRecommendations />} />
-              <Route path="/migration/:projectId/results" element={<MigrationResults />} />
-              <Route path="/migration/:projectId/dashboard" element={<MigrationDashboard />} />
-              <Route path="/migration/:projectId/resources" element={<ResourceOrganization />} />
-              <Route path="/migration/:projectId/filtering" element={<DimensionalFiltering />} />
-              <Route path="/migration/:projectId/report" element={<MigrationReport />} />
+                  {/* Migration Wizard - No Sidebar/Header */}
+                  <Route path="/migration-wizard" element={<MigrationWizard />} />
+                  <Route path="/migration-wizard/:projectId" element={<MigrationWizard />} />
+                  <Route path="/migration/:projectId/recommendations" element={<ProviderRecommendations />} />
+                  <Route path="/migration/:projectId/results" element={<MigrationResults />} />
+                  <Route path="/migration/:projectId/dashboard" element={<MigrationDashboard />} />
+                  <Route path="/migration/:projectId/resources" element={<ResourceOrganization />} />
+                  <Route path="/migration/:projectId/filtering" element={<DimensionalFiltering />} />
+                  <Route path="/migration/:projectId/report" element={<MigrationReport />} />
 
-              {/* Dashboard Routes */}
-              <Route path="/dashboard" element={<PageLayout><Dashboard /></PageLayout>} />
-              <Route path="/scheduler" element={<PageLayout><SchedulerDashboard /></PageLayout>} />
-              <Route path="/cost-analysis" element={<PageLayout><CostAnalysis /></PageLayout>} />
-              <Route path="/budgets" element={<PageLayout><BudgetManagement /></PageLayout>} />
-              <Route path="/optimization" element={<PageLayout><Optimization /></PageLayout>} />
-              <Route path="/reports" element={<PageLayout><Reports /></PageLayout>} />
-              <Route path="/alerts" element={<PageLayout><Alerts /></PageLayout>} />
-              <Route path="/compliance" element={<PageLayout><Compliance /></PageLayout>} />
-              <Route path="/settings" element={<PageLayout><Settings /></PageLayout>} />
-              <Route path="/migration-planner" element={<PageLayout><MigrationPlanner /></PageLayout>} />
-            </Routes>
-            <PlatformFloatingChat />
-          </Router>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#1a1d3a',
-                color: '#fff',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-              },
-            }}
-          />
-        </ThemeProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+                  {/* Dashboard Routes */}
+                  <Route path="/dashboard" element={<PageLayout><Dashboard /></PageLayout>} />
+                  <Route path="/scheduler" element={<PageLayout><SchedulerDashboard /></PageLayout>} />
+                  <Route path="/cost-analysis" element={<PageLayout><CostAnalysis /></PageLayout>} />
+                  <Route path="/budgets" element={<PageLayout><BudgetManagement /></PageLayout>} />
+                  <Route path="/optimization" element={<PageLayout><Optimization /></PageLayout>} />
+                  <Route path="/reports" element={<PageLayout><Reports /></PageLayout>} />
+                  <Route path="/alerts" element={<PageLayout><Alerts /></PageLayout>} />
+                  <Route path="/compliance" element={<PageLayout><Compliance /></PageLayout>} />
+                  <Route path="/settings" element={<PageLayout><Settings /></PageLayout>} />
+                </Routes>
+                <PlatformFloatingChat />
+              </Suspense>
+            </Router>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#1a1d3a',
+                  color: '#fff',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                },
+              }}
+            />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 

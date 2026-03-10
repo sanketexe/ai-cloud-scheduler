@@ -53,16 +53,28 @@ class DatabaseConfig:
     def create_sync_engine(self):
         """Create synchronous database engine"""
         if self._sync_engine is None:
-            self._sync_engine = create_engine(
-                self.database_url,
-                poolclass=QueuePool,
-                pool_size=self.pool_size,
-                max_overflow=self.max_overflow,
-                pool_timeout=self.pool_timeout,
-                pool_recycle=self.pool_recycle,
-                pool_pre_ping=True,  # Validate connections before use
-                echo=os.getenv("DB_ECHO", "false").lower() == "true"
-            )
+            # Check if using SQLite
+            is_sqlite = "sqlite" in self.database_url.lower()
+            
+            if is_sqlite:
+                # SQLite doesn't support connection pooling
+                self._sync_engine = create_engine(
+                    self.database_url,
+                    connect_args={"check_same_thread": False},
+                    echo=os.getenv("DB_ECHO", "false").lower() == "true"
+                )
+            else:
+                # PostgreSQL with connection pooling
+                self._sync_engine = create_engine(
+                    self.database_url,
+                    poolclass=QueuePool,
+                    pool_size=self.pool_size,
+                    max_overflow=self.max_overflow,
+                    pool_timeout=self.pool_timeout,
+                    pool_recycle=self.pool_recycle,
+                    pool_pre_ping=True,
+                    echo=os.getenv("DB_ECHO", "false").lower() == "true"
+                )
             
             # Add connection event listeners
             @event.listens_for(self._sync_engine, "connect")
@@ -74,25 +86,37 @@ class DatabaseConfig:
                         cursor.execute("SET timezone TO 'UTC'")
             
             logger.info("Synchronous database engine created", 
-                       url=self.database_url.split('@')[0] + '@***')
+                       url=self.database_url.split('@')[0] if '@' in self.database_url else self.database_url)
         
         return self._sync_engine
     
     def create_async_engine(self):
         """Create asynchronous database engine"""
         if self._async_engine is None:
-            self._async_engine = create_async_engine(
-                self.async_database_url,
-                pool_size=self.pool_size,
-                max_overflow=self.max_overflow,
-                pool_timeout=self.pool_timeout,
-                pool_recycle=self.pool_recycle,
-                pool_pre_ping=True,
-                echo=os.getenv("DB_ECHO", "false").lower() == "true"
-            )
+            # Check if using SQLite
+            is_sqlite = "sqlite" in self.async_database_url.lower()
+            
+            if is_sqlite:
+                # SQLite doesn't support connection pooling
+                self._async_engine = create_async_engine(
+                    self.async_database_url,
+                    connect_args={"check_same_thread": False},
+                    echo=os.getenv("DB_ECHO", "false").lower() == "true"
+                )
+            else:
+                # PostgreSQL with connection pooling
+                self._async_engine = create_async_engine(
+                    self.async_database_url,
+                    pool_size=self.pool_size,
+                    max_overflow=self.max_overflow,
+                    pool_timeout=self.pool_timeout,
+                    pool_recycle=self.pool_recycle,
+                    pool_pre_ping=True,
+                    echo=os.getenv("DB_ECHO", "false").lower() == "true"
+                )
             
             logger.info("Asynchronous database engine created",
-                       url=self.async_database_url.split('@')[0] + '@***')
+                       url=self.async_database_url.split('@')[0] if '@' in self.async_database_url else self.async_database_url)
         
         return self._async_engine
     
