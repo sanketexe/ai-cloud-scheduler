@@ -19,11 +19,11 @@ from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import User
-from backend.app.services.approval_workflow_integration import enhanced_workflow_engine
-from backend.app.services.decision_tracking_system import decision_tracker, notification_service, NotificationType
-from backend.app.core.auth import get_current_user
+from app.database.database import get_db_session
+from app.services.startup_migration.models import User
+from app.services.approval_workflow_integration import enhanced_workflow_engine
+from app.services.decision_tracking_system import decision_tracker, notification_service, NotificationType
+from app.core.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ async def submit_for_approval(
     """
     try:
         # Convert request to internal models
-        from backend.app.services.approval_workflow_integration import OptimizationAction, DecisionContext
+        from app.services.approval_workflow_integration import OptimizationAction, DecisionContext
         
         decision = OptimizationAction(
             action_id=request.decision.action_id,
@@ -182,7 +182,7 @@ async def process_approval_decision(
     """
     try:
         # Convert to internal model
-        from backend.app.services.approval_workflow_integration import ApprovalDecision
+        from app.services.approval_workflow_integration import ApprovalDecision
         
         decision = ApprovalDecision(
             decision_id=str(UUID(approval_id)),
@@ -236,7 +236,7 @@ async def escalate_approval(
     Implements requirement 2.3: Intelligent notification routing based on roles and urgency
     """
     try:
-        from backend.app.services.approval_workflow_integration import EscalationReason
+        from app.services.approval_workflow_integration import EscalationReason
         
         # Map string reason to enum
         escalation_reason = EscalationReason(reason)
@@ -410,7 +410,7 @@ async def get_user_notifications(
             )
         
         # Get notifications from Redis cache
-        from backend.app.core.redis_config import redis_manager
+        from app.core.redis_config import redis_manager
         
         cache_key = f"notifications:{user_id}"
         notifications = await redis_manager.get_json(cache_key) or []

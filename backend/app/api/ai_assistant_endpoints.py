@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 import structlog
 
-from backend.app.services.ai_assistant import (
+from app.services.ai_assistant import (
     platform_assistant,
     ChatRequest,
     ChatResponse

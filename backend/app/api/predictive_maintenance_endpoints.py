@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from pydantic import BaseModel, Field
 import uuid
 
-from backend.app.ml.predictive_maintenance_system import (
+from app.ml.predictive_maintenance_system import (
     PredictiveMaintenanceSystem,
     HealthMetric,
     HealthAssessment,
@@ -24,8 +24,8 @@ from backend.app.ml.predictive_maintenance_system import (
     MaintenancePriority,
     DegradationPattern
 )
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
 
 logger = logging.getLogger(__name__)
 

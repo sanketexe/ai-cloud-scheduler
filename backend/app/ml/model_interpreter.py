@@ -41,7 +41,7 @@ except ImportError:
     LIME_AVAILABLE = False
     logging.warning("LIME not available. Install with: pip install lime")
 
-from backend.app.core.exceptions import ModelInterpreterError, ValidationError
+from app.core.exceptions import ModelInterpreterError, ValidationError
 
 logger = logging.getLogger(__name__)
 

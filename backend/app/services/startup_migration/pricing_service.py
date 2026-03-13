@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from backend.app.services.startup_migration.models import (
+from app.services.startup_migration.models import (
     StartupMigrationProject,
     StartupDatabaseAssessment,
     StartupCloudRecommendation,

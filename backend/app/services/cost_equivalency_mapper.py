@@ -10,8 +10,8 @@ from typing import Dict, List, Optional, Set, Any, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
-from backend.app.models.multi_cloud_models import WorkloadSpec, ComputeSpec, StorageSpec, NetworkSpec, DatabaseSpec
-from backend.app.utils.service_mappings import SERVICE_EQUIVALENCY_CONFIG, FEATURE_MAPPING_CONFIG
+from app.models.multi_cloud_models import WorkloadSpec, ComputeSpec, StorageSpec, NetworkSpec, DatabaseSpec
+from app.utils.service_mappings import SERVICE_EQUIVALENCY_CONFIG, FEATURE_MAPPING_CONFIG
 
 logger = logging.getLogger(__name__)
 

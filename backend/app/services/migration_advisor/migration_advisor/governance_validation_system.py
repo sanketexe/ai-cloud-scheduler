@@ -13,13 +13,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceType
-from backend.app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceType
+from app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
     CategorizedResources,
     ResourceCategorization,
     OwnershipStatus
 )
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
     OrganizationalStructure,
     DimensionType
 )

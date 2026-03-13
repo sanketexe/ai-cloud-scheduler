@@ -125,9 +125,9 @@ class ForecastEngine:
         """Initialize and load forecasting models"""
         try:
             # Import models with fallback handling
-            from backend.app.ml.prophet_forecaster import ProphetForecaster, ProphetConfig
-            from backend.app.ml.lstm_anomaly_detector import LSTMAnomalyDetector, LSTMModelConfig
-            from backend.app.ml.ensemble_scorer import EnsembleScorer, EnsembleConfig
+            from app.ml.prophet_forecaster import ProphetForecaster, ProphetConfig
+            from app.ml.lstm_anomaly_detector import LSTMAnomalyDetector, LSTMModelConfig
+            from app.ml.ensemble_scorer import EnsembleScorer, EnsembleConfig
             
             # Initialize Prophet for seasonal forecasting
             prophet_config = ProphetConfig(

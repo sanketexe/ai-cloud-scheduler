@@ -13,9 +13,9 @@ from datetime import datetime, timedelta, date
 from dataclasses import dataclass, field
 import structlog
 
-from backend.app.ml.cost_data_collector import CostDataCollector, CostDataPoint
-from backend.app.ml.feature_engine import FeatureEngine, FeatureSet, FeatureConfig
-from backend.app.ml.time_series_db import TimeSeriesDB, TimeSeriesPoint, DataPreprocessor
+from app.ml.cost_data_collector import CostDataCollector, CostDataPoint
+from app.ml.feature_engine import FeatureEngine, FeatureSet, FeatureConfig
+from app.ml.time_series_db import TimeSeriesDB, TimeSeriesPoint, DataPreprocessor
 
 logger = structlog.get_logger(__name__)
 

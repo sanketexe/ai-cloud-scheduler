@@ -14,8 +14,8 @@ try:
 except ImportError:
     SKLEARN_AVAILABLE = False
 
-from backend.app.utils.enums import MetricType, SeverityLevel
-from backend.app.utils.performance_monitor import MetricsData
+from app.utils.enums import MetricType, SeverityLevel
+from app.utils.performance_monitor import MetricsData
 
 
 @dataclass

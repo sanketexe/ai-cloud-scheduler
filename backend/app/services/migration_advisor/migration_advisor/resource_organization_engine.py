@@ -12,33 +12,33 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import (
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import (
     ResourceDiscoveryEngine,
     CloudProvider,
     ProviderCredentials,
     ResourceInventory,
     CloudResource
 )
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
     OrganizationalStructureManager,
     OrganizationalStructure,
     DimensionType
 )
-from backend.app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
+from app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
     AutoCategorizationEngine,
     CategorizedResources,
     CategorizationRule
 )
-from backend.app.services.migration_advisor.migration_advisor.tagging_engine import (
+from app.services.migration_advisor.migration_advisor.tagging_engine import (
     TaggingEngine,
     TaggingPolicy,
     BulkTaggingResult
 )
-from backend.app.services.migration_advisor.migration_advisor.hierarchy_builder import (
+from app.services.migration_advisor.migration_advisor.hierarchy_builder import (
     HierarchyBuilder,
     HierarchyView
 )
-from backend.app.services.migration_advisor.migration_advisor.ownership_resolver import (
+from app.services.migration_advisor.migration_advisor.ownership_resolver import (
     OwnershipResolver,
     OwnershipResolutionResult
 )

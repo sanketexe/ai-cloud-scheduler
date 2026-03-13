@@ -16,8 +16,8 @@ from collections import deque
 import threading
 import queue
 
-from backend.app.ml.feature_engine import FeatureEngine, FeatureSet, FeatureConfig
-from backend.app.ml.data_pipeline import DataPipeline
+from app.ml.feature_engine import FeatureEngine, FeatureSet, FeatureConfig
+from app.ml.data_pipeline import DataPipeline
 
 logger = structlog.get_logger(__name__)
 

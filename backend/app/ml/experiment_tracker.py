@@ -26,8 +26,8 @@ import mlflow
 import mlflow.sklearn
 from mlflow.tracking import MlflowClient
 
-from backend.app.database.database import get_db_session
-from backend.app.core.exceptions import ExperimentTrackerError, ValidationError
+from app.database.database import get_db_session
+from app.core.exceptions import ExperimentTrackerError, ValidationError
 
 logger = logging.getLogger(__name__)
 

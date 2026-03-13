@@ -16,17 +16,17 @@ from sqlalchemy.types import JSON as JSONB, Uuid as UUID
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
 
-from backend.app.database.database import Base
+from app.database.database import Base
 
 # Import automation models
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     AutomationPolicy, OptimizationAction, AutomationAuditLog,
     ActionApproval, SafetyCheckResult, AutomationLevel, ActionType,
     ActionStatus, RiskLevel, ApprovalStatus
 )
 
 # Import collaboration models
-from backend.app.models.collaboration_models import (
+from app.models.collaboration_models import (
     CollaborativeSession, SessionParticipant, SessionStateUpdate,
     SessionChatMessage, SessionAnnotation, SessionInvitation,
     SessionType, ParticipantRole, ParticipantStatus, PermissionLevel
@@ -1031,7 +1031,7 @@ class ScanJob(Base):
 
 # Compatibility alias for code expecting `AnomalyDetection` model name
 # Historically parts of the codebase imported `AnomalyDetection` from
-# `backend.app.models.models` (e.g. `resources_router`). Provide a simple
+# `app.models.models` (e.g. `resources_router`). Provide a simple
 # alias so those imports continue to work and reference the `AnomalyEvent`
 # SQLAlchemy model defined above.
 try:

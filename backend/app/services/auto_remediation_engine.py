@@ -15,18 +15,18 @@ from dataclasses import dataclass
 from decimal import Decimal
 import structlog
 
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     OptimizationAction, AutomationPolicy, ActionType, ActionStatus, 
     RiskLevel, ApprovalStatus, AutomationAuditLog
 )
-from backend.app.services.safety_checker import SafetyChecker
-from backend.app.services.action_engine import ActionEngine
-from backend.app.services.rollback_manager import RollbackManager
-from backend.app.services.automation_audit_logger import AutomationAuditLogger
-from backend.app.services.scheduling_engine import SchedulingEngine
-from backend.app.database.database import get_db_session
-from backend.app.services.notification_service import get_notification_service, NotificationMessage, NotificationPriority
-from backend.app.utils.monitoring_service import get_monitoring_service
+from app.services.safety_checker import SafetyChecker
+from app.services.action_engine import ActionEngine
+from app.services.rollback_manager import RollbackManager
+from app.services.automation_audit_logger import AutomationAuditLogger
+from app.services.scheduling_engine import SchedulingEngine
+from app.database.database import get_db_session
+from app.services.notification_service import get_notification_service, NotificationMessage, NotificationPriority
+from app.utils.monitoring_service import get_monitoring_service
 
 logger = structlog.get_logger(__name__)
 

@@ -26,11 +26,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import User
-from backend.app.models.collaboration_models import CollaborativeSession, SessionParticipant
-from backend.app.core.redis_config import redis_manager
-from backend.app.services.decision_tracking_system import notification_service
+from app.database.database import get_db_session
+from app.services.startup_migration.models import User
+from app.models.collaboration_models import CollaborativeSession, SessionParticipant
+from app.core.redis_config import redis_manager
+from app.services.decision_tracking_system import notification_service
 
 logger = logging.getLogger(__name__)
 

@@ -17,12 +17,12 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from decimal import Decimal
 
-from backend.app.services.approval_workflow_engine import (
+from app.services.approval_workflow_engine import (
     ApprovalWorkflowEngine, OptimizationAction, DecisionContext,
     ApprovalDecision, ApprovalRequest, ApprovalResult, EscalationResult,
     Priority, ApprovalStatus, EscalationReason
 )
-from backend.app.services.decision_tracking_system import (
+from app.services.decision_tracking_system import (
     decision_tracker, notification_service, NotificationType, NotificationPriority
 )
 

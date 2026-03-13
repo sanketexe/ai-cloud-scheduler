@@ -16,11 +16,11 @@ import structlog
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
-from backend.app.services.startup_migration.models import CostData, CloudProvider
-from backend.app.services.repositories import CostDataRepository, CloudProviderRepository, SystemConfigurationRepository
-from backend.app.utils.cache_service import CacheService
-from backend.app.utils.logging_service import LoggingService
-from backend.app.services.cost_data_processor import CostDataProcessor, ProcessingResult
+from app.services.startup_migration.models import CostData, CloudProvider
+from app.services.repositories import CostDataRepository, CloudProviderRepository, SystemConfigurationRepository
+from app.utils.cache_service import CacheService
+from app.utils.logging_service import LoggingService
+from app.services.cost_data_processor import CostDataProcessor, ProcessingResult
 
 logger = structlog.get_logger(__name__)
 

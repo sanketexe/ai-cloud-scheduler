@@ -7,12 +7,12 @@ import asyncio
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from backend.app.services.webhook_manager import (
+from app.services.webhook_manager import (
     WebhookEventType, emit_action_event, emit_system_event,
     get_webhook_manager
 )
-from backend.app.models.automation_models import OptimizationAction, ActionStatus
-from backend.app.services.safety_checker import SafetyCheckResult
+from app.models.automation_models import OptimizationAction, ActionStatus
+from app.services.safety_checker import SafetyCheckResult
 
 
 class WebhookIntegration:

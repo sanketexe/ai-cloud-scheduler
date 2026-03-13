@@ -10,8 +10,8 @@ from pydantic import BaseModel
 from typing import Dict, List, Any
 from datetime import datetime
 
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
 
 router = APIRouter(prefix="/api/v1/ai-services", tags=["AI Services Documentation"])
 

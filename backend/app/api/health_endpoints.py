@@ -13,9 +13,9 @@ import time
 import psutil
 import structlog
 from datetime import datetime, timedelta
-from backend.app.database.database import database_health_check
-from backend.app.core.redis_config import redis_manager
-from backend.app.utils.performance_monitor import performance_monitor
+from app.database.database import database_health_check
+from app.core.redis_config import redis_manager
+from app.utils.performance_monitor import performance_monitor
 
 logger = structlog.get_logger(__name__)
 

@@ -15,13 +15,13 @@ from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 import structlog
 
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.optimizers.smart_contract_optimizer import (
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.optimizers.smart_contract_optimizer import (
     SmartContractOptimizer, UsagePattern, ReservedInstanceRecommendation,
     CommitmentStrategy, MarketCondition, CommitmentType, RiskTolerance
 )
-from backend.app.core.exceptions import OptimizerError
+from app.core.exceptions import OptimizerError
 
 logger = structlog.get_logger(__name__)
 

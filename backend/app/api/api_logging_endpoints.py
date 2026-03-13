@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from backend.app.utils.api_call_logger import api_call_logger
+from app.utils.api_call_logger import api_call_logger
 
 router = APIRouter(prefix="/api/v1/logs", tags=["API Logging"])
 

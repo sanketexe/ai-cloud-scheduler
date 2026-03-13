@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from collections import defaultdict
 
-from backend.app.models.ai_orchestrator_models import CoordinatedRecommendation, OptimizationContext
+from app.models.ai_orchestrator_models import CoordinatedRecommendation, OptimizationContext
 
 logger = logging.getLogger(__name__)
 

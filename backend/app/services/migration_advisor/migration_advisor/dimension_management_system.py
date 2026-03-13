@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
     Dimension,
     DimensionType,
     OrganizationalStructure,

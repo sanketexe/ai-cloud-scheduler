@@ -26,8 +26,8 @@ from .models import (
     BudgetConstraints,
     TechnicalRequirements
 )
-from backend.app.services.migration_advisor.migration_advisor.recommendation_engine import RecommendationEngine
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import CloudProviderName
+from app.services.migration_advisor.migration_advisor.recommendation_engine import RecommendationEngine
+from app.services.migration_advisor.migration_advisor.provider_catalog import CloudProviderName
 
 
 @dataclass

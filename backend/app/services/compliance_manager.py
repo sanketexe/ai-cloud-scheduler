@@ -24,12 +24,12 @@ import re
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 
-from backend.app.database.database import get_db_session
-from backend.app.models.automation_models import (
+from app.database.database import get_db_session
+from app.models.automation_models import (
     OptimizationAction, AutomationAuditLog, ActionApproval, SafetyCheckResult,
     ActionType, ActionStatus, RiskLevel, ApprovalStatus
 )
-from backend.app.services.compliance_framework import (
+from app.services.compliance_framework import (
     AuditLogger, ComplianceReporter, ComplianceStandard, AuditEventType,
     DataClassification, GeographicRegion, log_audit_event
 )

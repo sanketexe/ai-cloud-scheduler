@@ -31,9 +31,9 @@ except ImportError:
     TENSORFLOW_AVAILABLE = False
     logging.warning("TensorFlow not available. LSTM models will be disabled.")
 
-from backend.app.aws.aws_cost_analyzer import CostAnalysisReport
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import AnomalyEvent, CostForecast, AnomalyConfiguration
+from app.aws.aws_cost_analyzer import CostAnalysisReport
+from app.database.database import get_db_session
+from app.models.models import AnomalyEvent, CostForecast, AnomalyConfiguration
 
 logger = logging.getLogger(__name__)
 

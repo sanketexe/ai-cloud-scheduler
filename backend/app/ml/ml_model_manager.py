@@ -30,9 +30,9 @@ import mlflow
 import mlflow.sklearn
 from mlflow.tracking import MlflowClient
 
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import MLModelMetrics
-from backend.app.core.exceptions import ModelManagerError, ValidationError
+from app.database.database import get_db_session
+from app.models.models import MLModelMetrics
+from app.core.exceptions import ModelManagerError, ValidationError
 
 logger = logging.getLogger(__name__)
 

@@ -11,10 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.aws.aws_cost_analyzer import AWSCostAnalyzer, CostAnalysisReport
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.aws.aws_cost_analyzer import AWSCostAnalyzer, CostAnalysisReport
 
 router = APIRouter(prefix="/api/v1/aws-cost", tags=["AWS Cost Analysis"])
 

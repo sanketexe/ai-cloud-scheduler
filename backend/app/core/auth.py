@@ -14,9 +14,9 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
-from backend.app.services.startup_migration.models import User, UserRole
-from backend.app.services.repositories import UserRepository
-from backend.app.database.database import get_db_session
+from app.services.startup_migration.models import User, UserRole
+from app.services.repositories import UserRepository
+from app.database.database import get_db_session
 from sqlalchemy.orm import Session
 
 # JWT Configuration
@@ -239,7 +239,7 @@ async def get_current_user(
     db: Session = Depends(get_db_session)
 ) -> User:
     """FastAPI dependency to get current authenticated user"""
-    from backend.app.services.repositories import UserRepository
+    from app.services.repositories import UserRepository
     
     # Demo mode bypass - if no credentials provided or demo mode enabled
     if os.getenv("DEMO_MODE", "false").lower() == "true" or credentials is None:

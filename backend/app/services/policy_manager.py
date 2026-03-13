@@ -14,13 +14,13 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 import structlog
 
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     AutomationPolicy, AutomationLevel, ActionType, ActionApproval, 
     ApprovalStatus, OptimizationAction
 )
-from backend.app.database.database import get_db_session
-from backend.app.services.automation_audit_logger import AutomationAuditLogger
-from backend.app.services.notification_service import get_notification_service, NotificationMessage, NotificationPriority
+from app.database.database import get_db_session
+from app.services.automation_audit_logger import AutomationAuditLogger
+from app.services.notification_service import get_notification_service, NotificationMessage, NotificationPriority
 
 logger = structlog.get_logger(__name__)
 

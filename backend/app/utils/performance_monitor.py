@@ -14,8 +14,8 @@ from contextlib import asynccontextmanager, contextmanager
 from collections import defaultdict, deque
 import threading
 import structlog
-from backend.app.core.redis_config import get_redis
-from backend.app.utils.enums import MetricType
+from app.core.redis_config import get_redis
+from app.utils.enums import MetricType
 
 logger = structlog.get_logger(__name__)
 

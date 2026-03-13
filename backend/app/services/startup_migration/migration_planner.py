@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from backend.app.services.startup_migration.models import StartupMigrationPlan, CloudProvider
+from app.services.startup_migration.models import StartupMigrationPlan, CloudProvider
 
 class MigrationPlanner:
     """

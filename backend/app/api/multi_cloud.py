@@ -16,11 +16,11 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import structlog
 
-from backend.app.database.database import get_async_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.services.multi_cloud_repository import MultiCloudRepository
-from backend.app.api.multi_cloud_models import (
+from app.database.database import get_async_db_session
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.services.multi_cloud_repository import MultiCloudRepository
+from app.api.multi_cloud_models import (
     # Request models
     WorkloadSpecRequest, MigrationRequest, TCORequest,
     
@@ -1151,7 +1151,7 @@ async def trigger_pricing_update(
             )
         
         # Import Celery tasks
-        from backend.tasks.pricing_update_tasks import (
+        from tasks.pricing_update_tasks import (
             update_aws_pricing, update_gcp_pricing, update_azure_pricing,
             update_all_provider_pricing
         )
@@ -1329,8 +1329,8 @@ async def get_performance_dashboard(
     """
     try:
         # Import performance metrics (lazy import to avoid circular dependencies)
-        from backend.monitoring.performance_metrics import PerformanceMetrics
-        from backend.app.utils.cache_manager import CacheManager
+        from monitoring.performance_metrics import PerformanceMetrics
+        from app.utils.cache_manager import CacheManager
         
         # Initialize performance metrics (in production, this would be a singleton)
         metrics = PerformanceMetrics()
@@ -1397,7 +1397,7 @@ async def get_metric_data(
     - throughput
     """
     try:
-        from backend.monitoring.performance_metrics import PerformanceMetrics
+        from monitoring.performance_metrics import PerformanceMetrics
         
         metrics = PerformanceMetrics()
         
@@ -1469,7 +1469,7 @@ async def get_cache_statistics(
     Returns cache hit rates, memory usage, and performance metrics.
     """
     try:
-        from backend.app.utils.cache_manager import CacheManager
+        from app.utils.cache_manager import CacheManager
         
         cache_manager = CacheManager()
         await cache_manager.initialize()
@@ -1540,7 +1540,7 @@ async def warm_cache(
     This endpoint helps improve performance by pre-loading frequently accessed data.
     """
     try:
-        from backend.app.utils.cache_manager import CacheManager
+        from app.utils.cache_manager import CacheManager
         
         cache_manager = CacheManager()
         await cache_manager.initialize()
@@ -1606,7 +1606,7 @@ async def clear_cache(
     Use with caution as this will impact performance until cache is rebuilt.
     """
     try:
-        from backend.app.utils.cache_manager import CacheManager
+        from app.utils.cache_manager import CacheManager
         
         cache_manager = CacheManager()
         await cache_manager.initialize()
@@ -1654,8 +1654,8 @@ async def get_system_health(
     cache status, and overall system health score.
     """
     try:
-        from backend.monitoring.performance_metrics import PerformanceMetrics
-        from backend.app.utils.cache_manager import CacheManager
+        from monitoring.performance_metrics import PerformanceMetrics
+        from app.utils.cache_manager import CacheManager
         
         # Get performance metrics
         metrics = PerformanceMetrics()

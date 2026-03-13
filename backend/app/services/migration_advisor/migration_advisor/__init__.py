@@ -24,14 +24,14 @@ from .models import (
     OrganizationalStructure,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.assessment_engine import (
+from app.services.migration_advisor.migration_advisor.assessment_engine import (
     MigrationAssessmentEngine,
     MigrationProjectManager,
     OrganizationProfiler,
     AssessmentTimelineEstimator,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.requirements_analysis_engine import (
+from app.services.migration_advisor.migration_advisor.requirements_analysis_engine import (
     WorkloadAnalysisEngine,
     WorkloadProfiler,
     PerformanceAnalyzer,
@@ -41,12 +41,12 @@ from backend.app.services.migration_advisor.migration_advisor.requirements_analy
     RequirementsCompletenessValidator,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.resource_organization_engine import (
+from app.services.migration_advisor.migration_advisor.resource_organization_engine import (
     ResourceOrganizationEngine,
     OrganizationResult,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import (
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import (
     ResourceDiscoveryEngine,
     CloudProvider,
     CloudResource,
@@ -54,7 +54,7 @@ from backend.app.services.migration_advisor.migration_advisor.resource_discovery
     ProviderCredentials,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
     OrganizationalStructureManager,
     Team,
     Project,
@@ -64,33 +64,33 @@ from backend.app.services.migration_advisor.migration_advisor.organizational_str
     DimensionType,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
+from app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
     AutoCategorizationEngine,
     ResourceCategorization,
     CategorizedResources,
     CategorizationRule,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.tagging_engine import (
+from app.services.migration_advisor.migration_advisor.tagging_engine import (
     TaggingEngine,
     TaggingPolicy,
     TagConflictResolution,
     BulkTaggingResult,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.hierarchy_builder import (
+from app.services.migration_advisor.migration_advisor.hierarchy_builder import (
     HierarchyBuilder,
     HierarchyView,
     HierarchyNode,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.ownership_resolver import (
+from app.services.migration_advisor.migration_advisor.ownership_resolver import (
     OwnershipResolver,
     OwnershipSuggestion,
     OwnershipResolutionResult,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.error_handler import (
+from app.services.migration_advisor.migration_advisor.error_handler import (
     MigrationErrorHandler,
     MigrationError,
     AssessmentError,
@@ -104,7 +104,7 @@ from backend.app.services.migration_advisor.migration_advisor.error_handler impo
     get_error_handler,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.validation import (
+from app.services.migration_advisor.migration_advisor.validation import (
     MigrationValidator,
     ValidationResult,
     ValidationError,
@@ -119,7 +119,7 @@ from backend.app.services.migration_advisor.migration_advisor.validation import 
     get_validator,
 )
 
-from backend.app.services.migration_advisor.migration_advisor.retry_rollback import (
+from app.services.migration_advisor.migration_advisor.retry_rollback import (
     RetryManager,
     RetryConfig,
     RetryStrategy,

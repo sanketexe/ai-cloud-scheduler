@@ -17,8 +17,8 @@ from sqlalchemy.orm import Session, selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from backend.app.services.repositories import BaseRepository
-from backend.app.services.startup_migration.models import (
+from app.services.repositories import BaseRepository
+from app.models.models import (
     WorkloadSpecification, MultiCloudCostComparison, TCOAnalysis, 
     MigrationAnalysis, ProviderPricing, ServiceEquivalency, 
     FeatureParityAnalysis, User

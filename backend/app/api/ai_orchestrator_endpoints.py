@@ -11,9 +11,9 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
 
-from backend.app.services.ai_orchestrator import AIOrchestrator
-from backend.app.models.ai_orchestrator_models import OptimizationContext, CoordinatedRecommendation
-from backend.app.core.auth import get_current_user
+from app.services.ai_orchestrator import AIOrchestrator
+from app.models.ai_orchestrator_models import OptimizationContext, CoordinatedRecommendation
+from app.core.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 

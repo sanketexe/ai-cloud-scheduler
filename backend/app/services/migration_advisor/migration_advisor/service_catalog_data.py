@@ -6,7 +6,7 @@ including compute, storage, database, ML services, and service comparison mappin
 """
 
 from typing import Dict, List
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import (
+from app.services.migration_advisor.migration_advisor.provider_catalog import (
     CloudProvider, CloudProviderName, ServiceSpecification, ServiceCategory,
     ServiceComparison, RegionSpecification, PerformanceCapability
 )
@@ -851,7 +851,7 @@ def build_azure_provider() -> CloudProvider:
 
 def initialize_provider_catalog() -> 'ProviderCatalog':
     """Initialize the complete provider catalog with all providers and comparisons"""
-    from backend.app.services.migration_advisor.migration_advisor.provider_catalog import ProviderCatalog
+    from app.services.migration_advisor.migration_advisor.provider_catalog import ProviderCatalog
     
     catalog = ProviderCatalog()
     

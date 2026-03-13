@@ -20,7 +20,7 @@ from .models import (
     InfrastructureType,
     ExperienceLevel
 )
-from backend.app.models.models import User
+from app.models.models import User
 
 logger = structlog.get_logger(__name__)
 

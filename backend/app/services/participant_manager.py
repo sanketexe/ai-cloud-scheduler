@@ -14,14 +14,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.database.database import get_db_session
-from backend.app.models.collaboration_models import (
+from app.database.database import get_db_session
+from app.models.collaboration_models import (
     CollaborativeSession, SessionParticipant, SessionInvitation,
     ParticipantRole, ParticipantStatus, PermissionLevel, SessionStatus
 )
-from backend.app.services.startup_migration.models import User
-from backend.app.core.redis_config import redis_manager
-from backend.app.services.notification_service import get_notification_service
+from app.services.startup_migration.models import User
+from app.core.redis_config import redis_manager
+from app.services.notification_service import get_notification_service
 
 logger = logging.getLogger(__name__)
 

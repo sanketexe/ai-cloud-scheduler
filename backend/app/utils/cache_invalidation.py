@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from enum import Enum
 import structlog
-from backend.app.core.redis_config import get_redis
-from backend.app.utils.cache_service import cache_service
+from app.core.redis_config import get_redis
+from app.utils.cache_service import cache_service
 
 logger = structlog.get_logger(__name__)
 

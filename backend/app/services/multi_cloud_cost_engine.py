@@ -15,14 +15,14 @@ import json
 
 from sqlalchemy.orm import Session
 
-from backend.app.models.multi_cloud_models import (
+from app.models.multi_cloud_models import (
     WorkloadSpec, CostComparison, TCOAnalysis, MigrationAnalysis,
     ProviderCost, ServiceCost, CostRecommendation, SavingsOpportunity,
     CloudProvider, TCOComponent, RiskFactor, MigrationPhase
 )
-from backend.app.services.startup_migration.models import WorkloadSpecification, MultiCloudCostComparison, User
-from backend.app.database.database import get_db_session
-from backend.app.core.exceptions import FinOpsException
+from app.models.models import WorkloadSpecification, MultiCloudCostComparison, User
+from app.database.database import get_db_session
+from app.core.exceptions import FinOpsException
 
 
 logger = logging.getLogger(__name__)

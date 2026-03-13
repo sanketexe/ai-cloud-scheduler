@@ -14,8 +14,8 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 import structlog
 
-from backend.app.models.automation_models import AutomationAuditLog
-from backend.app.database.database import get_db_session
+from app.models.automation_models import AutomationAuditLog
+from app.database.database import get_db_session
 
 logger = structlog.get_logger(__name__)
 

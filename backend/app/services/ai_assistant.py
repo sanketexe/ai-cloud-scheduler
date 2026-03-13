@@ -10,7 +10,7 @@ import openai
 from pydantic import BaseModel
 import json
 import structlog
-from backend.app.api.scaling_rules_endpoints import get_engine
+from app.api.scaling_rules_endpoints import get_engine
 
 logger = structlog.get_logger(__name__)
 

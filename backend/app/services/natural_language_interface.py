@@ -23,8 +23,8 @@ from sentence_transformers import SentenceTransformer
 import openai
 
 # Internal imports
-from backend.app.services.startup_migration.models import CostData
-from backend.app.core.exceptions import NLPProcessingError
+from app.services.startup_migration.models import CostData
+from app.core.exceptions import NLPProcessingError
 
 logger = structlog.get_logger(__name__)
 

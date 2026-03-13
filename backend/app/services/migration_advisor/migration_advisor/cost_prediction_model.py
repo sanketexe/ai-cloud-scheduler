@@ -12,11 +12,11 @@ from typing import Dict, List, Optional
 from decimal import Decimal
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import (
+from app.services.migration_advisor.migration_advisor.provider_catalog import (
     CloudProvider, CloudProviderName, ServiceCategory,
     PricingModel, ProviderCatalog
 )
-from backend.app.services.migration_advisor.migration_advisor.service_catalog_data import get_provider_catalog
+from app.services.migration_advisor.migration_advisor.service_catalog_data import get_provider_catalog
 
 
 class CostCategory(Enum):

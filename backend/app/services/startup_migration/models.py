@@ -10,7 +10,7 @@ from datetime import datetime
 from enum import Enum
 import uuid
 
-from backend.app.database.database import Base
+from app.database.database import Base
 
 
 class ProjectStatus(str, Enum):
@@ -248,7 +248,7 @@ class StartupFinOpsIntegration(Base):
 
 # Re-export models for compatibility with migration_advisor module
 try:
-    from backend.app.services.migration_advisor.migration_advisor.models import (
+    from app.services.migration_advisor.migration_advisor.models import (
         MigrationProject,
         MigrationStatus,
         OrganizationProfile,
@@ -267,7 +267,7 @@ try:
         CategorizedResource,
         OrganizationalStructure
     )
-    from backend.app.models.models import (
+    from app.models.models import (
         User,
         CostData,
         Budget,
@@ -284,4 +284,24 @@ try:
         CloudProvider,
     )
 except ImportError:
+    pass
+
+# Backwards-compatibility shims: some modules historically imported
+# anomaly-related and forecasting models from this startup_migration
+# package. Re-export them from the canonical `app.models.models`
+# so older import sites keep working.
+try:
+    from app.models.models import (
+        AnomalyEvent,
+        CostForecast,
+        AnomalyConfiguration,
+    )
+    # expose them at this module level
+    __all__ = globals().get("__all__", []) + [
+        "AnomalyEvent",
+        "CostForecast",
+        "AnomalyConfiguration",
+    ]
+except ImportError:
+    # If the canonical models module is unavailable, skip silently.
     pass

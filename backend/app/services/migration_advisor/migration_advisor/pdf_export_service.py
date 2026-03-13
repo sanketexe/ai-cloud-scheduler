@@ -26,7 +26,7 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-from backend.app.services.migration_advisor.migration_advisor.report_generator import ComprehensiveReport
+from app.services.migration_advisor.migration_advisor.report_generator import ComprehensiveReport
 
 
 class PDFExportService:

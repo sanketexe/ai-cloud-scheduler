@@ -14,8 +14,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import structlog
 
-from backend.app.services.startup_migration.models import CloudProvider, CostData, ProviderType
-from backend.app.utils.encryption import EncryptionService
+from app.services.startup_migration.models import CloudProvider, CostData, ProviderType
+from app.utils.encryption import EncryptionService
 
 logger = structlog.get_logger(__name__)
 

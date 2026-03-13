@@ -15,13 +15,13 @@ from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 import structlog
 
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.ml.reinforcement_learning_agent import (
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.ml.reinforcement_learning_agent import (
     ReinforcementLearningAgent, SystemState, OptimizationAction,
     Experience, PolicyUpdateResult, ActionOutcome, RiskLevel
 )
-from backend.app.core.exceptions import RLAgentError
+from app.core.exceptions import RLAgentError
 
 logger = structlog.get_logger(__name__)
 

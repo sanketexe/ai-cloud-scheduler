@@ -20,7 +20,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from backend.app.core.exceptions import BiasDetectionError, ValidationError
+from app.core.exceptions import BiasDetectionError, ValidationError
 
 logger = logging.getLogger(__name__)
 

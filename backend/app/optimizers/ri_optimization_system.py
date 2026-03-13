@@ -443,7 +443,7 @@ class RIRecommendationEngine:
         
         # Use real AWS Pricing API service
         if pricing_service is None:
-            from backend.app.aws.aws_pricing_service import get_pricing_service
+            from app.aws.aws_pricing_service import get_pricing_service
             self.pricing_service = get_pricing_service()
         else:
             self.pricing_service = pricing_service

@@ -11,9 +11,9 @@ import structlog
 from fastapi import APIRouter, HTTPException, Depends, Query, Path
 from pydantic import BaseModel, Field
 
-from backend.app.core.auth import get_current_user, require_permission
-from backend.app.services.startup_migration.models import User, UserRole
-from backend.app.workers.tasks import (
+from app.core.auth import get_current_user, require_permission
+from app.services.startup_migration.models import User, UserRole
+from app.workers.tasks import (
     TaskMonitor, trigger_cost_sync, trigger_resource_discovery,
     trigger_budget_monitoring, trigger_optimization_analysis,
     sync_provider_cost_data, sync_all_providers_cost_data,

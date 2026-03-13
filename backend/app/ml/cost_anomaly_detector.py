@@ -13,10 +13,10 @@ from enum import Enum
 import statistics
 import structlog
 
-from backend.app.services.startup_migration.models import CostData, CloudProvider, Budget, BudgetAlert, AlertType
-from backend.app.services.repositories import CostDataRepository, BudgetRepository, BudgetAlertRepository
-from backend.app.utils.cache_service import CacheService
-from backend.app.utils.logging_service import LoggingService
+from app.services.startup_migration.models import CostData, CloudProvider, Budget, BudgetAlert, AlertType
+from app.services.repositories import CostDataRepository, BudgetRepository, BudgetAlertRepository
+from app.utils.cache_service import CacheService
+from app.utils.logging_service import LoggingService
 
 logger = structlog.get_logger(__name__)
 

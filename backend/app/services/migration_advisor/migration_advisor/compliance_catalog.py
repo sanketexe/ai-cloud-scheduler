@@ -7,7 +7,7 @@ and utilities for matching requirements to provider certifications.
 
 from typing import Dict, List, Set, Optional
 from dataclasses import dataclass, field
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import (
+from app.services.migration_advisor.migration_advisor.provider_catalog import (
     ComplianceCertification, ComplianceFramework, CloudProviderName
 )
 

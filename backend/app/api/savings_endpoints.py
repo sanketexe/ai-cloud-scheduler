@@ -13,10 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db
-from backend.app.services.savings_calculator import SavingsCalculator, SavingsReport, SavingsMetrics
-from backend.app.models.automation_models import OptimizationAction, ActionStatus
-from backend.app.core.auth import get_current_user
+from app.database.database import get_db
+from app.services.savings_calculator import SavingsCalculator, SavingsReport, SavingsMetrics
+from app.models.automation_models import OptimizationAction, ActionStatus
+from app.core.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/savings", tags=["savings"])
 

@@ -18,9 +18,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.database.database import get_db_session
-from backend.app.models.collaboration_models import SessionStateUpdate, CollaborativeSession
-from backend.app.core.redis_config import redis_manager
+from app.database.database import get_db_session
+from app.models.collaboration_models import SessionStateUpdate, CollaborativeSession
+from app.core.redis_config import redis_manager
 
 logger = logging.getLogger(__name__)
 

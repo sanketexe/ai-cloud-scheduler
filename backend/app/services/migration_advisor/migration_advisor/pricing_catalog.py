@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import (
+from app.services.migration_advisor.migration_advisor.provider_catalog import (
     CloudProviderName, ServicePricing, PricingTier, PricingModel
 )
 

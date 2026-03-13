@@ -16,13 +16,13 @@ from pydantic import BaseModel, Field
 import pandas as pd
 import numpy as np
 
-from backend.app.ml.ml_model_manager import ModelManager, ModelConfig, ModelStatus
+from app.ml.ml_model_manager import ModelManager, ModelConfig, ModelStatus
 from .ab_testing_framework import ABTestingFramework, TestConfiguration, TestVariant, TrafficSplitStrategy, TestType
-from backend.app.ml.experiment_tracker import ExperimentTracker, ExperimentStatus
-from backend.app.ml.model_interpreter import ModelInterpreter, InterpretabilityMethod, ExplanationType
-from backend.app.ml.bias_detection_mitigation import BiasDetectionMitigation, BiasType, MitigationStrategy
-from backend.app.core.auth import get_current_user
-from backend.app.core.exceptions import ModelManagerError, ABTestingError, ExperimentTrackerError
+from app.ml.experiment_tracker import ExperimentTracker, ExperimentStatus
+from app.ml.model_interpreter import ModelInterpreter, InterpretabilityMethod, ExplanationType
+from app.ml.bias_detection_mitigation import BiasDetectionMitigation, BiasType, MitigationStrategy
+from app.core.auth import get_current_user
+from app.core.exceptions import ModelManagerError, ABTestingError, ExperimentTrackerError
 
 logger = logging.getLogger(__name__)
 

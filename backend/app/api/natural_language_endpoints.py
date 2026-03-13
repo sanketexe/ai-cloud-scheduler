@@ -10,15 +10,15 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 import structlog
 
-from backend.app.services.natural_language_interface import (
+from app.services.natural_language_interface import (
     get_natural_language_interface,
     QueryResponse,
     ConversationContext,
     IntentType
 )
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.core.exceptions import NLPProcessingError
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.core.exceptions import NLPProcessingError
 
 logger = structlog.get_logger(__name__)
 
@@ -179,7 +179,7 @@ async def generate_insights(
     """
     try:
         # Create intent object from request
-        from backend.app.services.natural_language_interface import Intent, Entity
+        from app.services.natural_language_interface import Intent, Entity
         
         intent = Intent(
             intent_type=request.intent_type,

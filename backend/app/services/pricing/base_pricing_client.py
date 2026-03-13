@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 
-from backend.app.services.pricing.pricing_models import (
+from app.services.pricing.pricing_models import (
     ComputePricing, StoragePricing, NetworkPricing, DatabasePricing,
     PricingData, PricingQuery, PricingResponse, ServiceCategory
 )

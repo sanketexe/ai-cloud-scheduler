@@ -13,10 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.models.models import User
-from backend.app.services.migration_advisor.migration_advisor.assessment_engine import MigrationAssessmentEngine
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.models.models import User
+from app.services.migration_advisor.migration_advisor.assessment_engine import MigrationAssessmentEngine
 from .models import (
     MigrationStatus,
     CompanySize,
@@ -551,7 +551,7 @@ async def get_score_preview(
     This endpoint calculates provider scores using the enhanced scoring engine
     and returns them for real-time preview during the assessment.
     """
-    from backend.app.services.migration_advisor.migration_advisor.enhanced_scoring_engine import EnhancedScoringEngine
+    from app.services.migration_advisor.migration_advisor.enhanced_scoring_engine import EnhancedScoringEngine
     
     # Get the assessment engine
     engine = MigrationAssessmentEngine(db)
@@ -655,7 +655,7 @@ async def get_enhanced_recommendation(
     This endpoint uses the enhanced scoring engine to generate a comprehensive
     recommendation with evidence, comparison matrix, and trade-offs.
     """
-    from backend.app.services.migration_advisor.migration_advisor.enhanced_scoring_engine import EnhancedScoringEngine, Provider
+    from app.services.migration_advisor.migration_advisor.enhanced_scoring_engine import EnhancedScoringEngine, Provider
     
     # Get the assessment engine
     engine = MigrationAssessmentEngine(db)
@@ -721,7 +721,7 @@ async def get_enhanced_recommendation(
             })
         
         # Calculate migration complexity
-        from backend.app.services.migration_advisor.migration_advisor.migration_complexity_calculator import MigrationComplexityCalculator
+        from app.services.migration_advisor.migration_advisor.migration_complexity_calculator import MigrationComplexityCalculator
         complexity_calc = MigrationComplexityCalculator()
         
         data_volume = answers.get('workload', {}).get('total_storage_tb', 0)
@@ -920,7 +920,7 @@ def get_provider_trade_offs(provider: str) -> List[str]:
 
 def get_complexity_description(complexity_level) -> str:
     """Get description for complexity level"""
-    from backend.app.services.migration_advisor.migration_advisor.migration_complexity_calculator import ComplexityLevel
+    from app.services.migration_advisor.migration_advisor.migration_complexity_calculator import ComplexityLevel
     
     descriptions = {
         ComplexityLevel.LOW: 'Straightforward migration with minimal risk',

@@ -12,14 +12,14 @@ from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.services.collaborative_session_manager import session_manager, SessionConfig, UserPermissions
-from backend.app.services.participant_manager import participant_manager, InvitationRequest, PresenceUpdate
-from backend.app.services.state_synchronization import sync_engine, SyncEventType
-from backend.app.services.operational_transformation import ot_engine, Operation, OperationType
-from backend.app.models.collaboration_models import (
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.services.collaborative_session_manager import session_manager, SessionConfig, UserPermissions
+from app.services.participant_manager import participant_manager, InvitationRequest, PresenceUpdate
+from app.services.state_synchronization import sync_engine, SyncEventType
+from app.services.operational_transformation import ot_engine, Operation, OperationType
+from app.models.collaboration_models import (
     SessionType, ParticipantRole, ParticipantStatus, PermissionLevel, SessionStatus
 )
 
@@ -241,7 +241,7 @@ async def get_session(
     """Get session information"""
     try:
         async with get_db_session() as db:
-            from backend.app.models.collaboration_models import CollaborativeSession
+            from app.models.collaboration_models import CollaborativeSession
             
             session = db.query(CollaborativeSession).filter(
                 CollaborativeSession.id == session_id
@@ -711,7 +711,7 @@ async def list_user_sessions(
     """List user's collaborative sessions"""
     try:
         async with get_db_session() as db:
-            from backend.app.models.collaboration_models import CollaborativeSession, SessionParticipant
+            from app.models.collaboration_models import CollaborativeSession, SessionParticipant
             
             query = db.query(CollaborativeSession).join(SessionParticipant).filter(
                 SessionParticipant.user_id == current_user.id

@@ -12,12 +12,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.core.auth import get_current_active_user, require_permission
-from backend.app.services.startup_migration.models import User, CloudProvider, ProviderType, CostData
-from backend.app.services.repositories import CloudProviderRepository, CostDataRepository, AuditLogRepository
-from backend.app.database.database import get_db_session
-from backend.app.services.cloud_providers import CloudProviderService, AWSCredentials
-from backend.app.utils.encryption import encryption_service
+from app.core.auth import get_current_active_user, require_permission
+from app.services.startup_migration.models import User, CloudProvider, ProviderType, CostData
+from app.services.repositories import CloudProviderRepository, CostDataRepository, AuditLogRepository
+from app.database.database import get_db_session
+from app.services.cloud_providers import CloudProviderService, AWSCredentials
+from app.utils.encryption import encryption_service
 
 # Create router
 cloud_router = APIRouter(prefix="/cloud-providers", tags=["cloud-providers"])

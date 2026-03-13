@@ -14,7 +14,7 @@ def verify_imports():
     print("Verifying imports...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import (
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import (
             MigrationPlanGenerator,
             DependencyAnalyzer,
             MigrationSequencer,
@@ -36,7 +36,7 @@ def verify_dependency_analyzer():
     print("\nVerifying DependencyAnalyzer...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import DependencyAnalyzer
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import DependencyAnalyzer
         
         analyzer = DependencyAnalyzer(None)
         
@@ -73,7 +73,7 @@ def verify_migration_sequencer():
     print("\nVerifying MigrationSequencer...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationSequencer
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationSequencer
         
         sequencer = MigrationSequencer(None)
         
@@ -109,7 +109,7 @@ def verify_cost_estimator():
     print("\nVerifying MigrationCostEstimator...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationCostEstimator
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationCostEstimator
         
         estimator = MigrationCostEstimator(None)
         
@@ -139,7 +139,7 @@ def verify_progress_tracker():
     print("\nVerifying MigrationProgressTracker...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationProgressTracker
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationProgressTracker
         
         tracker = MigrationProgressTracker(None)
         
@@ -162,7 +162,7 @@ def verify_validator():
     print("\nVerifying MigrationValidator...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationValidator
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationValidator
         
         validator = MigrationValidator(None)
         
@@ -186,7 +186,7 @@ def verify_rollback_manager():
     print("\nVerifying RollbackManager...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import RollbackManager
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import RollbackManager
         
         manager = RollbackManager(None)
         
@@ -209,7 +209,7 @@ def verify_main_engine():
     print("\nVerifying MigrationPlanningEngine...")
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationPlanningEngine
+        from app.services.migration_advisor.migration_advisor.migration_planning_engine import MigrationPlanningEngine
         
         engine = MigrationPlanningEngine(None)
         

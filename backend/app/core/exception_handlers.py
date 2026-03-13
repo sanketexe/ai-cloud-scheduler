@@ -14,7 +14,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import ValidationError
 import traceback
 
-from backend.app.core.exceptions import (
+from app.core.exceptions import (
     FinOpsException,
     CloudProviderException,
     CloudProviderConnectionException,
@@ -37,7 +37,7 @@ from backend.app.core.exceptions import (
     ResourceNotFoundException,
     ConflictException
 )
-from backend.app.utils.logging_service import get_logger
+from app.utils.logging_service import get_logger
 
 
 logger = get_logger()

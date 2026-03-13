@@ -11,10 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from pydantic import BaseModel, Field, EmailStr
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.aws.aws_cost_monitor import AWSCostMonitor, BudgetThreshold, CostAlert
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.aws.aws_cost_monitor import AWSCostMonitor, BudgetThreshold, CostAlert
 
 router = APIRouter(prefix="/api/v1/aws-cost-alerts", tags=["AWS Cost Alerts"])
 
@@ -446,7 +446,7 @@ async def test_notifications(
         class TestMonitor:
             def send_alert_notification(self, alert, config):
                 # Import here to avoid circular imports
-                from backend.app.aws.aws_cost_monitor import AWSCostMonitor
+                from app.aws.aws_cost_monitor import AWSCostMonitor
                 temp_monitor = AWSCostMonitor.__new__(AWSCostMonitor)
                 return temp_monitor._send_email_alert(alert, config.get('email', {})) if config.get('email_enabled') else True
         

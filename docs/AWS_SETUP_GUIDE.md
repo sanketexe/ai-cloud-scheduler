@@ -355,7 +355,7 @@ If all tests pass, start the platform:
 
 ```bash
 # Terminal 1: Backend
-python start_backend.py
+python start_py
 
 # Terminal 2: Frontend
 cd frontend

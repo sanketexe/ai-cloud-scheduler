@@ -13,17 +13,17 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, CloudProvider
-from backend.app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, CloudProvider
+from app.services.migration_advisor.migration_advisor.auto_categorization_engine import (
     CategorizedResources,
     ResourceCategorization,
     CategorizationConfidence
 )
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
     OrganizationalStructure,
     DimensionType
 )
-from backend.app.services.migration_advisor.migration_advisor.tagging_engine import TaggingEngine, TaggingPolicy
+from app.services.migration_advisor.migration_advisor.tagging_engine import TaggingEngine, TaggingPolicy
 
 
 logger = logging.getLogger(__name__)

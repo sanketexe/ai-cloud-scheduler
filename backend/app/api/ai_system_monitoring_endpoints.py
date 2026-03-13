@@ -10,7 +10,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
 
-from backend.app.services.ai_system_monitoring import (
+from app.services.ai_system_monitoring import (
     get_ai_system_monitor, AISystemMonitor, AISystemType, AISystemMetrics,
     ModelPerformanceMetrics, AIDecisionAuditLog, ResourceUsageOptimization,
     HealthStatus, AlertSeverity

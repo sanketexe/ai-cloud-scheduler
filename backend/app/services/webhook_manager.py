@@ -25,9 +25,9 @@ from sqlalchemy.types import JSON as JSONB, Uuid as UUID
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
-from backend.app.database.database import Base, get_db_session
-from backend.app.models.automation_models import OptimizationAction, ActionStatus
-from backend.app.core.exceptions import WebhookException, ValidationException
+from app.database.database import Base, get_db_session
+from app.models.automation_models import OptimizationAction, ActionStatus
+from app.core.exceptions import WebhookException, ValidationException
 
 logger = structlog.get_logger(__name__)
 

@@ -7,10 +7,10 @@ from typing import Dict, Any, List
 
 from sqlalchemy import select
 
-from backend.app.database.database import AsyncSessionLocal
-from backend.app.models.models import ScanJob, ScanStatus, EC2Instance, EBSVolume, OptimizationRecommendation
-from backend.app.aws.aws_collector import AWSCollector
-from backend.app.optimizers.resource_optimizer import ResourceOptimizer
+from app.database.database import AsyncSessionLocal
+from app.models.models import ScanJob, ScanStatus, EC2Instance, EBSVolume, OptimizationRecommendation
+from app.aws.aws_collector import AWSCollector
+from app.optimizers.resource_optimizer import ResourceOptimizer
 
 logger = logging.getLogger(__name__)
 

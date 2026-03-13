@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 from pydantic import BaseModel
 import structlog
-from backend.app.core.redis_config import get_redis, redis_manager
+from app.core.redis_config import get_redis, redis_manager
 
 logger = structlog.get_logger(__name__)
 

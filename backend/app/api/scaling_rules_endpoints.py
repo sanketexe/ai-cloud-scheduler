@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, HTTPException, status, Query
 from pydantic import BaseModel, Field
 
-from backend.app.services.scaling_rules_engine import ScalingRulesEngine
+from app.services.scaling_rules_engine import ScalingRulesEngine
 
 router = APIRouter(prefix="/scaling-rules", tags=["Auto-Scaling Rules"])
 
@@ -26,7 +26,7 @@ def get_engine() -> ScalingRulesEngine:
         boto3_session = None
         region = "us-east-1"
         try:
-            from backend.app.aws.aws_data_service import AWSDataService
+            from app.aws.aws_data_service import AWSDataService
             svc = AWSDataService()
             boto3_session = svc.session
             region = svc.region

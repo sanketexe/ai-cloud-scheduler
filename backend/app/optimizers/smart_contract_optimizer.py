@@ -22,7 +22,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 # Import existing components
-from backend.app.optimizers.ri_optimization_system import (
+from app.optimizers.ri_optimization_system import (
     UsagePattern, UsageAnalyzer, RIRecommendation, 
     CommitmentTerm, PaymentOption, CloudProvider
 )

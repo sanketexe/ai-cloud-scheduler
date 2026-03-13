@@ -17,12 +17,12 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-from backend.app.ml.reinforcement_learning_agent import (
+from app.ml.reinforcement_learning_agent import (
     ReinforcementLearningAgent, Experience, SystemState, 
     OptimizationAction, ActionOutcome
 )
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import MLModelMetrics
+from app.database.database import get_db_session
+from app.models.models import MLModelMetrics
 
 logger = logging.getLogger(__name__)
 

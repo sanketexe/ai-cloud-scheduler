@@ -13,18 +13,18 @@ from typing import Dict, List, Optional, Any
 import pandas as pd
 import numpy as np
 
-from backend.app.ml.reinforcement_learning_agent import (
+from app.ml.reinforcement_learning_agent import (
     ReinforcementLearningAgent, SystemState, OptimizationAction, 
     ActionOutcome, Experience, ActionType, RiskLevel
 )
-from backend.app.ml.rl_training_pipeline import ContinuousLearningPipeline, TrainingConfig
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import (
+from app.ml.rl_training_pipeline import ContinuousLearningPipeline, TrainingConfig
+from app.database.database import get_db_session
+from app.services.startup_migration.models import (
     CostData, ResourceMetrics, OptimizationRecommendation, 
     AuditLog, ScalingEvent
 )
-from backend.app.services.cloud_providers import CloudProvider
-from backend.app.services.safety_checker import SafetyChecker
+from app.services.cloud_providers import CloudProvider
+from app.services.safety_checker import SafetyChecker
 
 logger = logging.getLogger(__name__)
 

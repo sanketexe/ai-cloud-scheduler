@@ -28,7 +28,7 @@ def verify_imports() -> List[Tuple[str, bool, str]]:
     
     # Test assessment engine imports
     try:
-        from backend.app.services.migration_advisor.migration_advisor.assessment_engine import (
+        from app.services.migration_advisor.migration_advisor.assessment_engine import (
             MigrationProjectManager,
             OrganizationProfiler,
             AssessmentTimelineEstimator,
@@ -40,7 +40,7 @@ def verify_imports() -> List[Tuple[str, bool, str]]:
     
     # Test endpoint imports
     try:
-        from backend.app.services.migration_advisor.migration_advisor.assessment_endpoints import router
+        from app.services.migration_advisor.migration_advisor.assessment_endpoints import router
         results.append(("API Endpoints", True, "API router imported successfully"))
     except Exception as e:
         results.append(("API Endpoints", False, f"Failed to import endpoints: {str(e)}"))
@@ -53,7 +53,7 @@ def verify_class_structure() -> List[Tuple[str, bool, str]]:
     results = []
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.assessment_engine import MigrationProjectManager
+        from app.services.migration_advisor.migration_advisor.assessment_engine import MigrationProjectManager
         
         expected_methods = [
             'create_migration_project',
@@ -73,7 +73,7 @@ def verify_class_structure() -> List[Tuple[str, bool, str]]:
         results.append(("MigrationProjectManager", False, f"Failed to verify: {str(e)}"))
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.assessment_engine import OrganizationProfiler
+        from app.services.migration_advisor.migration_advisor.assessment_engine import OrganizationProfiler
         
         expected_methods = [
             'create_organization_profile',
@@ -92,7 +92,7 @@ def verify_class_structure() -> List[Tuple[str, bool, str]]:
         results.append(("OrganizationProfiler", False, f"Failed to verify: {str(e)}"))
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.assessment_engine import AssessmentTimelineEstimator
+        from app.services.migration_advisor.migration_advisor.assessment_engine import AssessmentTimelineEstimator
         
         expected_methods = [
             'estimate_assessment_duration'
@@ -115,7 +115,7 @@ def verify_api_endpoints() -> List[Tuple[str, bool, str]]:
     results = []
     
     try:
-        from backend.app.services.migration_advisor.migration_advisor.assessment_endpoints import router
+        from app.services.migration_advisor.migration_advisor.assessment_endpoints import router
         
         # Check that router has routes
         if hasattr(router, 'routes') and len(router.routes) > 0:

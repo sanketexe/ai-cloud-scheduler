@@ -8,16 +8,16 @@ validation framework, and retry/rollback mechanisms together.
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 
-from backend.app.services.migration_advisor.migration_advisor.error_handler import get_error_handler, AssessmentError
-from backend.app.services.migration_advisor.migration_advisor.validation import get_validator
-from backend.app.services.migration_advisor.migration_advisor.retry_rollback import (
+from app.services.migration_advisor.migration_advisor.error_handler import get_error_handler, AssessmentError
+from app.services.migration_advisor.migration_advisor.validation import get_validator
+from app.services.migration_advisor.migration_advisor.retry_rollback import (
     get_retry_manager,
     get_transaction_manager,
     with_retry,
     RetryConfig,
     RetryStrategy,
 )
-from backend.app.core.exceptions import ValidationException, CloudProviderException
+from app.core.exceptions import ValidationException, CloudProviderException
 
 
 # Example 1: Validation with error handling

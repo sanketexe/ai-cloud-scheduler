@@ -15,12 +15,12 @@ from celery import Task
 from sqlalchemy.ext.asyncio import AsyncSession
 import structlog
 
-from backend.core.celery_config import celery_app
-from backend.core.database import get_async_db_session, db_config
-from backend.core.multi_cloud_repository import MultiCloudRepository
-from backend.core.models import ProviderPricing, User
-from backend.core.pricing_validator import PricingDataValidator, ValidationResult
-from backend.core.notification_service import NotificationService
+from core.celery_config import celery_app
+from core.database import get_async_db_session, db_config
+from core.multi_cloud_repository import MultiCloudRepository
+from core.models import ProviderPricing, User
+from core.pricing_validator import PricingDataValidator, ValidationResult
+from core.notification_service import NotificationService
 
 logger = structlog.get_logger(__name__)
 

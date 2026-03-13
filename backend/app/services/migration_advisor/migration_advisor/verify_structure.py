@@ -16,7 +16,7 @@ def verify_imports():
     
     try:
         # Test enum imports
-        from backend.core.migration_advisor.models import (
+        from core.migration_advisor.models import (
             MigrationStatus,
             CompanySize,
             InfrastructureType,
@@ -28,7 +28,7 @@ def verify_imports():
         print("✓ Enums imported successfully")
         
         # Test model imports
-        from backend.core.migration_advisor.models import (
+        from core.migration_advisor.models import (
             MigrationProject,
             OrganizationProfile,
             WorkloadProfile,
@@ -46,7 +46,7 @@ def verify_imports():
         print("✓ All models imported successfully")
         
         # Test module-level imports
-        from backend.core.migration_advisor import (
+        from core.migration_advisor import (
             MigrationProject as MP,
             OrganizationProfile as OP,
         )

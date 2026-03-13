@@ -14,16 +14,16 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.services.collaborative_budget_planner import (
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.services.collaborative_budget_planner import (
     collaborative_budget_planner, BudgetEditType, ForecastPeriod, ScenarioType
 )
-from backend.app.services.collaborative_forecasting_engine import (
+from app.services.collaborative_forecasting_engine import (
     collaborative_forecasting_engine, ForecastInput, ForecastMethod
 )
-from backend.app.services.collaborative_session_manager import session_manager
-from backend.app.services.startup_migration.models import User
+from app.services.collaborative_session_manager import session_manager
+from app.services.startup_migration.models import User
 
 logger = logging.getLogger(__name__)
 

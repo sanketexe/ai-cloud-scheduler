@@ -14,12 +14,12 @@ from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 import structlog
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.models.models import User
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.models.models import User
 from .models import MigrationProject, ProviderEvaluation, RecommendationReport as DBRecommendationReport
-from backend.app.services.migration_advisor.migration_advisor.recommendation_engine import RecommendationEngine, ScoringWeights
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import CloudProviderName
+from app.services.migration_advisor.migration_advisor.recommendation_engine import RecommendationEngine, ScoringWeights
+from app.services.migration_advisor.migration_advisor.provider_catalog import CloudProviderName
 
 logger = structlog.get_logger(__name__)
 

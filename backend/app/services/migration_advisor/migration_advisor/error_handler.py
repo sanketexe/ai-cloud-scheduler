@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime
 from enum import Enum
 
-from backend.app.core.exceptions import (
+from app.core.exceptions import (
     FinOpsException,
     ValidationException,
     CloudProviderException,

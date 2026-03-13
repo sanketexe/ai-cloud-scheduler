@@ -14,9 +14,9 @@ import structlog
 from enum import Enum
 import json
 
-from backend.app.ml.isolation_forest_detector import IsolationForestDetector, AnomalyScore
-from backend.app.ml.lstm_anomaly_detector import LSTMAnomalyDetector, LSTMPrediction
-from backend.app.ml.prophet_forecaster import ProphetForecaster, AnomalyDetection
+from app.ml.isolation_forest_detector import IsolationForestDetector, AnomalyScore
+from app.ml.lstm_anomaly_detector import LSTMAnomalyDetector, LSTMPrediction
+from app.ml.prophet_forecaster import ProphetForecaster, AnomalyDetection
 
 logger = structlog.get_logger(__name__)
 

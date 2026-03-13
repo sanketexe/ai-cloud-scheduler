@@ -24,10 +24,10 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import json
 
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import ResourceMetrics, ScalingEvent
-from backend.app.services.cloud_providers import CloudProvider
-from backend.app.services.safety_checker import SafetyChecker
+from app.database.database import get_db_session
+from app.services.startup_migration.models import ResourceMetrics, ScalingEvent
+from app.services.cloud_providers import CloudProvider
+from app.services.safety_checker import SafetyChecker
 
 logger = logging.getLogger(__name__)
 

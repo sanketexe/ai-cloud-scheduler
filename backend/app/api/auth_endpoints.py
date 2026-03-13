@@ -10,13 +10,13 @@ from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.core.auth import (
+from app.core.auth import (
     auth_service, AuthenticationService, TokenResponse, 
     get_current_user, get_current_active_user, security
 )
-from backend.app.models.models import User, UserRole
-from backend.app.services.repositories import UserRepository, AuditLogRepository
-from backend.app.database.database import get_db_session
+from app.models.models import User, UserRole
+from app.services.repositories import UserRepository, AuditLogRepository
+from app.database.database import get_db_session
 
 # Create router
 auth_router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -418,7 +418,7 @@ async def get_user_permissions(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get current user's permissions"""
-    from backend.app.core.auth import permission_service
+    from app.core.auth import permission_service
     
     permissions = permission_service.get_user_permissions(current_user.role)
     

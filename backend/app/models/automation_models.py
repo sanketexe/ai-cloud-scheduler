@@ -16,7 +16,7 @@ from sqlalchemy.types import JSON as JSONB, Uuid as UUID
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
 
-from backend.app.database.database import Base
+from app.database.database import Base
 
 
 class AutomationLevel(PyEnum):

@@ -14,12 +14,12 @@ from datetime import datetime
 from enum import Enum
 from collections import defaultdict
 
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import (
     DimensionType,
     OrganizationalStructure
 )
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource
-from backend.app.services.migration_advisor.migration_advisor.auto_categorization_engine import CategorizedResources, ResourceCategorization
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource
+from app.services.migration_advisor.migration_advisor.auto_categorization_engine import CategorizedResources, ResourceCategorization
 
 
 logger = logging.getLogger(__name__)

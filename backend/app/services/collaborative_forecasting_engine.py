@@ -18,11 +18,11 @@ from decimal import Decimal
 import numpy as np
 from scipy import stats
 
-from backend.app.database.database import get_db_session
-from backend.app.services.collaborative_budget_planner import CollaborativeBudget, collaborative_budget_planner
-from backend.app.services.state_synchronization import sync_engine, SyncEvent, SyncEventType
-from backend.app.services.operational_transformation import Operation, OperationType
-from backend.app.core.redis_config import redis_manager
+from app.database.database import get_db_session
+from app.services.collaborative_budget_planner import CollaborativeBudget, collaborative_budget_planner
+from app.services.state_synchronization import sync_engine, SyncEvent, SyncEventType
+from app.services.operational_transformation import Operation, OperationType
+from app.core.redis_config import redis_manager
 
 logger = logging.getLogger(__name__)
 

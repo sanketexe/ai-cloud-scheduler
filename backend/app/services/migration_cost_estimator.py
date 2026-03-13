@@ -12,12 +12,12 @@ from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 from enum import Enum
 
-from backend.app.models.multi_cloud_models import (
+from app.models.multi_cloud_models import (
     WorkloadSpec, MigrationAnalysis, MigrationCostBreakdown, RiskAssessment,
     CloudProvider, CostRecommendation
 )
-from backend.app.services.cost_factors import CostFactors
-from backend.app.services.tco_calculator import TCOCalculator
+from app.services.cost_factors import CostFactors
+from app.services.tco_calculator import TCOCalculator
 
 logger = logging.getLogger(__name__)
 

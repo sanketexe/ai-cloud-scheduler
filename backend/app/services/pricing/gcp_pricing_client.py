@@ -14,8 +14,8 @@ from typing import Dict, List, Optional, Any
 import aiohttp
 from urllib.parse import urlencode
 
-from backend.app.services.pricing.base_pricing_client import BasePricingClient, PricingAPIException, RateLimitException
-from backend.app.services.pricing.pricing_models import ComputePricing, StoragePricing, NetworkPricing, DatabasePricing
+from app.services.pricing.base_pricing_client import BasePricingClient, PricingAPIException, RateLimitException
+from app.services.pricing.pricing_models import ComputePricing, StoragePricing, NetworkPricing, DatabasePricing
 
 logger = logging.getLogger(__name__)
 

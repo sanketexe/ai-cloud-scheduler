@@ -647,7 +647,7 @@ class LSTMAnomalyDetector:
         if self.is_trained and self.model:
             info['model_summary'] = {
                 'total_params': self.model.count_params(),
-                'trainable_params': sum([tf.keras.backend.count_params(w) for w in self.model.trainable_weights]),
+                'trainable_params': sum([tf.keras.count_params(w) for w in self.model.trainable_weights]),
                 'layers': len(self.model.layers)
             }
         

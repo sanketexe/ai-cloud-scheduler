@@ -128,7 +128,7 @@ cd ..
 
 **Terminal 1 — Backend API:**
 ```bash
-python start_backend.py
+python start_py
 ```
 > Backend runs at **http://localhost:8000**
 > API docs available at **http://localhost:8000/docs**
@@ -329,7 +329,7 @@ For automated remediation and optimization actions, add:
 
 ### Issue: Backend won't start
 
-**Symptoms**: `python start_backend.py` fails
+**Symptoms**: `python start_py` fails
 
 **Solutions**:
 1. Check Python version: `python --version` (requires 3.10+)
@@ -361,7 +361,7 @@ For automated remediation and optimization actions, add:
 
 If you encounter issues not covered here:
 
-1. Check the logs: Backend logs appear in the terminal running `start_backend.py`
+1. Check the logs: Backend logs appear in the terminal running `start_py`
 2. Run the integration test: `python test_aws_integration.py` for detailed diagnostics
 3. Review AWS CloudTrail for API call failures
 4. Check the [GitHub Issues](https://github.com/sanketexe/ai-cloud-scheduler/issues) for similar problems

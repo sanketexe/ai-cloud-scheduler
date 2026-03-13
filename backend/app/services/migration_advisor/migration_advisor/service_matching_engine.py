@@ -12,11 +12,11 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import (
+from app.services.migration_advisor.migration_advisor.provider_catalog import (
     CloudProvider, CloudProviderName, ServiceCategory, 
     ServiceSpecification, ProviderCatalog
 )
-from backend.app.services.migration_advisor.migration_advisor.service_catalog_data import get_provider_catalog
+from app.services.migration_advisor.migration_advisor.service_catalog_data import get_provider_catalog
 
 
 class MatchQuality(Enum):

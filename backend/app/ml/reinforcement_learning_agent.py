@@ -31,9 +31,9 @@ import torch.optim as optim
 import torch.nn.functional as F
 from sklearn.preprocessing import StandardScaler
 
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import OptimizationRecommendation, AuditLog
-from backend.app.services.cloud_providers import CloudProvider
+from app.database.database import get_db_session
+from app.services.startup_migration.models import OptimizationRecommendation, AuditLog
+from app.services.cloud_providers import CloudProvider
 
 logger = logging.getLogger(__name__)
 

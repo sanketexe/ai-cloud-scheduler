@@ -22,8 +22,8 @@ from torch_geometric.nn import GCNConv, GATConv, global_mean_pool
 from torch_geometric.data import Data, Batch
 import networkx as nx
 
-from backend.app.services.startup_migration.models import BaseModel
-from backend.app.core.exceptions import FinOpsException
+from app.services.startup_migration.models import BaseModel
+from app.core.exceptions import FinOpsException
 
 logger = logging.getLogger(__name__)
 

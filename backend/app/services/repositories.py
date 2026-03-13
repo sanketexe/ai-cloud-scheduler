@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from backend.app.services.startup_migration.models import (
+from app.services.startup_migration.models import (
     BaseModel, User, CloudProvider, CostData, Budget, BudgetAlert,
     OptimizationRecommendation, AuditLog, SystemConfiguration,
     UserRole, ProviderType, BudgetType, RecommendationType, RecommendationStatus

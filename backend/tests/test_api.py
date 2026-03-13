@@ -4,8 +4,8 @@ from httpx import AsyncClient
 from unittest.mock import AsyncMock, patch
 from sqlalchemy.orm import Session
 
-from backend.main import app
-from backend.app.database.database import get_db
+from main import app
+from app.database.database import get_db
 
 @pytest.fixture
 def anyio_backend():
@@ -32,7 +32,7 @@ async def test_trigger_scan():
         # Since we use dependency injection for db in the background task, the real one runs.
         # It's better to mock the background task function `scan_aws_resources`
         
-        with patch("backend.app.api.resources_router.scan_aws_resources", new_callable=AsyncMock) as mock_scan:
+        with patch("app.api.resources_router.scan_aws_resources", new_callable=AsyncMock) as mock_scan:
             response = await ac.post("/api/v1/scan")
         
         assert response.status_code == 202

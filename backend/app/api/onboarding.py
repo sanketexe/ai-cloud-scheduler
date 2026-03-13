@@ -5,9 +5,9 @@ import structlog
 from typing import Optional, Dict, Any
 import asyncio
 
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.database.database import get_db_session as get_db
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.database.database import get_db_session as get_db
 
 logger = structlog.get_logger(__name__)
 

@@ -13,14 +13,14 @@ from typing import Dict, List, Optional, Any, Set, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 
-from backend.app.services.operational_transformation import (
+from app.services.operational_transformation import (
     OperationalTransformationEngine, Operation, OperationType, ot_engine
 )
-from backend.app.models.collaboration_models import SessionParticipant, ParticipantStatus
-from backend.app.services.collaborative_session_manager import session_manager
-from backend.app.services.participant_manager import participant_manager
-from backend.app.core.redis_config import redis_manager
-from backend.app.database.database import get_db_session
+from app.models.collaboration_models import SessionParticipant, ParticipantStatus
+from app.services.collaborative_session_manager import session_manager
+from app.services.participant_manager import participant_manager
+from app.core.redis_config import redis_manager
+from app.database.database import get_db_session
 
 logger = logging.getLogger(__name__)
 

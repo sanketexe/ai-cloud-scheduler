@@ -16,12 +16,12 @@ from enum import Enum as PyEnum
 import pytz
 import structlog
 
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     OptimizationAction, AutomationPolicy, ActionType, RiskLevel, 
     ActionStatus, ApprovalStatus
 )
-from backend.app.database.database import get_db_session
-from backend.app.services.automation_audit_logger import AutomationAuditLogger
+from app.database.database import get_db_session
+from app.services.automation_audit_logger import AutomationAuditLogger
 
 logger = structlog.get_logger(__name__)
 

@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 import logging
 import statistics
 
-from backend.app.utils.enums import MetricType, SeverityLevel
-from backend.app.utils.performance_monitor import MetricsData
-from backend.app.ml.anomaly_detector import Anomaly
+from app.utils.enums import MetricType, SeverityLevel
+from app.utils.performance_monitor import MetricsData
+from app.ml.anomaly_detector import Anomaly
 
 
 @dataclass

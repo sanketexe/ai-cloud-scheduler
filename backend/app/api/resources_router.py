@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.app.database.database import get_db
-from backend.app.models.models import EC2Instance, EBSVolume, OptimizationRecommendation, ScanJob, ScanStatus, AnomalyDetection
-from backend.app.schemas.schemas import EC2InstanceResponse, EBSVolumeResponse, OptimizationRecommendationResponse
-from backend.app.services.background_jobs import scan_aws_resources
+from app.database.database import get_db
+from app.models.models import EC2Instance, EBSVolume, OptimizationRecommendation, ScanJob, ScanStatus, AnomalyDetection
+from app.schemas.schemas import EC2InstanceResponse, EBSVolumeResponse, OptimizationRecommendationResponse
+from app.services.background_jobs import scan_aws_resources
 
 router = APIRouter(prefix="/api/v1", tags=["Cloud Resources"])
 

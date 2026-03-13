@@ -6,9 +6,9 @@ all error handling and logging components for the FinOps Platform.
 """
 
 from fastapi import FastAPI
-from backend.app.utils.logging_service import configure_logging, get_logger
-from backend.app.core.exception_handlers import register_exception_handlers
-from backend.app.core.middleware import setup_middleware
+from app.utils.logging_service import configure_logging, get_logger
+from app.core.exception_handlers import register_exception_handlers
+from app.core.middleware import setup_middleware
 
 
 def setup_error_handling_and_logging(
@@ -121,7 +121,7 @@ def example_exception_usage():
     """
     Example of how to use custom exceptions in application code.
     """
-    from backend.app.core.exceptions import (
+    from app.core.exceptions import (
         CloudProviderException,
         ValidationException,
         ResourceNotFoundException,

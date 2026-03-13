@@ -17,9 +17,9 @@ from enum import Enum
 from io import StringIO
 from collections import defaultdict
 
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceType
-from backend.app.services.migration_advisor.migration_advisor.auto_categorization_engine import CategorizedResources, ResourceCategorization
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import DimensionType, OrganizationalStructure
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceType
+from app.services.migration_advisor.migration_advisor.auto_categorization_engine import CategorizedResources, ResourceCategorization
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import DimensionType, OrganizationalStructure
 
 
 logger = logging.getLogger(__name__)

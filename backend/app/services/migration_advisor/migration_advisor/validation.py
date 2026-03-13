@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional, Callable, Union
 from datetime import datetime
 from decimal import Decimal
 
-from backend.app.core.exceptions import ValidationException, BusinessRuleException
+from app.core.exceptions import ValidationException, BusinessRuleException
 from .models import (
     CompanySize,
     InfrastructureType,

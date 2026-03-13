@@ -13,8 +13,8 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceInventory
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import OrganizationalStructure
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceInventory
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import OrganizationalStructure
 
 
 logger = logging.getLogger(__name__)

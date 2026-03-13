@@ -14,12 +14,12 @@ from typing import Dict, List, Optional, Any, Tuple
 from enum import Enum
 import structlog
 
-from backend.app.models.automation_models import OptimizationAction, ActionStatus, AutomationPolicy
-from backend.app.services.notification_service import (
+from app.models.automation_models import OptimizationAction, ActionStatus, AutomationPolicy
+from app.services.notification_service import (
     get_notification_service, NotificationMessage, NotificationPriority
 )
-from backend.app.services.automation_audit_logger import AutomationAuditLogger
-from backend.app.database.database import get_db_session
+from app.services.automation_audit_logger import AutomationAuditLogger
+from app.database.database import get_db_session
 
 logger = structlog.get_logger(__name__)
 

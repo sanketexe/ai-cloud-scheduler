@@ -18,10 +18,10 @@ from collections import defaultdict, deque
 import psutil
 import structlog
 
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import MLModelMetrics
-from backend.app.services.notification_service import get_notification_service, NotificationMessage, NotificationPriority
-from backend.app.services.automation_audit_logger import AutomationAuditLogger
+from app.database.database import get_db_session
+from app.models.models import MLModelMetrics
+from app.services.notification_service import get_notification_service, NotificationMessage, NotificationPriority
+from app.services.automation_audit_logger import AutomationAuditLogger
 
 logger = structlog.get_logger(__name__)
 

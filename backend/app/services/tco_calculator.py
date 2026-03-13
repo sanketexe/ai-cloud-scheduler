@@ -10,11 +10,11 @@ from decimal import Decimal
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 
-from backend.app.models.multi_cloud_models import (
+from app.models.multi_cloud_models import (
     WorkloadSpec, TCOAnalysis, TCOBreakdown, CloudProvider,
     CostRecommendation
 )
-from backend.app.services.cost_factors import CostFactors
+from app.services.cost_factors import CostFactors
 from .pricing.base_pricing_client import BasePricingClient
 from .pricing import AWSPricingClient, GCPPricingClient, AzurePricingClient
 

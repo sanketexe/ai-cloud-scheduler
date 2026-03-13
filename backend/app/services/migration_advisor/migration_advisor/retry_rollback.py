@@ -13,7 +13,7 @@ from datetime import datetime
 from functools import wraps
 from enum import Enum
 
-from backend.app.core.exceptions import (
+from app.core.exceptions import (
     CloudProviderException,
     CloudProviderRateLimitException,
     DatabaseException,

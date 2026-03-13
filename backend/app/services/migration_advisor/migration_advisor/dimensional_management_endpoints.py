@@ -13,12 +13,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 import structlog
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.models.models import User
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.models.models import User
 from .models import OrganizationalStructure, CategorizedResource
-from backend.app.services.migration_advisor.migration_advisor.dimensional_view_engine import DimensionalViewEngine
-from backend.app.services.migration_advisor.migration_advisor.advanced_filtering_system import AdvancedFilteringSystem
+from app.services.migration_advisor.migration_advisor.dimensional_view_engine import DimensionalViewEngine
+from app.services.migration_advisor.migration_advisor.advanced_filtering_system import AdvancedFilteringSystem
 
 logger = structlog.get_logger(__name__)
 

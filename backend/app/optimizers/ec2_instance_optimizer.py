@@ -15,11 +15,11 @@ from decimal import Decimal
 from dataclasses import dataclass
 import structlog
 
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     OptimizationAction, ActionType, RiskLevel, AutomationPolicy
 )
-from backend.app.services.safety_checker import SafetyChecker
-from backend.app.services.automation_audit_logger import AutomationAuditLogger
+from app.services.safety_checker import SafetyChecker
+from app.services.automation_audit_logger import AutomationAuditLogger
 
 logger = structlog.get_logger(__name__)
 

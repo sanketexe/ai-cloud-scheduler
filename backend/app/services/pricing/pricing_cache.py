@@ -13,14 +13,14 @@ from typing import Dict, List, Optional, Any
 import hashlib
 from decimal import Decimal
 
-from backend.app.services.pricing.pricing_models import PricingData, PricingResponse
+from app.services.pricing.pricing_models import PricingData, PricingResponse
 
 logger = logging.getLogger(__name__)
 
 
 class PricingDataCache:
     """
-    Pricing data cache implementation with Redis backend.
+    Pricing data cache implementation with Redis 
     
     Provides intelligent caching for pricing data with configurable TTL values
     and cache invalidation strategies.
@@ -388,7 +388,7 @@ class PricingDataCache:
     
     def _deserialize_pricing_data(self, data: Dict[str, Any]) -> PricingData:
         """Deserialize pricing data from cache."""
-        from backend.app.services.pricing.pricing_models import ServiceCategory
+        from app.services.pricing.pricing_models import ServiceCategory
         
         pricing_data = PricingData(
             provider=data['provider'],
@@ -425,7 +425,7 @@ class PricingDataCache:
     
     def _deserialize_compute_pricing(self, data: Dict[str, Any]):
         """Deserialize compute pricing."""
-        from backend.app.services.pricing.pricing_models import ComputePricing
+        from app.services.pricing.pricing_models import ComputePricing
         
         return ComputePricing(
             instance_type=data['instance_type'],
@@ -462,7 +462,7 @@ class PricingDataCache:
     
     def _deserialize_storage_pricing(self, data: Dict[str, Any]):
         """Deserialize storage pricing."""
-        from backend.app.services.pricing.pricing_models import StoragePricing
+        from app.services.pricing.pricing_models import StoragePricing
         
         return StoragePricing(
             storage_type=data['storage_type'],
@@ -494,7 +494,7 @@ class PricingDataCache:
     
     def _deserialize_network_pricing(self, data: Dict[str, Any]):
         """Deserialize network pricing."""
-        from backend.app.services.pricing.pricing_models import NetworkPricing
+        from app.services.pricing.pricing_models import NetworkPricing
         
         return NetworkPricing(
             service_type=data['service_type'],
@@ -526,7 +526,7 @@ class PricingDataCache:
     
     def _deserialize_database_pricing(self, data: Dict[str, Any]):
         """Deserialize database pricing."""
-        from backend.app.services.pricing.pricing_models import DatabasePricing
+        from app.services.pricing.pricing_models import DatabasePricing
         
         return DatabasePricing(
             database_type=data['database_type'],
@@ -545,7 +545,7 @@ class PricingDataCache:
     # Cache backend methods (Redis or in-memory)
     
     async def _get_from_cache(self, key: str) -> Optional[Dict[str, Any]]:
-        """Get data from cache backend."""
+        """Get data from cache """
         if self.redis_client:
             try:
                 data = await self.redis_client.get(key)
@@ -568,7 +568,7 @@ class PricingDataCache:
             return None
     
     async def _set_in_cache(self, key: str, data: Dict[str, Any], ttl: int):
-        """Set data in cache backend."""
+        """Set data in cache """
         if self.redis_client:
             try:
                 await self.redis_client.setex(key, ttl, json.dumps(data, default=str))
@@ -583,7 +583,7 @@ class PricingDataCache:
             }
     
     async def _delete_from_cache(self, key: str):
-        """Delete data from cache backend."""
+        """Delete data from cache """
         if self.redis_client:
             try:
                 await self.redis_client.delete(key)
@@ -594,7 +594,7 @@ class PricingDataCache:
             self.mock_cache.pop(key, None)
     
     async def _delete_pattern_from_cache(self, pattern: str) -> int:
-        """Delete keys matching pattern from cache backend."""
+        """Delete keys matching pattern from cache """
         if self.redis_client:
             try:
                 keys = await self.redis_client.keys(pattern)

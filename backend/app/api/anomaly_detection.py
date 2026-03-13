@@ -16,9 +16,9 @@ from pydantic import BaseModel, Field
 import logging
 
 from ..core.auth import get_current_user
-from ..core.ml_cost_anomaly_detector import CostAnomalyDetectionService, AWSCostExplorer
-from ..core.database import get_db_session
-from ..core.models import User
+from app.ml.ml_cost_anomaly_detector import CostAnomalyDetectionService, AWSCostExplorer
+from app.database import get_db_session
+from app.models.models import User
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()

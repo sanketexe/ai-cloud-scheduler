@@ -26,22 +26,22 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 
 # Import shared models
-from backend.app.models.ai_orchestrator_models import (
+from app.models.ai_orchestrator_models import (
     AISystemType, CoordinationStrategy, OptimizationScope,
     OptimizationContext, SystemRecommendation, CoordinatedRecommendation,
     AISystemStatus, CoordinationRequest
 )
 
 # Import existing AI/ML systems
-from backend.app.services.predictive_scaling_engine import PredictiveScalingEngine, DemandForecast, ScalingRecommendation
-from backend.app.ml.workload_intelligence_system import WorkloadIntelligenceSystem, WorkloadProfile, PlacementRecommendation
-from backend.app.ml.reinforcement_learning_agent import ReinforcementLearningAgent, SystemState, OptimizationAction, Experience
-from backend.app.services.natural_language_interface import NaturalLanguageInterface, QueryResponse, ConversationContext
-from backend.app.ml.graph_neural_network_system import GraphNeuralNetworkSystem, ResourceGraph, DependencyAnalysis
-from backend.app.ml.predictive_maintenance_system import PredictiveMaintenanceSystem, HealthAssessment, MaintenanceRecommendation
-from backend.app.optimizers.smart_contract_optimizer import SmartContractOptimizer, OptimizationResult
-from backend.app.services.startup_migration.models import BaseModel
-from backend.app.core.exceptions import FinOpsException
+from app.services.predictive_scaling_engine import PredictiveScalingEngine, DemandForecast, ScalingRecommendation
+from app.ml.workload_intelligence_system import WorkloadIntelligenceSystem, WorkloadProfile, PlacementRecommendation
+from app.ml.reinforcement_learning_agent import ReinforcementLearningAgent, SystemState, OptimizationAction, Experience
+from app.services.natural_language_interface import NaturalLanguageInterface, QueryResponse, ConversationContext
+from app.ml.graph_neural_network_system import GraphNeuralNetworkSystem, ResourceGraph, DependencyAnalysis
+from app.ml.predictive_maintenance_system import PredictiveMaintenanceSystem, HealthAssessment, MaintenanceRecommendation
+from app.optimizers.smart_contract_optimizer import SmartContractOptimizer, OptimizationResult
+from app.services.startup_migration.models import BaseModel
+from app.core.exceptions import FinOpsException
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class AIOrchestrator:
         self.optimization_algorithm = AdaptiveOptimizationAlgorithm()
         
         # Import here to avoid circular import
-        from backend.app.services.contextual_recommendation_engine import ContextualRecommendationEngine
+        from app.services.contextual_recommendation_engine import ContextualRecommendationEngine
         self.recommendation_engine = ContextualRecommendationEngine()
         
         # Coordination state

@@ -3,9 +3,9 @@ from typing import List, Dict, Any, Optional
 from uuid import UUID
 import boto3
 
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.services.scheduler_service import SchedulerService
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.services.scheduler_service import SchedulerService
 from pydantic import BaseModel
 
 router = APIRouter(

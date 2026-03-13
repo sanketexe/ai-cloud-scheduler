@@ -13,10 +13,10 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 import structlog
 
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     AutomationPolicy, ActionType, RiskLevel
 )
-from backend.app.database.database import get_db_session
+from app.database.database import get_db_session
 
 logger = structlog.get_logger(__name__)
 

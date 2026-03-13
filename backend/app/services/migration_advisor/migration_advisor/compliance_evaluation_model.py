@@ -11,12 +11,12 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.provider_catalog import (
+from app.services.migration_advisor.migration_advisor.provider_catalog import (
     CloudProvider, CloudProviderName, ComplianceFramework,
     ComplianceCertification, ProviderCatalog
 )
-from backend.app.services.migration_advisor.migration_advisor.service_catalog_data import get_provider_catalog
-from backend.app.services.migration_advisor.migration_advisor.compliance_catalog import get_compliance_matcher
+from app.services.migration_advisor.migration_advisor.service_catalog_data import get_provider_catalog
+from app.services.migration_advisor.migration_advisor.compliance_catalog import get_compliance_matcher
 
 
 class ComplianceMatchLevel(Enum):

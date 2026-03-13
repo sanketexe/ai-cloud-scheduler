@@ -7,13 +7,13 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 import logging
 
-from backend.app.ml.graph_neural_network_system import (
+from app.ml.graph_neural_network_system import (
     GraphNeuralNetworkSystem, ResourceGraph, DependencyAnalysis,
     CascadeEffects, ResourceCluster, ClusterOptimization,
     OptimizationOpportunity, ResourceNode, ResourceEdge
 )
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -356,7 +356,7 @@ async def health_check():
 
 def _convert_to_resource_graph(graph_data: ResourceGraphResponse) -> ResourceGraph:
     """Convert API response model back to ResourceGraph domain object"""
-    from backend.app.ml.graph_neural_network_system import ResourceType, RelationshipType
+    from app.ml.graph_neural_network_system import ResourceType, RelationshipType
     
     # Convert nodes
     nodes = []

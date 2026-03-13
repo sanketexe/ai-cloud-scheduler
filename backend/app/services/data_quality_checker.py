@@ -12,9 +12,9 @@ from enum import Enum
 import statistics
 import structlog
 
-from backend.app.services.startup_migration.models import CostData, CloudProvider
-from backend.app.services.repositories import CostDataRepository, CloudProviderRepository
-from backend.app.services.cost_data_processor import DataQualityIssueType, ValidationSeverity
+from app.services.startup_migration.models import CostData, CloudProvider
+from app.services.repositories import CostDataRepository, CloudProviderRepository
+from app.services.cost_data_processor import DataQualityIssueType, ValidationSeverity
 
 logger = structlog.get_logger(__name__)
 

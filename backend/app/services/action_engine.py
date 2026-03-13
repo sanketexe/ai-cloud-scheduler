@@ -13,8 +13,8 @@ from typing import Dict, List, Optional, Any, Tuple
 from decimal import Decimal
 import structlog
 
-from backend.app.models.automation_models import OptimizationAction, ActionType, ActionStatus
-from backend.app.services.automation_audit_logger import AutomationAuditLogger
+from app.models.automation_models import OptimizationAction, ActionType, ActionStatus
+from app.services.automation_audit_logger import AutomationAuditLogger
 
 logger = structlog.get_logger(__name__)
 

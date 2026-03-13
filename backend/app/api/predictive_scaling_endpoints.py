@@ -19,15 +19,15 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.services.predictive_scaling_engine import (
+from app.database.database import get_db_session
+from app.services.predictive_scaling_engine import (
     PredictiveScalingEngine, DemandForecast, ScalingRecommendation, 
     ScalingResult, ForecastHorizon, ScalingActionType
 )
-from backend.app.services.safety_checker import SafetyChecker
-from backend.app.services.cloud_providers import CloudProviderService
-from backend.app.services.startup_migration.models import ResourceMetrics, ScalingEvent
-from backend.app.core.auth import get_current_user, User
+from app.services.safety_checker import SafetyChecker
+from app.services.cloud_providers import CloudProviderService
+from app.services.startup_migration.models import ResourceMetrics, ScalingEvent
+from app.core.auth import get_current_user, User
 
 logger = logging.getLogger(__name__)
 
@@ -320,7 +320,7 @@ async def execute_scaling_action(
             )
         
         # Create scaling recommendation
-        from backend.app.services.predictive_scaling_engine import ScalingRecommendation
+        from app.services.predictive_scaling_engine import ScalingRecommendation
         recommendation = ScalingRecommendation(
             resource_id=request.resource_id,
             action_type=action_type,
@@ -336,7 +336,7 @@ async def execute_scaling_action(
         # Execute scaling (would need actual cloud provider integration)
         engine = get_scaling_engine()
         # For now, simulate cloud provider
-        from backend.app.services.cloud_providers import AWSCostExplorerAdapter, AWSCredentials
+        from app.services.cloud_providers import AWSCostExplorerAdapter, AWSCredentials
         
         # This would be retrieved from configuration in a real system
         mock_credentials = AWSCredentials("mock", "mock")

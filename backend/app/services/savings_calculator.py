@@ -16,10 +16,10 @@ from enum import Enum
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
 
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     OptimizationAction, ActionStatus, ActionType, AutomationAuditLog
 )
-# from backend.app.aws.aws_pricing_service import AWSPricingService
+# from app.aws.aws_pricing_service import AWSPricingService
 
 logger = logging.getLogger(__name__)
 

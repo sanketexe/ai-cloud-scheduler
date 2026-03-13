@@ -2,8 +2,8 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from backend.core.database import db_config, Base
-from backend.core.models import *
+from core.database import db_config, Base
+from core.models import *
 
 # Create all tables
 engine = db_config.create_sync_engine()

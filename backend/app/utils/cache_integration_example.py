@@ -8,9 +8,9 @@ FinOps platform endpoints and services.
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
-from backend.app.utils.cache_service import cache_service, cache_result
-from backend.app.utils.performance_monitor import performance_monitor
-from backend.app.utils.cache_invalidation import invalidation_engine
+from app.utils.cache_service import cache_service, cache_result
+from app.utils.performance_monitor import performance_monitor
+from app.utils.cache_invalidation import invalidation_engine
 
 router = APIRouter(prefix="/examples", tags=["cache-examples"])
 

@@ -15,8 +15,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 import asyncio
 
-from backend.app.utils.logging_service import get_logger, correlation_id_var, user_id_var, request_id_var
-from backend.app.core.exceptions import RateLimitException
+from app.utils.logging_service import get_logger, correlation_id_var, user_id_var, request_id_var
+from app.core.exceptions import RateLimitException
 
 
 logger = get_logger()

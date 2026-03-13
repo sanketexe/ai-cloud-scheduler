@@ -12,14 +12,14 @@ from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.services.video_communication import (
+from app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.services.video_communication import (
     video_communication, VideoCallSession, CallParticipant, WebRTCOffer,
     CallType, CallStatus, ParticipantCallStatus, CallQuality
 )
-from backend.app.models.collaboration_models import ParticipantRole, PermissionLevel
+from app.models.collaboration_models import ParticipantRole, PermissionLevel
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/video", tags=["video"])

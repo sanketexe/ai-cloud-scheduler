@@ -1,5 +1,5 @@
 import pytest
-from backend.app.optimizers.resource_optimizer import ResourceOptimizer
+from app.optimizers.resource_optimizer import ResourceOptimizer
 
 @pytest.fixture
 def optimizer():

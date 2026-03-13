@@ -21,7 +21,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import structlog
 
-from backend.app.models.automation_models import (
+from app.models.automation_models import (
     OptimizationAction, AutomationPolicy, ActionType, ActionStatus,
     RiskLevel, ApprovalStatus
 )
@@ -734,8 +734,8 @@ class MultiAccountManager:
         """
         try:
             # Import here to avoid circular imports
-            from backend.app.services.action_engine import ActionEngine
-            from backend.app.services.safety_checker import SafetyChecker
+            from app.services.action_engine import ActionEngine
+            from app.services.safety_checker import SafetyChecker
             
             # Create action engine with the cross-account session
             action_engine = ActionEngine(aws_session=session)
@@ -777,7 +777,7 @@ class MultiAccountManager:
         
         try:
             # Import here to avoid circular imports
-            from backend.app.database.database import get_db_session
+            from app.database.database import get_db_session
             from sqlalchemy import and_, func
             
             account_summaries = {}
@@ -895,7 +895,7 @@ class MultiAccountManager:
             account = self.accounts[account_id]
             
             # Import here to avoid circular imports
-            from backend.app.database.database import get_db_session
+            from app.database.database import get_db_session
             from sqlalchemy import and_
             
             with get_db_session() as db:

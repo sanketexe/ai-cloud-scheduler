@@ -17,19 +17,19 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, 
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.core.auth import get_current_user, get_current_active_user
-from backend.app.services.startup_migration.models import User
-from backend.app.models.automation_models import (
+from app.database.database import get_db_session
+from app.core.auth import get_current_user, get_current_active_user
+from app.services.startup_migration.models import User
+from app.models.automation_models import (
     AutomationPolicy, OptimizationAction, ActionApproval, AutomationAuditLog,
     AutomationLevel, ActionType, ActionStatus, RiskLevel, ApprovalStatus
 )
-from backend.app.services.auto_remediation_engine import AutoRemediationEngine, OptimizationOpportunity
-from backend.app.services.policy_manager import PolicyManager
-from backend.app.services.action_engine import ActionEngine
-from backend.app.services.savings_calculator import SavingsCalculator
-from backend.app.services.scheduling_engine import SchedulingEngine
-from backend.app.services.rollback_manager import RollbackManager
+from app.services.auto_remediation_engine import AutoRemediationEngine, OptimizationOpportunity
+from app.services.policy_manager import PolicyManager
+from app.services.action_engine import ActionEngine
+from app.services.savings_calculator import SavingsCalculator
+from app.services.scheduling_engine import SchedulingEngine
+from app.services.rollback_manager import RollbackManager
 
 router = APIRouter(prefix="/api/v1/automation", tags=["Automation Management"])
 

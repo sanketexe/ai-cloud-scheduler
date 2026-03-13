@@ -21,8 +21,8 @@ from typing import Dict, Any
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from backend.core.multi_account_manager import create_multi_account_manager, CrossAccountRole
-from backend.core.notification_service import (
+from core.multi_account_manager import create_multi_account_manager, CrossAccountRole
+from core.notification_service import (
     get_notification_service,
     EmailConfig,
     SlackConfig,
@@ -30,7 +30,7 @@ from backend.core.notification_service import (
     NotificationMessage,
     NotificationPriority
 )
-from backend.core.alert_manager import AlertManager, AlertRule
+from core.alert_manager import AlertManager, AlertRule
 import structlog
 
 logger = structlog.get_logger(__name__)

@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-from backend.app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceType
-from backend.app.services.migration_advisor.migration_advisor.auto_categorization_engine import CategorizedResources, ResourceCategorization
-from backend.app.services.migration_advisor.migration_advisor.organizational_structure_manager import DimensionType
+from app.services.migration_advisor.migration_advisor.resource_discovery_engine import CloudResource, ResourceType
+from app.services.migration_advisor.migration_advisor.auto_categorization_engine import CategorizedResources, ResourceCategorization
+from app.services.migration_advisor.migration_advisor.organizational_structure_manager import DimensionType
 
 
 logger = logging.getLogger(__name__)

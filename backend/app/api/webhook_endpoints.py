@@ -10,13 +10,13 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Path
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.services.webhook_manager import (
+from app.database.database import get_db_session
+from app.services.webhook_manager import (
     WebhookManager, WebhookEndpoint, WebhookEventType, 
     WebhookSecurityType, WebhookStatus, get_webhook_manager,
     WebhookEndpointModel, WebhookDelivery
 )
-from backend.app.core.auth import get_current_user
+from app.core.auth import get_current_user
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
@@ -332,7 +332,7 @@ async def test_webhook_endpoint(
             raise HTTPException(status_code=404, detail="Webhook endpoint not found")
         
         # Create test event
-        from backend.app.services.webhook_manager import WebhookEvent, WebhookEventType
+        from app.services.webhook_manager import WebhookEvent, WebhookEventType
         
         test_event = WebhookEvent(
             event_type=WebhookEventType.SYSTEM_ERROR if test_request.event_type == "system.test" else WebhookEventType(test_request.event_type),

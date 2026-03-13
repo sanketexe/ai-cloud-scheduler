@@ -54,22 +54,22 @@ def create_celery_app() -> Celery:
         
         # Queue configuration
         task_routes={
-            'backend.core.tasks.sync_provider_cost_data': {'queue': 'cost_sync'},
-            'backend.core.tasks.sync_all_providers_cost_data': {'queue': 'cost_sync'},
-            'backend.core.tasks.discover_provider_resources': {'queue': 'resource_discovery'},
-            'backend.core.tasks.discover_all_resources': {'queue': 'resource_discovery'},
-            'backend.core.tasks.monitor_budget': {'queue': 'monitoring'},
-            'backend.core.tasks.monitor_all_budgets': {'queue': 'monitoring'},
-            'backend.core.tasks.analyze_optimization_opportunities': {'queue': 'analysis'},
-            'backend.core.tasks.detect_cost_anomalies': {'queue': 'analysis'},
-            'backend.core.tasks.cleanup_old_data': {'queue': 'maintenance'},
+            'core.tasks.sync_provider_cost_data': {'queue': 'cost_sync'},
+            'core.tasks.sync_all_providers_cost_data': {'queue': 'cost_sync'},
+            'core.tasks.discover_provider_resources': {'queue': 'resource_discovery'},
+            'core.tasks.discover_all_resources': {'queue': 'resource_discovery'},
+            'core.tasks.monitor_budget': {'queue': 'monitoring'},
+            'core.tasks.monitor_all_budgets': {'queue': 'monitoring'},
+            'core.tasks.analyze_optimization_opportunities': {'queue': 'analysis'},
+            'core.tasks.detect_cost_anomalies': {'queue': 'analysis'},
+            'core.tasks.cleanup_old_data': {'queue': 'maintenance'},
             # Multi-cloud pricing update tasks
-            'backend.tasks.pricing_update_tasks.update_aws_pricing': {'queue': 'pricing_updates'},
-            'backend.tasks.pricing_update_tasks.update_gcp_pricing': {'queue': 'pricing_updates'},
-            'backend.tasks.pricing_update_tasks.update_azure_pricing': {'queue': 'pricing_updates'},
-            'backend.tasks.pricing_update_tasks.update_all_provider_pricing': {'queue': 'pricing_updates'},
-            'backend.tasks.pricing_update_tasks.detect_pricing_changes': {'queue': 'pricing_analysis'},
-            'backend.tasks.pricing_update_tasks.validate_pricing_data': {'queue': 'pricing_analysis'},
+            'tasks.pricing_update_tasks.update_aws_pricing': {'queue': 'pricing_updates'},
+            'tasks.pricing_update_tasks.update_gcp_pricing': {'queue': 'pricing_updates'},
+            'tasks.pricing_update_tasks.update_azure_pricing': {'queue': 'pricing_updates'},
+            'tasks.pricing_update_tasks.update_all_provider_pricing': {'queue': 'pricing_updates'},
+            'tasks.pricing_update_tasks.detect_pricing_changes': {'queue': 'pricing_analysis'},
+            'tasks.pricing_update_tasks.validate_pricing_data': {'queue': 'pricing_analysis'},
         },
         
         # Define queues
@@ -89,42 +89,42 @@ def create_celery_app() -> Celery:
         beat_schedule={
             # Sync cost data every 6 hours
             'sync-cost-data': {
-                'task': 'backend.core.tasks.sync_all_providers_cost_data',
+                'task': 'core.tasks.sync_all_providers_cost_data',
                 'schedule': 6 * 60 * 60,  # 6 hours in seconds
                 'options': {'queue': 'cost_sync'}
             },
             
             # Monitor budgets every hour
             'monitor-budgets': {
-                'task': 'backend.core.tasks.monitor_all_budgets',
+                'task': 'core.tasks.monitor_all_budgets',
                 'schedule': 60 * 60,  # 1 hour in seconds
                 'options': {'queue': 'monitoring'}
             },
             
             # Discover resources daily at 2 AM UTC
             'discover-resources': {
-                'task': 'backend.core.tasks.discover_all_resources',
+                'task': 'core.tasks.discover_all_resources',
                 'schedule': 24 * 60 * 60,  # Daily
                 'options': {'queue': 'resource_discovery'}
             },
             
             # Generate optimization recommendations daily at 3 AM UTC
             'optimization-analysis': {
-                'task': 'backend.core.tasks.analyze_optimization_opportunities',
+                'task': 'core.tasks.analyze_optimization_opportunities',
                 'schedule': 24 * 60 * 60,  # Daily
                 'options': {'queue': 'analysis'}
             },
             
             # Detect anomalies every 4 hours
             'anomaly-detection': {
-                'task': 'backend.core.tasks.detect_cost_anomalies',
+                'task': 'core.tasks.detect_cost_anomalies',
                 'schedule': 4 * 60 * 60,  # 4 hours in seconds
                 'options': {'queue': 'analysis'}
             },
             
             # Cleanup old data weekly (every 7 days)
             'cleanup-old-data': {
-                'task': 'backend.core.tasks.cleanup_old_data',
+                'task': 'core.tasks.cleanup_old_data',
                 'schedule': 7 * 24 * 60 * 60,  # Weekly
                 'options': {'queue': 'maintenance'}
             },
@@ -132,21 +132,21 @@ def create_celery_app() -> Celery:
             # Multi-cloud pricing update tasks
             # Update all provider pricing daily at 1 AM UTC
             'update-all-pricing': {
-                'task': 'backend.tasks.pricing_update_tasks.update_all_provider_pricing',
+                'task': 'tasks.pricing_update_tasks.update_all_provider_pricing',
                 'schedule': 24 * 60 * 60,  # Daily
                 'options': {'queue': 'pricing_updates'}
             },
             
             # Detect pricing changes every 6 hours
             'detect-pricing-changes': {
-                'task': 'backend.tasks.pricing_update_tasks.detect_pricing_changes',
+                'task': 'tasks.pricing_update_tasks.detect_pricing_changes',
                 'schedule': 6 * 60 * 60,  # 6 hours in seconds
                 'options': {'queue': 'pricing_analysis'}
             },
             
             # Validate pricing data daily at 4 AM UTC
             'validate-pricing-data': {
-                'task': 'backend.tasks.pricing_update_tasks.validate_pricing_data',
+                'task': 'tasks.pricing_update_tasks.validate_pricing_data',
                 'schedule': 24 * 60 * 60,  # Daily
                 'options': {'queue': 'pricing_analysis'}
             },
@@ -180,7 +180,7 @@ def create_celery_app() -> Celery:
 celery_app = create_celery_app()
 
 # Auto-discover tasks
-celery_app.autodiscover_tasks(['backend.core', 'backend.tasks'])
+celery_app.autodiscover_tasks(['core', 'tasks'])
 
 if __name__ == '__main__':
     celery_app.start()

@@ -12,13 +12,13 @@ from dataclasses import dataclass
 from enum import Enum
 import structlog
 
-from backend.app.services.startup_migration.models import CostData, AuditLog, BudgetAlert, OptimizationRecommendation
-from backend.app.services.repositories import (
+from app.services.startup_migration.models import CostData, AuditLog, BudgetAlert, OptimizationRecommendation
+from app.services.repositories import (
     CostDataRepository, AuditLogRepository, BudgetAlertRepository, 
     OptimizationRecommendationRepository, SystemConfigurationRepository
 )
-from backend.app.utils.cache_service import CacheService
-from backend.app.utils.logging_service import LoggingService
+from app.utils.cache_service import CacheService
+from app.utils.logging_service import LoggingService
 
 logger = structlog.get_logger(__name__)
 

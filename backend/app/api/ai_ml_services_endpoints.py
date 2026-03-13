@@ -16,20 +16,20 @@ from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks, U
 from pydantic import BaseModel, Field
 import structlog
 
-from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.core.exceptions import AIServiceError, ModelNotFoundError, ValidationException
+from app.core.auth import get_current_user
+from app.services.startup_migration.models import User
+from app.core.exceptions import AIServiceError, ModelNotFoundError, ValidationException
 
 # Import AI/ML components
-from backend.app.services.predictive_scaling_engine import PredictiveScalingEngine, ForecastHorizon, ScalingActionType
-from backend.app.ml.workload_intelligence_system import WorkloadIntelligenceSystem, WorkloadProfile, PlacementRecommendation
-from backend.app.services.natural_language_interface import get_natural_language_interface, QueryResponse, ConversationContext
-from backend.app.ml.ml_model_manager import ModelManager, ModelStatus
-from backend.app.services.ai_orchestrator import AIOrchestrator
-from backend.app.ml.graph_neural_network_system import GraphNeuralNetworkSystem
-from backend.app.ml.predictive_maintenance_system import PredictiveMaintenanceSystem
-from backend.app.optimizers.smart_contract_optimizer import SmartContractOptimizer
-from backend.app.ml.reinforcement_learning_agent import ReinforcementLearningAgent
+from app.services.predictive_scaling_engine import PredictiveScalingEngine, ForecastHorizon, ScalingActionType
+from app.ml.workload_intelligence_system import WorkloadIntelligenceSystem, WorkloadProfile, PlacementRecommendation
+from app.services.natural_language_interface import get_natural_language_interface, QueryResponse, ConversationContext
+from app.ml.ml_model_manager import ModelManager, ModelStatus
+from app.services.ai_orchestrator import AIOrchestrator
+from app.ml.graph_neural_network_system import GraphNeuralNetworkSystem
+from app.ml.predictive_maintenance_system import PredictiveMaintenanceSystem
+from app.optimizers.smart_contract_optimizer import SmartContractOptimizer
+from app.ml.reinforcement_learning_agent import ReinforcementLearningAgent
 
 logger = structlog.get_logger(__name__)
 
@@ -49,7 +49,7 @@ def get_predictive_scaling_engine() -> PredictiveScalingEngine:
     """Get or create predictive scaling engine instance"""
     global _predictive_scaling_engine
     if _predictive_scaling_engine is None:
-        from backend.app.services.safety_checker import SafetyChecker
+        from app.services.safety_checker import SafetyChecker
         _predictive_scaling_engine = PredictiveScalingEngine(SafetyChecker())
     return _predictive_scaling_engine
 

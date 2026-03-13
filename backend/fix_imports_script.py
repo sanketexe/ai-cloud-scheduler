@@ -10,11 +10,11 @@ for filename in os.listdir(directory):
             content = f.read()
         
         # 1. Replace MigrationProject and other advisor models imports
-        # Case: from backend.app.services.startup_migration.models import ( ... )
+        # Case: from app.services.startup_migration.models import ( ... )
         # Using a regex to capture the block and deciding if it contains User or not.
         
         # Strategy: 
-        # Replace `from backend.app.services.startup_migration.models import` with `from .models import` 
+        # Replace `from app.services.startup_migration.models import` with `from .models import` 
         # BUT check if `User` is in the list. If so, split it.
         
         # Regex for multi-line import
@@ -42,14 +42,14 @@ for filename in os.listdir(directory):
             
             if other_models:
                 if res: res += "\n"
-                res += f"from backend.app.models.models import {', '.join(other_models)}"
+                res += f"from app.models.models import {', '.join(other_models)}"
             
             return res
 
         new_content = re.sub(pattern, replace_import_block, content, flags=re.DOTALL)
         
         # 2. Single line imports
-        # pattern: from backend.app.services.startup_migration.models import X, Y
+        # pattern: from app.services.startup_migration.models import X, Y
         pattern_single = r"from backend\.app\.services\.startup_migration\.models import (.*)"
         
         def replace_single_line(match):
@@ -78,7 +78,7 @@ for filename in os.listdir(directory):
                 res += f"from .models import {', '.join(advisor_models)}"
             if other_models:
                 if res: res += "\n"
-                res += f"from backend.app.models.models import {', '.join(other_models)}"
+                res += f"from app.models.models import {', '.join(other_models)}"
             return res
 
         # Apply single line replacement carefully (ignoring checks we already did)

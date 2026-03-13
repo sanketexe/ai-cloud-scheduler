@@ -15,14 +15,14 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db_session
-from backend.app.services.startup_migration.models import User
-from backend.app.services.approval_workflow_engine import (
+from app.database.database import get_db_session
+from app.services.startup_migration.models import User
+from app.services.approval_workflow_engine import (
     workflow_engine, OptimizationAction, DecisionContext, 
     ApprovalDecision, Priority, EscalationReason
 )
-from backend.app.services.decision_tracking_system import decision_tracker, notification_service, NotificationType
-from backend.app.core.auth import get_current_user
+from app.services.decision_tracking_system import decision_tracker, notification_service, NotificationType
+from app.core.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 

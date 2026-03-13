@@ -24,8 +24,8 @@ from ..ml.ai_training_deployment_pipeline import (
     ModelMetrics,
     DriftDetectionResult
 )
-from backend.app.core.auth import get_current_user
-from backend.app.database.database import get_db_session
+from app.core.auth import get_current_user
+from app.database.database import get_db_session
 
 logger = logging.getLogger(__name__)
 

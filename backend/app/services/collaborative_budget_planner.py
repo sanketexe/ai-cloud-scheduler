@@ -18,15 +18,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.database.database import get_db_session
-from backend.app.models.collaboration_models import (
+from app.database.database import get_db_session
+from app.models.collaboration_models import (
     CollaborativeSession, SessionParticipant, ParticipantRole, ParticipantStatus
 )
-from backend.app.services.collaborative_session_manager import session_manager
-from backend.app.services.state_synchronization import sync_engine, SyncEvent, SyncEventType
-from backend.app.services.operational_transformation import Operation, OperationType, ot_engine
-from backend.app.services.budget_management_system import Budget, BudgetPeriod, BudgetDimension
-from backend.app.core.redis_config import redis_manager
+from app.services.collaborative_session_manager import session_manager
+from app.services.state_synchronization import sync_engine, SyncEvent, SyncEventType
+from app.services.operational_transformation import Operation, OperationType, ot_engine
+from app.services.budget_management_system import Budget, BudgetPeriod, BudgetDimension
+from app.core.redis_config import redis_manager
 
 logger = logging.getLogger(__name__)
 

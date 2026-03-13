@@ -14,11 +14,11 @@ import structlog
 import hashlib
 import json
 
-from backend.app.services.startup_migration.models import CostData, CloudProvider, ProviderType
-from backend.app.services.repositories import CostDataRepository, CloudProviderRepository
-from backend.app.utils.cache_service import CacheService
-from backend.app.utils.logging_service import LoggingService
-from backend.app.core.exceptions import ValidationException, DataProcessingException
+from app.services.startup_migration.models import CostData, CloudProvider, ProviderType
+from app.services.repositories import CostDataRepository, CloudProviderRepository
+from app.utils.cache_service import CacheService
+from app.utils.logging_service import LoggingService
+from app.core.exceptions import ValidationException, DataProcessingException
 
 logger = structlog.get_logger(__name__)
 

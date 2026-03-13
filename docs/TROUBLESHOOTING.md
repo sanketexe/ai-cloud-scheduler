@@ -270,7 +270,7 @@ This guide covers common issues, their causes, and solutions for the AWS FinOps 
 ### Issue: Backend won't start
 
 **Symptoms**:
-- `python start_backend.py` fails
+- `python start_py` fails
 - Import errors
 - Port already in use
 
@@ -305,7 +305,7 @@ This guide covers common issues, their causes, and solutions for the AWS FinOps 
 
 4. **Check for errors**:
    ```bash
-   python start_backend.py
+   python start_py
    ```
    Read error messages carefully
 
@@ -483,14 +483,14 @@ This guide covers common issues, their causes, and solutions for the AWS FinOps 
 **Solutions**:
 
 1. **Check backend logs**:
-   - Look at terminal running `start_backend.py`
+   - Look at terminal running `start_py`
    - Find stack trace and error message
 
 2. **Common fixes**:
    ```bash
    # Restart backend
    # Ctrl+C to stop
-   python start_backend.py
+   python start_py
    ```
 
 3. **Check database connection**:
@@ -707,7 +707,7 @@ This guide covers common issues, their causes, and solutions for the AWS FinOps 
    ```python
    # In Python console
    from datetime import datetime
-   from backend.core.budget_management_system import BudgetManager
+   from core.budget_management_system import BudgetManager
    
    manager = BudgetManager()
    utilization = manager.get_budget_utilization(budget_id)
@@ -763,7 +763,7 @@ If your issue isn't covered here:
 2. **Collect logs**:
    ```bash
    # Backend logs
-   python start_backend.py > backend.log 2>&1
+   python start_py > log 2>&1
    
    # Frontend logs
    cd frontend

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import datetime
 
-from backend.app.services.startup_migration.models import (
+from app.services.startup_migration.models import (
     StartupMigrationProject,
     StartupDatabaseAssessment,
     ProjectStatus

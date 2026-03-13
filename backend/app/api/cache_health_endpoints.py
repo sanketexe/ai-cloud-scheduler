@@ -8,10 +8,10 @@ performance metrics, and system status.
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 import structlog
-from backend.app.core.redis_config import redis_manager
-from backend.app.utils.cache_service import cache_service
-from backend.app.utils.performance_monitor import performance_monitor
-from backend.app.utils.cache_invalidation import invalidation_engine
+from app.core.redis_config import redis_manager
+from app.utils.cache_service import cache_service
+from app.utils.performance_monitor import performance_monitor
+from app.utils.cache_invalidation import invalidation_engine
 
 logger = structlog.get_logger(__name__)
 
