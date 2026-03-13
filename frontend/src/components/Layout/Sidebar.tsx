@@ -24,6 +24,7 @@ import {
   Assessment as ReportsIcon,
   FlightTakeoff as MigrationIcon,
   Home as HomeIcon,
+  AutoMode as AutoScaleIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 280;
@@ -50,6 +51,7 @@ const menuSections: MenuSection[] = [
     label: 'Intelligence',
     items: [
       { text: 'Smart Scheduler', icon: <SchedulerIcon />, path: '/scheduler' },
+      { text: 'Auto-Scaling Rules', icon: <AutoScaleIcon />, path: '/scaling-rules' },
       { text: 'Optimization', icon: <OptimizationIcon />, path: '/optimization' },
     ],
   },

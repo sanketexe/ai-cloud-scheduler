@@ -23,6 +23,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Alerts = lazy(() => import('./pages/Alerts'));
 const Compliance = lazy(() => import('./pages/Compliance'));
 const SchedulerDashboard = lazy(() => import('./pages/SchedulerDashboard'));
+const ScalingRules = lazy(() => import('./pages/ScalingRules'));
 const Home = lazy(() => import('./pages/Home'));
 const MigrationWizard = lazy(() => import('./pages/MigrationWizard'));
 const MigrationResults = lazy(() => import('./pages/MigrationResults'));
@@ -142,6 +143,7 @@ function App() {
                   {/* Dashboard Routes */}
                   <Route path="/dashboard" element={<PageLayout><Dashboard /></PageLayout>} />
                   <Route path="/scheduler" element={<PageLayout><SchedulerDashboard /></PageLayout>} />
+                  <Route path="/scaling-rules" element={<PageLayout><ScalingRules /></PageLayout>} />
                   <Route path="/cost-analysis" element={<PageLayout><CostAnalysis /></PageLayout>} />
                   <Route path="/budgets" element={<PageLayout><BudgetManagement /></PageLayout>} />
                   <Route path="/optimization" element={<PageLayout><Optimization /></PageLayout>} />

@@ -19,9 +19,9 @@ import uvicorn
 import structlog
 
 # Import our core modules
-from backend.core.database import db_config, database_health_check
-from backend.core.auth_endpoints import auth_router
-from backend.core.models import Base
+from backend.app.database.database import db_config, database_health_check
+from backend.app.api.auth_endpoints import auth_router
+from backend.app.services.startup_migration.models import Base
 
 # Configure structured logging
 structlog.configure(
@@ -63,7 +63,7 @@ async def lifespan(app: FastAPI):
         
         # Initialize Redis connection
         logger.info("Initializing Redis connection")
-        from backend.core.redis_config import redis_manager
+        from backend.app.core.redis_config import redis_manager
         redis_health = await redis_manager.health_check()
         if redis_health["status"] == "healthy":
             logger.info("Redis connection established successfully")
@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
         
         # Initialize webhook system
         logger.info("Initializing webhook system")
-        from backend.core.webhook_integration import start_webhook_system
+        from backend.app.services.webhook_integration import start_webhook_system
         await start_webhook_system()
         logger.info("Webhook system started successfully")
         
@@ -92,7 +92,7 @@ async def lifespan(app: FastAPI):
     
     # Close Redis connections
     try:
-        from backend.core.redis_config import redis_manager
+        from backend.app.core.redis_config import redis_manager
         await redis_manager.close_connections()
         logger.info("Redis connections closed")
     except Exception as e:
@@ -100,7 +100,7 @@ async def lifespan(app: FastAPI):
     
     # Stop webhook system
     try:
-        from backend.core.webhook_integration import stop_webhook_system
+        from backend.app.services.webhook_integration import stop_webhook_system
         await stop_webhook_system()
         logger.info("Webhook system stopped")
     except Exception as e:
@@ -244,12 +244,12 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     )
 
 # Import additional routers
-from backend.core.cloud_endpoints import cloud_router
-# from backend.core.task_endpoints import router as task_router  # TODO: Fix import errors
-from backend.core.cache_health_endpoints import router as cache_health_router
-from backend.core.health_endpoints import router as health_router
-from backend.core.ai_assistant_endpoints import router as ai_assistant_router
-# from backend.core.natural_language_endpoints import router as nlp_router  # Temporarily disabled due to TensorFlow dependency
+from backend.app.api.cloud_endpoints import cloud_router
+# from backend.app.api.task_endpoints import router as task_router  # TODO: Fix import errors
+from backend.app.api.cache_health_endpoints import router as cache_health_router
+from backend.app.api.health_endpoints import router as health_router
+from backend.app.api.ai_assistant_endpoints import router as ai_assistant_router
+# from backend.app.api.natural_language_endpoints import router as nlp_router  # Temporarily disabled due to TensorFlow dependency
 from backend.core.migration_advisor.assessment_endpoints import router as assessment_router
 from backend.core.migration_advisor.requirements_endpoints import router as requirements_router
 from backend.core.migration_advisor.recommendation_endpoints import router as recommendation_router
@@ -258,26 +258,27 @@ from backend.core.migration_advisor.resource_organization_endpoints import route
 from backend.core.migration_advisor.dimensional_management_endpoints import router as dimensional_router
 from backend.core.migration_advisor.integration_endpoints import router as integration_router
 from backend.core.migration_advisor.report_endpoints import router as report_router
-from backend.core.aws_cost_endpoints import router as aws_cost_router
-from backend.core.aws_cost_alerts_endpoints import router as aws_cost_alerts_router
-from backend.core.webhook_endpoints import router as webhook_router
-from backend.core.automation_endpoints import router as automation_router
-from backend.api.anomaly_detection import router as anomaly_detection_router
-from backend.api.multi_cloud import router as multi_cloud_router
-from backend.core.graph_neural_network_endpoints import router as gnn_router
-# from backend.core.ml_model_management_endpoints import router as ml_model_router  # Temporarily disabled - missing mlflow
-# from backend.core.ai_orchestrator_endpoints import router as ai_orchestrator_router  # Temporarily disabled - TensorFlow dependency
-# from backend.core.ai_ml_services_endpoints import router as ai_ml_services_router  # Temporarily disabled - TensorFlow dependency
-# from backend.core.rl_optimization_endpoints import router as rl_optimization_router  # Temporarily disabled - import error
-# from backend.core.smart_contract_optimizer_endpoints import router as smart_contract_router  # Temporarily disabled - import error
-from backend.core.ai_services_documentation import router as ai_services_docs_router
-from backend.core.ai_system_monitoring_endpoints import router as ai_monitoring_router
-from backend.core.collaboration_endpoints import router as collaboration_router
-from backend.core.communication_endpoints import router as communication_router
-from backend.core.video_endpoints import router as video_router
-from backend.api.onboarding import router as onboarding_router
-from backend.core.api_logging_endpoints import router as api_logging_router
-from backend.core.scheduler_endpoints import router as scheduler_router
+from backend.app.api.aws_cost_endpoints import router as aws_cost_router
+from backend.app.api.aws_cost_alerts_endpoints import router as aws_cost_alerts_router
+from backend.app.api.webhook_endpoints import router as webhook_router
+from backend.app.api.automation_endpoints import router as automation_router
+from backend.app.api.anomaly_detection import router as anomaly_detection_router
+from backend.app.api.multi_cloud import router as multi_cloud_router
+from backend.app.api.graph_neural_network_endpoints import router as gnn_router
+# from backend.app.api.ml_model_management_endpoints import router as ml_model_router  # Temporarily disabled - missing mlflow
+# from backend.app.api.ai_orchestrator_endpoints import router as ai_orchestrator_router  # Temporarily disabled - TensorFlow dependency
+# from backend.app.api.ai_ml_services_endpoints import router as ai_ml_services_router  # Temporarily disabled - TensorFlow dependency
+# from backend.app.api.rl_optimization_endpoints import router as rl_optimization_router  # Temporarily disabled - import error
+# from backend.app.api.smart_contract_optimizer_endpoints import router as smart_contract_router  # Temporarily disabled - import error
+from backend.app.services.ai_services_documentation import router as ai_services_docs_router
+from backend.app.api.ai_system_monitoring_endpoints import router as ai_monitoring_router
+from backend.app.api.collaboration_endpoints import router as collaboration_router
+from backend.app.api.communication_endpoints import router as communication_router
+from backend.app.api.video_endpoints import router as video_router
+from backend.app.api.onboarding import router as onboarding_router
+from backend.app.api.api_logging_endpoints import router as api_logging_router
+from backend.app.api.scheduler_endpoints import router as scheduler_router
+from backend.app.api.scaling_rules_endpoints import router as scaling_rules_router
 
 # Include routers
 app.include_router(auth_router, prefix="/api/v1")
@@ -315,6 +316,7 @@ app.include_router(video_router, prefix="/api/v1")
 app.include_router(onboarding_router, prefix="/api/v1")
 app.include_router(api_logging_router)
 app.include_router(scheduler_router, prefix="/api")
+app.include_router(scaling_rules_router, prefix="/api/v1")
 
 # Root endpoints
 @app.get("/")
@@ -336,7 +338,7 @@ async def health_check():
         db_health = await database_health_check()
         
         # Check Redis
-        from backend.core.redis_config import redis_manager
+        from backend.app.core.redis_config import redis_manager
         redis_health = await redis_manager.health_check()
         
         # Overall health
