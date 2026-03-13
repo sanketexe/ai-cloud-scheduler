@@ -139,100 +139,123 @@ class AWSCollector:
             "create_time": volume["CreateTime"].isoformat()
         }
 
-    def get_cloudwatch_metrics(
-        self, 
-        namespace: str, 
-        metric_name: str, 
-        dimensions: List[Dict[str, str]], 
-        start_time: datetime, 
-        end_time: datetime,
-        period: int = 300,
-        stat: str = "Average"
-    ) -> List[Dict[str, Any]]:
+    def collect_ec2_metrics(self, instance_ids: List[str], days: int = 7) -> Dict[str, Dict[str, Any]]:
         """
-        Fetch metrics from CloudWatch.
-        
-        :param namespace: AWS/EC2, AWS/EBS, etc.
-        :param metric_name: CPUUtilization, etc.
-        :param dimensions: List of dimensions like [{'Name': 'InstanceId', 'Value': 'i-123'}]
-        :param start_time: datetime object
-        :param end_time: datetime object
-        :param period: Granularity in seconds (default 5 mins)
-        :param stat: Statistic to fetch (Average, Sum, Maximum)
-        """
-        try:
-            response = self.cloudwatch.get_metric_statistics(
-                Namespace=namespace,
-                MetricName=metric_name,
-                Dimensions=dimensions,
-                StartTime=start_time,
-                EndTime=end_time,
-                Period=period,
-                Statistics=[stat]
-            )
-            # Sort datapoints by timestamp
-            datapoints = sorted(response["Datapoints"], key=lambda x: x["Timestamp"])
-            return datapoints
-        except ClientError as e:
-            logger.warning(f"Failed to fetch metric {metric_name}: {e}")
-            return []
-
-    def collect_ec2_metrics(
-        self, 
-        instance_ids: List[str], 
-        days: int = 7
-    ) -> Dict[str, Dict[str, List[Dict]]]:
-        """
-        Batch collect metrics for multiple instances (CPU, Network).
+        Batch collect EC2 metrics for multiple instances.
         
         :param instance_ids: List of instance IDs
-        :param days: Number of past days to fetch
+        :param days: Number of past days to fetch (default 7)
+        :return: Nested dict {instance_id: {metric_name: [datapoints]}}
         """
-        end_time = datetime.utcnow()
-        start_time = end_time - timedelta(days=days)
-        metrics_data = {}
+        metrics_config = [
+            ("CPUUtilization", "AWS/EC2", "Average"),
+            ("NetworkIn", "AWS/EC2", "Average"),
+            ("NetworkOut", "AWS/EC2", "Average")
+        ]
+        return self._batch_get_metrics(
+            resource_ids=instance_ids,
+            id_dimension="InstanceId",
+            metrics_config=metrics_config,
+            days=days
+        )
 
-        for instance_id in instance_ids:
-            metrics_data[instance_id] = {}
-            for metric in ["CPUUtilization", "NetworkIn", "NetworkOut"]:
-                data = self.get_cloudwatch_metrics(
-                    namespace="AWS/EC2",
-                    metric_name=metric,
-                    dimensions=[{"Name": "InstanceId", "Value": instance_id}],
-                    start_time=start_time,
-                    end_time=end_time
-                )
-                metrics_data[instance_id][metric] = data
-        
-        return metrics_data
-
-    def collect_ebs_metrics(
-        self, 
-        volume_ids: List[str], 
-        days: int = 7
-    ) -> Dict[str, Dict[str, List[Dict]]]:
+    def collect_ebs_metrics(self, volume_ids: List[str], days: int = 7) -> Dict[str, Dict[str, Any]]:
         """
-        Batch collect metrics for multiple volumes (Read/Write Ops).
+        Batch collect EBS metrics for multiple volumes.
         
         :param volume_ids: List of volume IDs
-        :param days: Number of past days to fetch
+        :param days: Number of past days to fetch (default 7)
+        :return: Nested dict {volume_id: {metric_name: [datapoints]}}
         """
+        metrics_config = [
+            ("VolumeReadOps", "AWS/EBS", "Sum"),
+            ("VolumeWriteOps", "AWS/EBS", "Sum")
+        ]
+        return self._batch_get_metrics(
+            resource_ids=volume_ids,
+            id_dimension="VolumeId",
+            metrics_config=metrics_config,
+            days=days
+        )
+
+    def _batch_get_metrics(
+        self,
+        resource_ids: List[str],
+        id_dimension: str,
+        metrics_config: List[tuple],
+        days: int
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Helper to fetch metrics in batches using CloudWatch GetMetricData.
+        Handles query construction, batching, and result parsing.
+        """
+        results = {rid: {} for rid in resource_ids}
         end_time = datetime.utcnow()
         start_time = end_time - timedelta(days=days)
-        metrics_data = {}
+        
+        # Max 500 queries per GetMetricData call
+        # Each resource has N metrics, so batch_size = floor(500 / N)
+        metrics_per_resource = len(metrics_config)
+        if metrics_per_resource == 0:
+            return results
+            
+        batch_size = 500 // metrics_per_resource
+        
+        for i in range(0, len(resource_ids), batch_size):
+            batch_ids = resource_ids[i:i + batch_size]
+            queries = []
+            query_map = {} # query_id -> (resource_id, metric_name)
+            
+            for idx, rid in enumerate(batch_ids):
+                # Construct unique query IDs for this batch call
+                # Format: q_{resource_index}_{metric_index}
+                for m_idx, (metric_name, namespace, stat) in enumerate(metrics_config):
+                    query_id = f"q_{idx}_{m_idx}" 
+                    query_map[query_id] = (rid, metric_name)
+                    
+                    queries.append({
+                        "Id": query_id,
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": namespace,
+                                "MetricName": metric_name,
+                                "Dimensions": [{"Name": id_dimension, "Value": rid}]
+                            },
+                            "Period": 3600, # 1 hour aggregation
+                            "Stat": stat,
+                        },
+                        "ReturnData": True
+                    })
+            
+            if not queries:
+                continue
 
-        for volume_id in volume_ids:
-            metrics_data[volume_id] = {}
-            # EBS metrics: VolumeReadOps, VolumeWriteOps
-            for metric in ["VolumeReadOps", "VolumeWriteOps"]:
-                data = self.get_cloudwatch_metrics(
-                    namespace="AWS/EBS",
-                    metric_name=metric,
-                    dimensions=[{"Name": "VolumeId", "Value": volume_id}],
-                    start_time=start_time,
-                    end_time=end_time,
-                    stat="Sum" # Ops are counts, so Sum makes sense usually
-                )
-                metrics_data[volume_id][metric] = data
-                
-        return metrics_data
+            try:
+                paginator = self.cloudwatch.get_paginator('get_metric_data')
+                # get_metric_data paginator handles "NextToken" automatically
+                for page in paginator.paginate(
+                    MetricDataQueries=queries,
+                    StartTime=start_time,
+                    EndTime=end_time
+                ):
+                    for metric_data in page["MetricDataResults"]:
+                        qid = metric_data["Id"]
+                        if qid in query_map:
+                            rid, m_name = query_map[qid]
+                            
+                            datapoints = []
+                            if "Timestamps" in metric_data and "Values" in metric_data:
+                                for t, v in zip(metric_data["Timestamps"], metric_data["Values"]):
+                                    datapoints.append({
+                                        "Timestamp": t.isoformat(),
+                                        "Value": v
+                                    })
+                            
+                            # Sort by timestamp to ensure time-series order
+                            datapoints.sort(key=lambda x: x["Timestamp"])
+                            results[rid][m_name] = datapoints
+
+            except ClientError as e:
+                logger.error(f"Failed to fetch batch metrics for batch starting at index {i}: {e}")
+        
+        return results

@@ -62,9 +62,9 @@ class StartupMigrationProject(Base):
         return f"<StartupMigrationProject(company='{self.company_name}', status='{self.status}')>"
 
 
-class DatabaseAssessment(Base):
+class StartupDatabaseAssessment(Base):
     """Database assessment information"""
-    __tablename__ = "database_assessments"
+    __tablename__ = "startup_database_assessments"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("startup_migration_projects.id"), nullable=False)
@@ -111,9 +111,9 @@ class DatabaseAssessment(Base):
         return f"<DatabaseAssessment(type='{self.database_type}', size={self.database_size_gb}GB)>"
 
 
-class CloudRecommendation(Base):
+class StartupCloudRecommendation(Base):
     """Cloud provider recommendation with pricing"""
-    __tablename__ = "cloud_recommendations"
+    __tablename__ = "startup_cloud_recommendations"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("startup_migration_projects.id"), nullable=False)
@@ -163,9 +163,9 @@ class CloudRecommendation(Base):
         return f"<CloudRecommendation(provider='{self.provider}', score={self.overall_score})>"
 
 
-class MigrationPlan(Base):
+class StartupMigrationPlan(Base):
     """Migration plan with timeline and checklist"""
-    __tablename__ = "migration_plans"
+    __tablename__ = "startup_migration_plans"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("startup_migration_projects.id"), nullable=False)
@@ -208,9 +208,9 @@ class MigrationPlan(Base):
         return f"<MigrationPlan(provider='{self.selected_provider}', weeks={self.timeline_weeks})>"
 
 
-class FinOpsIntegration(Base):
+class StartupFinOpsIntegration(Base):
     """FinOps platform integration configuration"""
-    __tablename__ = "finops_integrations"
+    __tablename__ = "startup_finops_integrations"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("startup_migration_projects.id"), nullable=False)
@@ -245,3 +245,43 @@ class FinOpsIntegration(Base):
     
     def __repr__(self):
         return f"<FinOpsIntegration(org='{self.organization_name}', budget=${self.monthly_budget})>"
+
+# Re-export models for compatibility with migration_advisor module
+try:
+    from backend.app.services.migration_advisor.migration_advisor.models import (
+        MigrationProject,
+        MigrationStatus,
+        OrganizationProfile,
+        CompanySize,
+        InfrastructureType,
+        ExperienceLevel,
+        WorkloadProfile,
+        PerformanceRequirements,
+        ComplianceRequirements,
+        BudgetConstraints,
+        TechnicalRequirements,
+        ProviderEvaluation,
+        RecommendationReport,
+        MigrationPlan,
+        MigrationPhase,
+        CategorizedResource,
+        OrganizationalStructure
+    )
+    from backend.app.models.models import (
+        User,
+        CostData,
+        Budget,
+        BudgetAlert,
+        OptimizationRecommendation,
+        AuditLog,
+        SystemConfiguration,
+        UserRole,
+        ProviderType,
+        BudgetType,
+        RecommendationType,
+        RecommendationStatus,
+        BaseModel,
+        CloudProvider,
+    )
+except ImportError:
+    pass

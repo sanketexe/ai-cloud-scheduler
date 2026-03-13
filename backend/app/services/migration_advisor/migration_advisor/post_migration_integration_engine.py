@@ -14,7 +14,7 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from backend.app.services.startup_migration.models import (
+from .models import (
     MigrationProject,
     OrganizationalStructure,
     CategorizedResource,
@@ -24,12 +24,7 @@ from backend.app.services.startup_migration.models import (
 )
 # Note: CostCenter, Alert, Tag models don't exist in core.models
 # These are created as dictionaries in the integration logic
-# from backend.app.services.startup_migration.models import (
-#     CostCenter,
-#     Budget,
-#     Alert,
-#     Tag
-# )
+# 
 
 logger = logging.getLogger(__name__)
 

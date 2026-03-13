@@ -12,11 +12,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 import structlog
 
-from backend.app.services.startup_migration.models import (
-    MigrationProject, OrganizationProfile, MigrationStatus,
-    CompanySize, InfrastructureType, ExperienceLevel
+from .models import (
+    MigrationProject,
+    OrganizationProfile,
+    MigrationStatus,
+    CompanySize,
+    InfrastructureType,
+    ExperienceLevel
 )
-from backend.app.services.startup_migration.models import User
+from backend.app.models.models import User
 
 logger = structlog.get_logger(__name__)
 

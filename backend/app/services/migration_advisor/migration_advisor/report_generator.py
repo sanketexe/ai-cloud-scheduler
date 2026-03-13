@@ -15,8 +15,8 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from backend.app.services.startup_migration.models import (
-    MigrationProject, 
+from .models import (
+    MigrationProject,
     RecommendationReport as DBRecommendationReport,
     ProviderEvaluation,
     OrganizationProfile,

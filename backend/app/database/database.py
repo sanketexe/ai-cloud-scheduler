@@ -10,13 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 import structlog
 
 logger = structlog.get_logger(__name__)
 
 # Base class for all models
 Base = declarative_base()
-
+print("DB_url",os.getenv("DATABASE_URL"))
 # Metadata for migrations
 metadata = MetaData()
 

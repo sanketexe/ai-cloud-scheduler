@@ -4,6 +4,7 @@ Celery Configuration for FinOps Platform
 
 import os
 from celery import Celery
+from celery.schedules import crontab
 from kombu import Queue
 
 def create_celery_app() -> Celery:
@@ -160,6 +161,19 @@ def create_celery_app() -> Celery:
         worker_log_color=False,
     )
     
+
+    # Schedule
+    celery_app.conf.beat_schedule = {
+        "collect-aws-metrics-every-6-hours": {
+            "task": "app.workers.aws_tasks.collect_aws_metrics",
+            "schedule": crontab(minute=0, hour='*/6'),
+        },
+        "run-resource-optimizer-every-6-hours": {
+            "task": "app.workers.aws_tasks.run_resource_optimizer",
+            "schedule": crontab(minute=30, hour='*/6'),
+        },
+    }
+
     return celery_app
 
 # Create the Celery app instance

@@ -18,7 +18,7 @@ from backend.app.core.exceptions import (
     ExternalServiceException,
     ResourceNotFoundException,
 )
-from backend.app.services.startup_migration.models import MigrationProject, MigrationPhase
+from .models import MigrationProject, MigrationPhase
 
 
 logger = logging.getLogger(__name__)

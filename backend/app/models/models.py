@@ -338,6 +338,8 @@ class AnomalyEvent(BaseModel):
     event_id = Column(String(255), unique=True, nullable=False, index=True)
     account_id = Column(String(100), nullable=False, index=True)
     detection_time = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    # Backwards-compatible alias used by older code: `detected_at`
+    detected_at = detection_time
     anomaly_type = Column(Enum(AnomalyType), nullable=False)
     service = Column(String(100), nullable=False, index=True)
     resource_id = Column(String(255))
@@ -987,3 +989,53 @@ class MitigationResult(BaseModel):
     
     def __repr__(self):
         return f"<MitigationResult(strategy='{self.strategy}', improvement={self.improvement_score})>"
+
+class EC2Instance(Base):
+    __tablename__ = "ec2_instances"
+    
+    id = Column(String, primary_key=True)
+    instance_type = Column(String)
+    state = Column(String)
+    region = Column(String)
+    launch_time = Column(DateTime)
+    
+    # Relationships
+    recommendations = relationship("OptimizationRecommendation", back_populates="ec2_instance")
+    cost_history = relationship("CostHistory", back_populates="ec2_instance")
+
+class EBSVolume(Base):
+    __tablename__ = "ebs_volumes"
+    
+    id = Column(String, primary_key=True)
+    size = Column(Integer)
+    volume_type = Column(String)
+    state = Column(String)
+    region = Column(String)
+    attached_to = Column(String, nullable=True)
+
+class ScanStatus(PyEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+class ScanJob(Base):
+    __tablename__ = "scan_jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status = Column(Enum(ScanStatus), default=ScanStatus.PENDING)
+    resource_count = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+# Compatibility alias for code expecting `AnomalyDetection` model name
+# Historically parts of the codebase imported `AnomalyDetection` from
+# `backend.app.models.models` (e.g. `resources_router`). Provide a simple
+# alias so those imports continue to work and reference the `AnomalyEvent`
+# SQLAlchemy model defined above.
+try:
+    AnomalyDetection = AnomalyEvent
+except NameError:
+    # If AnomalyEvent is not defined for some reason, skip the alias.
+    AnomalyDetection = None

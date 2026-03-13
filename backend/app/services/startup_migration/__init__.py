@@ -7,10 +7,10 @@ to cloud (AWS, GCP, Azure) with cost comparison and migration planning.
 
 from backend.app.services.startup_migration.models import (
     StartupMigrationProject,
-    DatabaseAssessment,
-    CloudRecommendation,
-    MigrationPlan,
-    FinOpsIntegration
+    StartupDatabaseAssessment,
+    StartupCloudRecommendation,
+    StartupMigrationPlan,
+    StartupFinOpsIntegration
 )
 
 from .assessment_service import AssessmentService
@@ -21,10 +21,10 @@ from .finops_integrator import FinOpsIntegrator
 
 __all__ = [
     'StartupMigrationProject',
-    'DatabaseAssessment',
-    'CloudRecommendation',
-    'MigrationPlan',
-    'FinOpsIntegration',
+    'StartupDatabaseAssessment',
+    'StartupCloudRecommendation',
+    'StartupMigrationPlan',
+    'StartupFinOpsIntegration',
     'AssessmentService',
     'MultiCloudPricingService',
     'RecommendationEngine',

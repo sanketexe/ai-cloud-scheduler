@@ -18,7 +18,7 @@ from backend.app.core.exceptions import (
     CloudProviderRateLimitException,
     DatabaseException,
 )
-from backend.app.services.startup_migration.models import MigrationPhase, PhaseStatus
+from .models import MigrationPhase, PhaseStatus
 
 
 logger = logging.getLogger(__name__)

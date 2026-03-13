@@ -13,7 +13,7 @@ import uuid
 
 from backend.app.database.database import get_db_session
 from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
+from backend.app.models.models import User
 from backend.app.services.migration_advisor.migration_advisor.requirements_analysis_engine import WorkloadAnalysisEngine
 
 router = APIRouter(prefix="/api/migrations", tags=["requirements-analysis"])
@@ -126,7 +126,7 @@ def get_workload_profiles(
     Implements Requirement: 2.1
     """
     try:
-        from backend.app.services.startup_migration.models import MigrationProject, WorkloadProfile
+        from .models import MigrationProject, WorkloadProfile
         
         project = db.query(MigrationProject).filter(
             MigrationProject.project_id == project_id
@@ -202,7 +202,7 @@ def get_performance_requirements(
     Implements Requirement: 2.2
     """
     try:
-        from backend.app.services.startup_migration.models import MigrationProject, PerformanceRequirements
+        from .models import MigrationProject, PerformanceRequirements
         
         project = db.query(MigrationProject).filter(
             MigrationProject.project_id == project_id
@@ -273,7 +273,7 @@ def get_compliance_requirements(
     Implements Requirement: 2.3
     """
     try:
-        from backend.app.services.startup_migration.models import MigrationProject, ComplianceRequirements
+        from .models import MigrationProject, ComplianceRequirements
         
         project = db.query(MigrationProject).filter(
             MigrationProject.project_id == project_id
@@ -343,7 +343,7 @@ def get_budget_constraints(
     Implements Requirement: 2.4
     """
     try:
-        from backend.app.services.startup_migration.models import MigrationProject, BudgetConstraints
+        from .models import MigrationProject, BudgetConstraints
         
         project = db.query(MigrationProject).filter(
             MigrationProject.project_id == project_id
@@ -414,7 +414,7 @@ def get_technical_requirements(
     Implements Requirement: 2.5
     """
     try:
-        from backend.app.services.startup_migration.models import MigrationProject, TechnicalRequirements
+        from .models import MigrationProject, TechnicalRequirements
         
         project = db.query(MigrationProject).filter(
             MigrationProject.project_id == project_id

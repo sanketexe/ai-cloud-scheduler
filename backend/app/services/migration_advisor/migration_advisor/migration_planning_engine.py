@@ -13,9 +13,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 import structlog
 
-from backend.app.services.startup_migration.models import (
-    MigrationProject, MigrationPlan, MigrationPhase, WorkloadProfile,
-    MigrationStatus, PhaseStatus, MigrationRiskLevel
+from .models import (
+    MigrationProject,
+    MigrationPlan,
+    MigrationPhase,
+    WorkloadProfile,
+    MigrationStatus,
+    PhaseStatus,
+    MigrationRiskLevel
 )
 
 logger = structlog.get_logger(__name__)
@@ -393,7 +398,7 @@ class MigrationPlanGenerator:
         
         # Adjust based on organization size
         if organization_profile:
-            from backend.app.services.startup_migration.models import CompanySize
+            from .models import CompanySize
             if organization_profile.company_size == CompanySize.ENTERPRISE:
                 base_duration = int(base_duration * 1.3)
             elif organization_profile.company_size == CompanySize.LARGE:
@@ -492,7 +497,7 @@ class MigrationPlanGenerator:
         
         # Factor 3: Organization experience
         if organization_profile:
-            from backend.app.services.startup_migration.models import ExperienceLevel
+            from .models import ExperienceLevel
             if organization_profile.cloud_experience_level == ExperienceLevel.NONE:
                 risk_score += 3
             elif organization_profile.cloud_experience_level == ExperienceLevel.BEGINNER:

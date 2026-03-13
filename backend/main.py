@@ -21,6 +21,7 @@ import structlog
 # Import our core modules
 from backend.app.database.database import db_config, database_health_check
 from backend.app.api.auth_endpoints import auth_router
+from backend.app.api.resources_router import router as resources_router
 from backend.app.services.startup_migration.models import Base
 
 # Configure structured logging
@@ -243,6 +244,33 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         }
     )
 
+# HTTP exception handler
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """HTTP exception handler"""
+    correlation_id = getattr(request.state, 'correlation_id', 'unknown')
+    
+    logger.warning(
+        "HTTP exception",
+        status_code=exc.status_code,
+        detail=exc.detail,
+        correlation_id=correlation_id,
+        url=str(request.url),
+        method=request.method
+    )
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "message": exc.detail,
+                "status_code": exc.status_code,
+                "correlation_id": correlation_id,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        }
+    )
+
 # Import additional routers
 from backend.app.api.cloud_endpoints import cloud_router
 # from backend.app.api.task_endpoints import router as task_router  # TODO: Fix import errors
@@ -317,6 +345,7 @@ app.include_router(onboarding_router, prefix="/api/v1")
 app.include_router(api_logging_router)
 app.include_router(scheduler_router, prefix="/api")
 app.include_router(scaling_rules_router, prefix="/api/v1")
+app.include_router(resources_router)
 
 # Root endpoints
 @app.get("/")

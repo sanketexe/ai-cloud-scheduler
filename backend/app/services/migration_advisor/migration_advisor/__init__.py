@@ -8,7 +8,7 @@ This module provides intelligent guidance for cloud migration including:
 - Resource organization and categorization
 """
 
-from backend.app.services.startup_migration.models import (
+from .models import (
     MigrationProject,
     OrganizationProfile,
     WorkloadProfile,

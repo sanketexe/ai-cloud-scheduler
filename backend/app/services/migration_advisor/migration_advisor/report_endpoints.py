@@ -17,8 +17,8 @@ from pydantic import BaseModel
 
 from backend.app.database.database import get_db_session
 from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.services.startup_migration.models import MigrationProject
+from backend.app.models.models import User
+from .models import MigrationProject
 from backend.app.services.migration_advisor.migration_advisor.report_generator import ReportGenerator, ShareableLinkManager, ComprehensiveReport
 from backend.app.services.migration_advisor.migration_advisor.pdf_export_service import export_report_to_pdf, REPORTLAB_AVAILABLE
 

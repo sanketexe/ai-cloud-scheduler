@@ -12,9 +12,13 @@ from datetime import datetime
 from decimal import Decimal
 
 from backend.app.core.exceptions import ValidationException, BusinessRuleException
-from backend.app.services.startup_migration.models import (
-    CompanySize, InfrastructureType, ExperienceLevel,
-    MigrationStatus, PhaseStatus, OwnershipStatus
+from .models import (
+    CompanySize,
+    InfrastructureType,
+    ExperienceLevel,
+    MigrationStatus,
+    PhaseStatus,
+    OwnershipStatus
 )
 
 

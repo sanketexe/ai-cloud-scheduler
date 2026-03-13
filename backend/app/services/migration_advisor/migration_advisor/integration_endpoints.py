@@ -16,10 +16,13 @@ import structlog
 
 from backend.app.database.database import get_db_session
 from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.services.startup_migration.models import (
-    MigrationProject, BaselineMetrics, MigrationReport,
-    OrganizationalStructure, CategorizedResource
+from backend.app.models.models import User
+from .models import (
+    MigrationProject,
+    BaselineMetrics,
+    MigrationReport,
+    OrganizationalStructure,
+    CategorizedResource
 )
 from backend.app.services.migration_advisor.migration_advisor.post_migration_integration_engine import PostMigrationIntegrationEngine
 

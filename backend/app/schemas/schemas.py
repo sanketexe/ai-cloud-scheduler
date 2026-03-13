@@ -83,5 +83,38 @@ class CostHistory(CostHistoryBase):
     class Config:
         from_attributes = True
 
+# --- Response Models ---
+class EC2InstanceResponse(BaseModel):
+    id: str
+    instance_type: str
+    region: str
+    state: str
+    
+    class Config:
+        from_attributes = True
+
+class EBSVolumeResponse(BaseModel):
+    id: str
+    size: int
+    volume_type: str
+    state: str
+    region: str
+    
+    class Config:
+        from_attributes = True
+
+class OptimizationRecommendationResponse(BaseModel):
+    id: int
+    resource_id: str
+    resource_type: str
+    recommendation_type: str
+    description: Optional[str]
+    potential_savings: float
+    status: str
+    generated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # --- EC2 Instance Extended Schema ---
 # To be used if we need to return instance data with recommendations

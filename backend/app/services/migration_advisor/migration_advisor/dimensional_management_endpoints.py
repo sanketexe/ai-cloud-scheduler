@@ -15,8 +15,8 @@ import structlog
 
 from backend.app.database.database import get_db_session
 from backend.app.core.auth import get_current_user
-from backend.app.services.startup_migration.models import User
-from backend.app.services.startup_migration.models import OrganizationalStructure, CategorizedResource
+from backend.app.models.models import User
+from .models import OrganizationalStructure, CategorizedResource
 from backend.app.services.migration_advisor.migration_advisor.dimensional_view_engine import DimensionalViewEngine
 from backend.app.services.migration_advisor.migration_advisor.advanced_filtering_system import AdvancedFilteringSystem
 
@@ -291,7 +291,7 @@ async def get_dimensional_view(
         
         # Filter by project if specified
         if project_id:
-            from backend.app.services.startup_migration.models import MigrationProject
+            from .models import MigrationProject
             project = db.query(MigrationProject).filter(
                 MigrationProject.project_id == project_id
             ).first()
@@ -395,7 +395,7 @@ async def filter_resources(
         
         # Filter by project if specified
         if project_id:
-            from backend.app.services.startup_migration.models import MigrationProject
+            from .models import MigrationProject
             project = db.query(MigrationProject).filter(
                 MigrationProject.project_id == project_id
             ).first()

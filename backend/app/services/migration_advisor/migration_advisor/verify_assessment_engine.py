@@ -14,10 +14,14 @@ def verify_imports() -> List[Tuple[str, bool, str]]:
     
     # Test model imports
     try:
-        from backend.app.services.startup_migration.models import (
-            MigrationProject, OrganizationProfile, MigrationStatus,
-            CompanySize, InfrastructureType, ExperienceLevel
-        )
+        from .models import (
+    MigrationProject,
+    OrganizationProfile,
+    MigrationStatus,
+    CompanySize,
+    InfrastructureType,
+    ExperienceLevel
+)
         results.append(("Models", True, "All model classes imported successfully"))
     except Exception as e:
         results.append(("Models", False, f"Failed to import models: {str(e)}"))
