@@ -100,13 +100,13 @@ class DatabaseConfig:
                 # SQLite doesn't support connection pooling
                 self._async_engine = create_async_engine(
                     self.async_database_url,
-                    connect_args={"check_same_thread": False},
                     echo=os.getenv("DB_ECHO", "false").lower() == "true"
                 )
             else:
                 # PostgreSQL with connection pooling
                 self._async_engine = create_async_engine(
                     self.async_database_url,
+                    poolclass=QueuePool,
                     pool_size=self.pool_size,
                     max_overflow=self.max_overflow,
                     pool_timeout=self.pool_timeout,
@@ -115,36 +115,44 @@ class DatabaseConfig:
                     echo=os.getenv("DB_ECHO", "false").lower() == "true"
                 )
             
-            logger.info("Asynchronous database engine created",
+            # Add connection event listeners
+            @event.listens_for(self._async_engine.sync_engine, "connect")
+            def set_sqlite_pragma(dbapi_connection, connection_record):
+                """Set database-specific settings on connection"""
+                if "postgresql" in self.async_database_url:
+                    # Set timezone to UTC for PostgreSQL
+                    with dbapi_connection.cursor() as cursor:
+                        cursor.execute("SET timezone TO 'UTC'")
+            
+            logger.info("Asynchronous database engine created", 
                        url=self.async_database_url.split('@')[0] if '@' in self.async_database_url else self.async_database_url)
         
         return self._async_engine
-    
-    def get_session_factory(self) -> sessionmaker:
-        """Get synchronous session factory"""
+
+    def create_session_factory(self):
+        """Create session factory"""
         if self._session_factory is None:
             engine = self.create_sync_engine()
             self._session_factory = sessionmaker(
-                bind=engine,
-                autocommit=False,
-                autoflush=False,
-                expire_on_commit=False
+                autocommit=False, 
+                autoflush=False, 
+                bind=engine
             )
         return self._session_factory
-    
-    def get_async_session_factory(self) -> async_sessionmaker:
-        """Get asynchronous session factory"""
+
+    def create_async_session_factory(self):
+        """Create async session factory"""
         if self._async_session_factory is None:
             engine = self.create_async_engine()
             self._async_session_factory = async_sessionmaker(
-                bind=engine,
+                engine,
                 class_=AsyncSession,
+                expire_on_commit=False,
                 autocommit=False,
-                autoflush=False,
-                expire_on_commit=False
+                autoflush=False
             )
         return self._async_session_factory
-    
+
     def create_tables(self):
         """Create all database tables"""
         try:
@@ -190,6 +198,62 @@ class DatabaseConfig:
 
 # Global database configuration instance
 db_config = DatabaseConfig()
+
+# Initialize global instance
+db_config = DatabaseConfig()
+
+# Export for compatibility with existing imports
+SessionLocal = db_config.create_session_factory()
+engine = db_config.create_async_engine() # This was missing in the original file but needed for init_db.py
+AsyncSessionLocal = db_config.create_async_session_factory()
+
+# Dependency for FastAPI
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency to get async session"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+# Create async engine
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    # Fallback for local development if not set
+    DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost/finops_db"
+elif DATABASE_URL.startswith("postgresql://"):
+    # Fix for SQLAlchemy asyncpg
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,  # Set to True for SQL logging
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True
+)
+
+# Create async session factory
+async_session_maker = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Dependency for getting async database session
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 # Dependency for FastAPI
 def get_db_session() -> Generator[Session, None, None]:

@@ -9,7 +9,7 @@ from enum import Enum as PyEnum
 from typing import Dict, Any, List, Optional
 
 from sqlalchemy import (
-    Column, String, DateTime, Boolean, Text, Date, Numeric, 
+    Column, String, DateTime, Boolean, Text, Date, Numeric, Float,
     ForeignKey, Index, JSON, Enum, Integer, UniqueConstraint, Uuid
 )
 from sqlalchemy.types import JSON as JSONB, Uuid as UUID
@@ -251,41 +251,42 @@ class BudgetAlert(BaseModel):
         return f"<BudgetAlert(budget_id='{self.budget_id}', threshold={self.threshold_percentage}%)>"
 
 class OptimizationRecommendation(BaseModel):
-    """Cost optimization recommendations"""
+    """Stores AI-generated optimization recommendations"""
     __tablename__ = "optimization_recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    resource_id = Column(String, index=True, nullable=False) 
+    resource_type = Column(String, nullable=False) # 'EC2', 'EBS', 'RDS', etc.
+    recommendation_type = Column(String, nullable=False) # 'Rightsizing', 'Idle', 'Reserved Instance'
+    description = Column(String, nullable=True)
+    current_cost = Column(Float, nullable=True)
+    projected_cost = Column(Float, nullable=True)
+    potential_savings = Column(Float, nullable=False)
+    confidence_score = Column(Float, nullable=True)
+    status = Column(String, default="pending") # pending, applied, rejected
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    applied_at = Column(DateTime, nullable=True)
     
-    provider_id = Column(UUID(as_uuid=True), ForeignKey("cloud_providers.id"), nullable=False, index=True)
-    resource_id = Column(String(255), nullable=False, index=True)
-    resource_type = Column(String(100), nullable=False)
-    recommendation_type = Column(Enum(RecommendationType), nullable=False)
-    current_cost = Column(Numeric(precision=12, scale=4), nullable=False)
-    optimized_cost = Column(Numeric(precision=12, scale=4), nullable=False)
-    potential_savings = Column(Numeric(precision=12, scale=4), nullable=False)
-    confidence_score = Column(Numeric(precision=3, scale=2), nullable=False)  # 0.00 to 1.00
-    risk_level = Column(Enum(RiskLevel), nullable=False)
-    recommendation_text = Column(Text, nullable=False)
-    implementation_details = Column(JSONB, default={})
-    status = Column(Enum(RecommendationStatus), nullable=False, default=RecommendationStatus.PENDING)
-    valid_until = Column(DateTime(timezone=True))
+    # Optional foreign key for structured relationships
+    ec2_instance_id = Column(Integer, ForeignKey("ec2_instances.id"), nullable=True)
+    ec2_instance = relationship("EC2Instance", back_populates="recommendations")
+
+class CostHistory(Base):
+    """Tracks historical cost data for resources"""
+    __tablename__ = "cost_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    resource_id = Column(String, index=True, nullable=False)
+    service_type = Column(String, nullable=False)
+    date = Column(DateTime, nullable=False)
+    cost = Column(Float, nullable=False)
+    usage_amount = Column(Float, nullable=True)
+    unit = Column(String, nullable=True)
+    currency = Column(String, default="USD")
     
-    # Relationships
-    provider = relationship("CloudProvider", back_populates="optimization_recommendations")
-    
-    # Indexes
-    __table_args__ = (
-        Index('ix_optimization_provider_status', 'provider_id', 'status'),
-        Index('ix_optimization_type_savings', 'recommendation_type', 'potential_savings'),
-    )
-    
-    @validates('confidence_score')
-    def validate_confidence_score(self, key, score):
-        """Validate confidence score is between 0 and 1"""
-        if not 0 <= score <= 1:
-            raise ValueError("Confidence score must be between 0 and 1")
-        return score
-    
-    def __repr__(self):
-        return f"<OptimizationRecommendation(resource='{self.resource_id}', savings={self.potential_savings})>"
+    # Optional FK
+    ec2_instance_id = Column(Integer, ForeignKey("ec2_instances.id"), nullable=True)
+    ec2_instance = relationship("EC2Instance", back_populates="cost_history")
 
 class AuditLog(BaseModel):
     """Audit log for security and compliance"""
